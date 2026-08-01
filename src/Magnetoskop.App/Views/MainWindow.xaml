@@ -1,0 +1,248 @@
+<Window x:Class="Magnetoskop.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:Magnetoskop.App.ViewModels"
+        Title="Magnetoskop Capture"
+        Width="1100" Height="760"
+        MinWidth="900" MinHeight="600"
+        Background="#1E1E1E"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="MinWidth" Value="70"/>
+        </Style>
+        <Style x:Key="TimecodeText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="Foreground" Value="#66FF99"/>
+        </Style>
+        <Style x:Key="TimecodeLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#999999"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="0,0,0,2"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="*" MinWidth="300"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Preview -->
+        <Border Grid.Row="0" Grid.Column="0" Background="Black" Margin="0,0,10,10">
+            <Grid>
+                <Image Source="{Binding PreviewSource}" Stretch="Uniform"/>
+                <TextBlock Text="No preview"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="#555555" FontSize="20">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPreviewRunning}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <!-- Right panel: timecodes, status, devices, recording -->
+        <ScrollViewer Grid.Row="0" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Time information -->
+                <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock Text="TIME INFORMATION" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <UniformGrid Columns="2">
+                            <StackPanel Margin="0,0,10,8">
+                                <TextBlock Style="{StaticResource TimecodeLabel}" Text="CTL"/>
+                                <TextBlock Style="{StaticResource TimecodeText}" Text="{Binding CtlText}"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,0,8">
+                                <TextBlock Style="{StaticResource TimecodeLabel}" Text="LTC"/>
+                                <TextBlock Style="{StaticResource TimecodeText}" Text="{Binding LtcText}"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,10,0">
+                                <TextBlock Style="{StaticResource TimecodeLabel}" Text="VITC"/>
+                                <TextBlock Style="{StaticResource TimecodeText}" Text="{Binding VitcText}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource TimecodeLabel}" Text="USER BITS"/>
+                                <TextBlock Style="{StaticResource TimecodeText}" FontSize="20"
+                                           Text="{Binding UserBitsText}"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+
+                <!-- VTR connection -->
+                <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right" Content="⟳" MinWidth="34"
+                                    ToolTip="Refresh COM ports"
+                                    Command="{Binding RefreshVtrConnectionsCommand}"/>
+                            <TextBlock Text="RECORDER CONNECTION" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <TextBlock Text="Connection" Style="{StaticResource TimecodeLabel}"/>
+                        <ComboBox ItemsSource="{Binding VtrConnections}"
+                                  SelectedItem="{Binding SelectedVtrConnection}"
+                                  Margin="0,0,0,8"/>
+                        <TextBlock Text="Device profile" Style="{StaticResource TimecodeLabel}"/>
+                        <ComboBox ItemsSource="{Binding VtrProfiles}"
+                                  SelectedItem="{Binding SelectedVtrProfile}"
+                                  DisplayMemberPath="DisplayName" Margin="0,0,0,8"/>
+                        <Button Content="Connect" HorizontalAlignment="Left"
+                                Command="{Binding ConnectVtrCommand}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Recorder status -->
+                <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock Text="RECORDER STATUS" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding DeviceDescription}" Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding DetectedProfileText}" Foreground="#88BBFF"
+                                   FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="#FFCC66"
+                                   Text="{Binding TransportStateText}" Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding StatusFlagsText}" Foreground="#FF8866"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding CapabilitiesText}" Foreground="#999999"
+                                   FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Devices -->
+                <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right" Content="Refresh"
+                                    Command="{Binding RefreshDevicesCommand}"/>
+                            <TextBlock Text="CAPTURE DEVICES" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <TextBlock Text="Video device" Style="{StaticResource TimecodeLabel}"/>
+                        <ComboBox ItemsSource="{Binding VideoDevices}"
+                                  SelectedItem="{Binding SelectedVideoDevice}"
+                                  DisplayMemberPath="Name" Margin="0,0,0,8"/>
+                        <TextBlock Text="Audio device (auto-selected unless changed)"
+                                   Style="{StaticResource TimecodeLabel}"/>
+                        <ComboBox ItemsSource="{Binding AudioDevices}"
+                                  SelectedItem="{Binding SelectedAudioDevice}"
+                                  DisplayMemberPath="Name" Margin="0,0,0,8"
+                                  SelectionChanged="AudioDevice_SelectionChanged"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Start preview" Command="{Binding StartPreviewCommand}"/>
+                            <Button Content="Stop preview" Command="{Binding StopPreviewCommand}"/>
+                        </StackPanel>
+                        <TextBlock Text="Audio levels" Style="{StaticResource TimecodeLabel}"/>
+                        <Grid Margin="0,2,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <ProgressBar Grid.Row="0" Height="8" Margin="0,0,0,3"
+                                         Minimum="0" Maximum="1"
+                                         Value="{Binding AudioLevelLeft, Mode=OneWay}"
+                                         Foreground="#66FF99" Background="#111111"/>
+                            <ProgressBar Grid.Row="1" Height="8"
+                                         Minimum="0" Maximum="1"
+                                         Value="{Binding AudioLevelRight, Mode=OneWay}"
+                                         Foreground="#66FF99" Background="#111111"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Recording -->
+                <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock Text="RECORDING" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="Profile" Style="{StaticResource TimecodeLabel}"/>
+                        <ComboBox ItemsSource="{Binding RecordingProfiles}"
+                                  SelectedItem="{Binding SelectedRecordingProfile}"
+                                  DisplayMemberPath="DisplayName" Margin="0,0,0,8"/>
+                        <TextBlock Text="Output folder" Style="{StaticResource TimecodeLabel}"/>
+                        <DockPanel Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right" Content="…" MinWidth="34"
+                                    Command="{Binding BrowseOutputDirectoryCommand}"/>
+                            <TextBox Text="{Binding OutputDirectory}" IsReadOnly="True"/>
+                        </DockPanel>
+                        <CheckBox IsChecked="{Binding AutoPlayOnRecord}"
+                                  Foreground="#DDDDDD" Margin="0,0,0,8">
+                            <TextBlock Text="Auto-play deck on record" Foreground="#DDDDDD"/>
+                        </CheckBox>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <Button Content="● Record" Foreground="Red" FontWeight="Bold"
+                                    Command="{Binding StartRecordingCommand}"/>
+                            <Button Content="■ Stop rec" Command="{Binding StopRecordingCommand}"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding RecordingStatusText}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Transport bar -->
+        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Content="⏪ Rew" Command="{Binding RewindCommand}"/>
+                <Button Content="▶ Play" Command="{Binding PlayCommand}" FontWeight="Bold"/>
+                <Button Content="■ Stop" Command="{Binding StopCommand}"/>
+                <Button Content="⏩ FF" Command="{Binding FastForwardCommand}"/>
+                <Button Content="⏏ Eject" Command="{Binding EjectCommand}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Error bar -->
+        <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                Background="#5A1E1E" Padding="10,6" Margin="0,0,0,10" CornerRadius="4">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding LastError}" Value="">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="✕" MinWidth="28" Padding="4,0"
+                        ToolTip="Dismiss" Command="{Binding DismissErrorCommand}"/>
+                <TextBlock Text="{Binding LastError}" Foreground="#FFB3B3"
+                           FontWeight="SemiBold" TextWrapping="Wrap"
+                           VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Log -->
+        <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                Background="#262626" Padding="10" CornerRadius="4" MaxHeight="140">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="LOG" FontWeight="Bold" Margin="0,0,0,4"/>
+                <ListBox ItemsSource="{Binding LogEntries}"
+                         Background="Transparent" BorderThickness="0"
+                         Foreground="#AAAAAA" FontFamily="Consolas" FontSize="11"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

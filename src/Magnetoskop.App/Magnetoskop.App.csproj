@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Magnetoskop.Core\Magnetoskop.Core.csproj" />
+    <ProjectReference Include="..\Magnetoskop.Serial\Magnetoskop.Serial.csproj" />
+    <ProjectReference Include="..\Magnetoskop.Protocol.Sony9Pin\Magnetoskop.Protocol.Sony9Pin.csproj" />
+    <ProjectReference Include="..\Magnetoskop.Capture.Video\Magnetoskop.Capture.Video.csproj" />
+    <ProjectReference Include="..\Magnetoskop.Capture.Audio\Magnetoskop.Capture.Audio.csproj" />
+    <ProjectReference Include="..\Magnetoskop.Recording\Magnetoskop.Recording.csproj" />
+    <ProjectReference Include="..\Magnetoskop.Simulation\Magnetoskop.Simulation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Product metadata">
+    <AssemblyName>Magnetoskop.App</AssemblyName>
+    <Product>Magnetoskop Capture</Product>
+    <AssemblyTitle>Magnetoskop Capture</AssemblyTitle>
+    <Description>Videotape recorder control and audiovisual signal digitization</Description>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+</Project>

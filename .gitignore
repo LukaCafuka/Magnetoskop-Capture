@@ -1,0 +1,93 @@
+## Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+out/
+
+## Visual Studio / VS Code / Rider
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## MSBuild / NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Test / coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+coverage*/
+*.lcov
+BenchmarkDotNet.Artifacts/
+
+## WPF temporary project files (can break `dotnet run` if left in the project folder)
+*_wpftmp.csproj
+*_wpftmp.*
+
+## Publish / packaging leftovers
+*.publishproj
+PublishScripts/
+
+## OS junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## Windows reserved device names (cannot be added to the Git index)
+nul
+NUL
+con
+CON
+aux
+AUX
+prn
+PRN
+
+## Local secrets / env
+*.pfx
+*.publishsettings
+appsettings.*.local.json
+secrets.json
+.env
+.env.*
+
+## Misc
+*.cache
+*.log
+*.tmp
+*.temp
+*~
+*.swp
+*.bak

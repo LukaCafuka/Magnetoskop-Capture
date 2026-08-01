@@ -1,0 +1,60 @@
+namespace Magnetoskop.Core.Models;
+
+/// <summary>Transport modes as reported by / commanded to a VTR.</summary>
+public enum TransportState
+{
+    Unknown,
+    Stopped,
+    Playing,
+    Recording,
+    FastForwarding,
+    Rewinding,
+    Ejecting,
+    Still,
+    Jog,
+    Shuttle,
+    Var,
+    Standby,
+}
+
+/// <summary>Transport commands. The initial set is required; the rest are reserved for later phases.</summary>
+public enum TransportCommand
+{
+    Play,
+    Stop,
+    FastForward,
+    Rewind,
+    Eject,
+    // Reserved for later phases:
+    Record,
+    StandbyOn,
+    StandbyOff,
+    JogForward,
+    JogReverse,
+    ShuttleForward,
+    ShuttleReverse,
+    VarForward,
+    VarReverse,
+    CueUp,
+    Preroll,
+}
+
+/// <summary>A snapshot of the recorder status.</summary>
+public sealed record VtrStatus
+{
+    public TransportState Transport { get; init; } = TransportState.Unknown;
+    public bool IsConnected { get; init; }
+    /// <summary>True when the deck's local/remote switch inhibits remote control.</summary>
+    public bool IsLocal { get; init; }
+    public bool TapeOut { get; init; }
+    public bool ServoLock { get; init; }
+    public bool ServoRefMissing { get; init; }
+    public bool RecordInhibited { get; init; }
+    public bool NearEndOfTape { get; init; }
+    public bool EndOfTape { get; init; }
+    public bool SystemAlarm { get; init; }
+    public bool ServoAlarm { get; init; }
+    /// <summary>Tape direction: true = reverse.</summary>
+    public bool TapeReverse { get; init; }
+    public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
+}

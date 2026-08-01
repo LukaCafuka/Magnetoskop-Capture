@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Magnetoskop.App/Magnetoskop.App.csproj" />
+    <Project Path="src/Magnetoskop.Capture.Audio/Magnetoskop.Capture.Audio.csproj" />
+    <Project Path="src/Magnetoskop.Capture.Video/Magnetoskop.Capture.Video.csproj" />
+    <Project Path="src/Magnetoskop.Core/Magnetoskop.Core.csproj" />
+    <Project Path="src/Magnetoskop.Protocol.Sony9Pin/Magnetoskop.Protocol.Sony9Pin.csproj" />
+    <Project Path="src/Magnetoskop.Recording/Magnetoskop.Recording.csproj" />
+    <Project Path="src/Magnetoskop.Serial/Magnetoskop.Serial.csproj" />
+    <Project Path="src/Magnetoskop.Simulation/Magnetoskop.Simulation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Magnetoskop.App.Tests/Magnetoskop.App.Tests.csproj" />
+    <Project Path="tests/Magnetoskop.Compatibility.Tests/Magnetoskop.Compatibility.Tests.csproj" />
+    <Project Path="tests/Magnetoskop.Core.Tests/Magnetoskop.Core.Tests.csproj" />
+    <Project Path="tests/Magnetoskop.Protocol.Sony9Pin.Tests/Magnetoskop.Protocol.Sony9Pin.Tests.csproj" />
+    <Project Path="tests/Magnetoskop.Recording.Tests/Magnetoskop.Recording.Tests.csproj" />
+  </Folder>
+</Solution>

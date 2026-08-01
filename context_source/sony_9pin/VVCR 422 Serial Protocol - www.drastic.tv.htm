@@ -1,0 +1,2191 @@
+<!DOCTYPE html>
+<html lang="en-gb" dir="ltr" style=""><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<meta charset="utf-8">
+	<meta name="rights" content="(c)opywrite Drastic Technologies 1995-2026">
+	<meta name="author" content="Administrator">
+	<meta name="description" content="Drastic Technologies develops professional video software for broadcast, post production, IP streaming, QC, signal analysis, transcoding, and 8K media workflows.
+">
+	<meta name="generator" content="Helix Ultimate - The Most Popular Joomla! Template Framework.">
+	<title>VVCR 422 Serial Protocol - www.drastic.tv</title>
+	<link href="https://www.drastic.tv/images/favicon.ico" rel="icon" type="image/vnd.microsoft.icon">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/joomla-alert.min_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/bootstrap.min_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/chosen_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/system-j4.min_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/joomla-fontawesome.min_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/template_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/default_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/dynamic-content_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/font-awesome-6.min_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/font-awesome-v4-shims_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/animate.min_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/sppagebuilder_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/style_003_ld6r.htm" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/style_ld6r.htm" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/style_002_ld6r.htm" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/style_ld6r.css" rel="stylesheet">
+	<link href="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/magnific-popup_ld6r.css" rel="stylesheet">
+	<style>/* 1. Force a solid white main header strip across all default and sticky scroll states */
+#sp-header, 
+#sp-header.header-sticky,
+.body-innerwrapper #sp-header,
+.header-sticky #sp-header {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+
+/* 2. Target the exact internal containers of the Mega Menu dropdown drop zones */
+.sp-megamenu-parent .sp-dropdown,
+.sp-megamenu-parent .sp-dropdown .sp-dropdown-inner,
+.sp-megamenu-parent .sp-dropdown li.sp-menu-item {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+
+/* 3. Ensure the top-level root horizontal navigation links stay purely black */
+.sp-megamenu-parent > li > a,
+#sp-menu .sp-megamenu-parent > li > a {
+    color: #000000 !important;
+}
+
+/* 4. Keep top-level active and hovered text legible */
+.sp-megamenu-parent > li:hover > a,
+.sp-megamenu-parent > li.active > a {
+    color: #000000 !important;
+}
+
+/* 5. Force text links inside the dropdown panels to stay strictly black */
+.sp-megamenu-parent .sp-dropdown li a,
+.sp-megamenu-parent .sp-dropdown .sp-mega-group-title,
+.sp-megamenu-parent .sp-dropdown a {
+    color: #000000 !important;
+}
+
+/* 6. Subtle hover effect for nested sub-menu rows */
+.sp-megamenu-parent .sp-dropdown li a:hover {
+    color: #444444 !important;
+    background-color: #f5f5f5 !important;
+}
+
+/* 7. Ensure the mobile menu trigger burger lines remain black and visible */
+.burger-icon span {
+    background-color: #000000 !important;
+}
+/* Block any template attempts to reverse or filter colors on your logo image */
+#sp-logo img, 
+.logo img, 
+.logo-image img,
+#sp-header .logo img {
+    filter: none !important;
+    -webkit-filter: none !important;
+}
+
+/* Ensure the background layout frame under the logo remains purely white */
+#sp-logo, 
+.logo-wrapper {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+}
+
+/* Fix the too big black bars around the footer */
+#sp-bottom {
+    padding-top: 16px !important;
+    padding-bottom: 12px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    min-height: 0 !important;
+}</style>
+	<style>.logo-image {height:36px;}.logo-image-phone {height:36px;}</style>
+	<style>@media(min-width: 1400px) {.sppb-row-container { max-width: 1320px; }}</style>
+	<style>:root {--sppb-topbar-bg-color: #0074b2; --sppb-topbar-text-color: #313335; --sppb-header-bg-color: #0074b2; --sppb-logo-text-color: #313335; --sppb-menu-text-color: #0074b2; --sppb-menu-text-hover-color: #313335; --sppb-menu-text-active-color: #0074b2; --sppb-menu-dropdown-bg-color: #ffffff; --sppb-menu-dropdown-text-color: #252525; --sppb-menu-dropdown-text-hover-color: #0074b2; --sppb-menu-dropdown-text-active-color: #0074b2; --sppb-offcanvas-menu-icon-color: #000000; --sppb-offcanvas-menu-bg-color: #ffffff; --sppb-offcanvas-menu-items-and-items-color: #252525; --sppb-offcanvas-menu-active-menu-item-color: #0345bf; --sppb-text-color: #252525; --sppb-bg-color: #ffffff; --sppb-link-color: #0074b2; --sppb-link-hover-color: #313335; --sppb-footer-bg-color: #171717; --sppb-footer-text-color: #ffffff; --sppb-footer-link-color: #a2a2a2; --sppb-footer-link-hover-color: #ffffff}</style>
+<script async="" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/google-analytics_analytics_002_ld6r.js"></script><script type="application/json" class="joomla-script-options loaded">{"joomla.jtext":{"MDL_MODALTXT_CLOSE":"close","MDL_MODALTXT_PREVIOUS":"previous","MDL_MODALTXT_NEXT":"next","RLTA_BUTTON_SCROLL_LEFT":"Scroll buttons to the left","RLTA_BUTTON_SCROLL_RIGHT":"Scroll buttons to the right","ERROR":"Error","MESSAGE":"Message","NOTICE":"Notice","WARNING":"Warning","JCLOSE":"Close","JOK":"OK","JOPEN":"Open"},"data":{"breakpoints":{"tablet":991,"mobile":480},"header":{"stickyOffset":"100"}},"system.paths":{"root":"","rootFull":"https:\/\/www.drastic.tv\/","base":"","baseFull":"https:\/\/www.drastic.tv\/"},"csrf.token":"007606af8266167f49852ea095aae69b"}</script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/core.min_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/joomla-hidden-mail.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/jquery.min_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/jquery-noconflict.min_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/alert.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/button.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/carousel.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/collapse.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/dropdown.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/modal.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/offcanvas.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/popover.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/scrollspy.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/tab.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/toast.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/showon.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/menu.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/messages.min_ld6r.js" type="module"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/inert.min_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/chosen.jquery_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/main_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/dynamic-content_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/jquery.parallax_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/sppagebuilder_ld6r.js" defer="defer"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/jquery.magnific-popup.min_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/image_ld6r.js"></script>
+	<script src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/text_block_ld6r.js"></script>
+	<script>rltaSettings = {"switchToAccordions":true,"switchBreakPoint":576,"buttonScrollSpeed":5,"addHashToUrls":true,"rememberActive":false,"wrapButtons":false}</script>
+	<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.drastic.tv/#/schema/Organization/base","name":"www.drastic.tv","url":"https://www.drastic.tv/"},{"@type":"WebSite","@id":"https://www.drastic.tv/#/schema/WebSite/base","url":"https://www.drastic.tv/","name":"www.drastic.tv","publisher":{"@id":"https://www.drastic.tv/#/schema/Organization/base"}},{"@type":"WebPage","@id":"https://www.drastic.tv/#/schema/WebPage/base","url":"https://www.drastic.tv/support-59/legacysoftwarehardware/37-miscellaneous-legacy/180-vvcr-422-serial-protocol","name":"VVCR 422 Serial Protocol - www.drastic.tv","description":"Drastic Technologies develops professional video software for broadcast, post production, IP streaming, QC, signal analysis, transcoding, and 8K media workflows.\r\n","isPartOf":{"@id":"https://www.drastic.tv/#/schema/WebSite/base"},"about":{"@id":"https://www.drastic.tv/#/schema/Organization/base"},"inLanguage":"en-GB"},{"@type":"Article","@id":"https://www.drastic.tv/#/schema/com_content/article/180","name":"VVCR 422 Serial Protocol","headline":"VVCR 422 Serial Protocol","inLanguage":"en-GB","isPartOf":{"@id":"https://www.drastic.tv/#/schema/WebPage/base"}}]}</script>
+	<script>template="shaper_helixultimate";</script>
+	<script>
+				document.addEventListener("DOMContentLoaded", () =>{
+					window.htmlAddContent = window?.htmlAddContent || "";
+					if (window.htmlAddContent) {
+        				document.body.insertAdjacentHTML("beforeend", window.htmlAddContent);
+					}
+				});
+			</script>
+	<script>(function () {
+	try {
+		var SPPB_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+		if (!SPPB_TIME_ZONE){
+			return;
+		}
+
+		document.cookie =
+			'sppb_user_timezone=' + encodeURIComponent(SPPB_TIME_ZONE) +
+			'; path=/' +
+			'; max-age=43200'; // 12 hours
+	} catch (e) {}
+})();</script>
+	<script>
+			const initColorMode = () => {
+				const colorVariableData = [];
+				const sppbColorVariablePrefix = "--sppb";
+				let activeColorMode = localStorage.getItem("sppbActiveColorMode") || "";
+				activeColorMode = "";
+				const modes = [];
+
+				if(!modes?.includes(activeColorMode)) {
+					activeColorMode = "";
+					localStorage.setItem("sppbActiveColorMode", activeColorMode);
+				}
+
+				document?.body?.setAttribute("data-sppb-color-mode", activeColorMode);
+
+				if (!localStorage.getItem("sppbActiveColorMode")) {
+					localStorage.setItem("sppbActiveColorMode", activeColorMode);
+				}
+
+				if (window.sppbColorVariables) {
+					const colorVariables = typeof(window.sppbColorVariables) === "string" ? JSON.parse(window.sppbColorVariables) : window.sppbColorVariables;
+
+					for (const colorVariable of colorVariables) {
+						const { path, value } = colorVariable;
+						const variable = String(path[0]).trim().toLowerCase().replaceAll(" ", "-");
+						const mode = path[1];
+						const variableName = `${sppbColorVariablePrefix}-${variable}`;
+
+						if (activeColorMode === mode) {
+							colorVariableData.push(`${variableName}: ${value}`);
+						}
+					}
+
+					document.documentElement.style.cssText += colorVariableData.join(";");
+				}
+			};
+
+			window.sppbColorVariables = [];
+			
+			initColorMode();
+
+			document.addEventListener("DOMContentLoaded", initColorMode);
+		</script>
+			</head>
+	<body class="site helix-ultimate hu com_content com-content view-article layout-blog task-none itemid-389 en-gb ltr sticky-header layout-fluid offcanvas-init offcanvs-position-right" data-sppb-color-mode="">
+
+		
+		
+		<div class="body-wrapper">
+			<div class="body-innerwrapper">
+								<main id="sp-main">
+					
+<section id="sp-top-bar">
+
+						<div class="container">
+				<div class="container-inner">
+			
+	
+<div class="row">
+	<div id="sp-top1" class="col-lg-12 "><div class="sp-column "></div></div></div>
+							</div>
+			</div>
+			
+	</section>
+
+<header id="sp-header" class="header-sticky">
+
+						<div class="container">
+				<div class="container-inner">
+			
+	
+<div class="row" style="position: relative;">
+	<div id="sp-logo" class="col-9 col-sm-9 col-md-3 col-lg-3 col-xl-3 "><div class="sp-column  d-flex align-items-center"><div class="logo"><a href="https://www.drastic.tv/">
+				<img class="logo-image  d-none d-lg-inline-block" srcset="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/logo_ld6r.png 1x" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/logo_ld6r.png" height="36" alt="www.drastic.tv">
+				<img class="logo-image-phone d-inline-block d-lg-none" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/logo_ld6r.png" alt="www.drastic.tv"></a></div></div></div><div id="sp-menu" class="col-3 col-sm-3 col-md-9 col-lg-9 col-xl-9 " style="position: static;"><div class="sp-column  d-flex align-items-center justify-content-end"><nav class="sp-megamenu-wrapper d-flex" role="navigation" aria-label="navigation"><ul class="sp-megamenu-parent menu-animation-fade d-none d-lg-block"><li class="sp-menu-item no-uppercase"><a href="https://www.drastic.tv/index.php">Home</a></li><li class="sp-menu-item sp-has-child no-uppercase menu-justify"><a href="https://www.drastic.tv/index.php/productsmenu-56">Products</a><div class="sp-dropdown sp-dropdown-main sp-dropdown-mega sp-menu-full container" style="display: none;"><div class="sp-dropdown-inner"><div class="row"><div class="col-sm-4"><ul class="sp-mega-group"><li class="item-363 menu_item item-header"><a class="sp-group-title" href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist">Video I/O Software</a><ul class="sp-mega-group-child sp-dropdown-items"><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist/videoqc">videoQC - Automated &amp; Visual Tools</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist/testpatterngenerator">TestPatternGenerator</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist/tccalc">Time Code Calc</a></li></ul></li><li class="item-366 menu_item item-header"><a class="sp-group-title" href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist">File Conversion/Plugins</a><ul class="sp-mega-group-child sp-dropdown-items"><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/dolby-vision-for-adobe">Dolby Vision for Adobe</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-workstation">MediaReactor Workstation Plugins</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-lite-adobe">MediaReactor Lite for Adobe</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-lite-avid">MediaReactor Lite for Avid</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-for-autodesk">MediaReactor For Autodesk</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/cc-convert">ccConvert for Closed Captions</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-client-server">Net-X-Convert &amp; Net-X-Proxy</a></li></ul></li></ul></div><div class="col-sm-4"><ul class="sp-mega-group"><li class="item-364 menu_item item-header"><a class="sp-group-title" href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement">Test and Measurement</a><ul class="sp-mega-group-child sp-dropdown-items"><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/networkvideoanalyzer">2110Scope</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/hdrscope-waveform-vectorscope">HDRScope Waveform/Vectorscope</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/4kscope">4KScope Waveform/Vectorscope</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/sdi-hdmi-scope">sdiScope Waveform/Vectorscope</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/drasticscope-free-waveform-vectorscope">Free Waveform/Vectorscope</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/netxscope">NetXScope</a></li></ul></li><li class="item-367 menu_item item-header"><a class="sp-group-title" href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist">SDK and API</a><ul class="sp-mega-group-child sp-dropdown-items"><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist/dt-media-read">DTMediaRead SDK</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist/dt-media-write">DTMediaWrite SDK</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist/rs-422-device-emulation">RS-422 Device Emulation</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist/rs-422-device-control">RS-422 Device Control</a></li></ul></li></ul></div><div class="col-sm-4"><ul class="sp-mega-group"><li class="item-365 menu_item item-header"><a class="sp-group-title" href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist">Network Streaming/PFR</a><ul class="sp-mega-group-child sp-dropdown-items"><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/net-x-code">Net-X-Code Server</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/net-x-code-pfr">FastClip/Partial File Restore</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/flowcaster">FlowCaster - Remote Collaboration</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/media-file-scanner">Media File Scanner</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/netxrouter-srt-rist-udp-rtp">NETXROUTER - IP Distribution</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/net-x-code-iptv">IP Video Capture/Stream</a></li></ul></li></ul></div></div></div></div></li><li class="sp-menu-item sp-has-child no-uppercase"><a href="https://www.drastic.tv/index.php/sales">Sales</a><div class="sp-dropdown sp-dropdown-main sp-menu-right" style="width: 240px; display: none;"><div class="sp-dropdown-inner"><ul class="sp-dropdown-items"><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/sales/testpatterngenerator-sales">Test Pattern Generator</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/sales/mediareactor">MediaReactor</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/sales/netxrouter-ip-routing">NETXROUTER</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/sales/netxcode-server">Net-X-Code Server</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/sales/netxconvert-proxy">Net-X-Convert &amp; Net-X-Proxy</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/sales/flowcaster-sales">FlowCaster</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/sales/ccconvert-how-to-buy-menu">ccConvert</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/sales/videoqc">videoQC</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/sales/signal-analysis-scopes">Signal Analysis/Scopes</a></li></ul></div></div></li><li class="sp-menu-item sp-has-child left-drop no-uppercase active"><a href="https://www.drastic.tv/index.php/support-59">Support</a><div class="sp-dropdown sp-dropdown-main sp-menu-right" style="width: 240px; display: none;"><div class="sp-dropdown-inner"><ul class="sp-dropdown-items"><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/support-59/supportdownloads">Downloads</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/support-59/supportdocumention">Documentation</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/support-59/licensing">Licensing</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/support-59/supporttipstechnical">Tips, Tricks and Technical</a></li><li class="sp-menu-item sp-has-child"><a href="#">Drastic</a><div class="sp-dropdown sp-dropdown-sub sp-menu-right" style="width: 240px;"><div class="sp-dropdown-inner"><ul class="sp-dropdown-items"><li class="sp-menu-item"><a rel="noopener noreferrer" href="https://www.youtube.com/user/DrasticTechnologies" target="_blank">YouTube Tutorials</a></li><li class="sp-menu-item"><a rel="noopener noreferrer" href="https://www.facebook.com/drastic.tv" target="_blank">Facebook Group</a></li><li class="sp-menu-item"><a rel="noopener noreferrer" href="https://twitter.com/DrasticTech" target="_blank">Twitter Announcements </a></li></ul></div></div></li><li class="sp-menu-item sp-has-child"><a href="#">FlowCaster</a><div class="sp-dropdown sp-dropdown-sub sp-menu-right" style="width: 240px;"><div class="sp-dropdown-inner"><ul class="sp-dropdown-items"><li class="sp-menu-item"><a rel="noopener noreferrer" href="https://www.youtube.com/channel/UC_Ibg5kA9KZkg3GlLnUlusw" target="_blank">YouTube Tutorials</a></li><li class="sp-menu-item"><a rel="noopener noreferrer" href="https://www.facebook.com/FlowCasterTV" target="_blank">Facebook Group</a></li><li class="sp-menu-item"><a href="https://twitter.com/DrasticTech">Twitter Announcements </a></li></ul></div></div></li><li class="sp-menu-item current-item active"><a aria-current="page" href="https://www.drastic.tv/index.php/support-59/legacysoftwarehardware">Legacy Software/Hardware</a></li></ul></div></div></li><li class="sp-menu-item sp-has-child"><a href="https://www.drastic.tv/index.php/company-60">Company</a><div class="sp-dropdown sp-dropdown-main sp-menu-right" style="width: 240px; display: none;"><div class="sp-dropdown-inner"><ul class="sp-dropdown-items"><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/company-60/newsletters/archive/listing">Newsletters</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/company-60/privacy">Privacy</a></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/company-60/company-61">About Us</a></li></ul></div></div></li><li class="sp-menu-item"><a href="https://www.drastic.tv/index.php/search-icon"></a></li></ul><a id="offcanvas-toggler" aria-label="Menu" class="offcanvas-toggler-right offcanvas-toggler-custom d-lg-none" href="#" title="Menu"><div class="burger-icon" aria-hidden="true"><span></span><span></span><span></span></div></a></nav></div></div></div>
+							</div>
+			</div>
+			
+	</header>
+
+<section id="sp-section-3">
+
+				
+	
+<div class="row">
+	<div id="sp-title" class="col-lg-12 "><div class="sp-column "><div class="sp-page-title" style="background-image: url(/images/header-inner-1.jpg);"><div class="container"><h2 class="sp-page-title-heading">Legacy</h2><h3 class="sp-page-title-sub-heading">Legacy hardware and software</h3></div></div></div></div></div>
+				
+	</section>
+
+<section id="sp-main-body">
+
+										<div class="container">
+					<div class="container-inner">
+						
+	
+<div class="row">
+	
+<div id="sp-component" class="col-lg-12 ">
+	<div class="sp-column ">
+		<div id="system-message-container" aria-live="polite"></div>
+
+
+		
+		<div class="article-details " itemscope="" itemtype="https://schema.org/Article">
+    <meta itemprop="inLanguage" content="en-GB">
+
+    
+    
+    
+    
+            <div class="article-header">
+                            <h1 itemprop="headline">
+                    VVCR 422 Serial Protocol                </h1>
+            
+            
+            
+                    </div>
+    
+    <div class="article-can-edit d-flex flex-wrap justify-content-between">
+                
+            </div>
+
+    
+        
+                
+    
+        
+        
+        
+        <div itemprop="articleBody">
+            <p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/legacy111_ld6r.png" alt="legacy serial control" width="111" height="100" style="float: right;">This
+ is a partial description of the Sony 9 Pin protocol as supported by 
+Drastic's original VVCR products. &nbsp;While the basis of this 
+protocol, Sony 9 Pin, has not changed, many of the extended commands 
+have. This document is made available for historic interest only. 
+&nbsp;For control of current Drastic DDRs, please contact <joomla-hidden-mail is-link="1" is-email="0" first="c3VwcG9ydA==" last="ZHJhc3RpY3RlY2guY29t" text="RHJhc3RpYyBTdXBwb3J0" base=""><a href="mailto:support@drastictech.com" base="">Drastic Support</a></joomla-hidden-mail>.</p>
+ 
+<p><em>NOTE: This area contains legacy material from previous Drastic 
+Technologies websites. It is provided for reference only, and contains 
+information, products and links that may no longer exist and which are 
+no longer supported by Drastic.</em> For current Drastic Technologies products, please see our main site here:<code></code></p>
+<p><a href="http://drastic.tv/">http://www.drastic.tv</a></p>
+<p><span style="font-family: monospace;"></span></p>
+<h1>DRASTIC VVCR&nbsp;9-PIN REMOTE CONNECTOR PROTOCOL<br>(Partial)</h1>
+<p>If you wish to control Sony VTRs, Louth and Odetics DDRs, or have 
+your application be controlled as one of those devices, Drastic has OEM 
+software for both.&nbsp; Please see:</p>
+<div style="margin-left: 2em;">
+<ul>
+<li>Controlling serial devices <a href="https://www.drastic.tv/index.php/component/content/article/62-mediacmdcontrolsdk?catid=55&amp;Itemid=65"><strong>MediaCMDX Control SDK</strong></a></li>
+<li>Being controlled as a device <a href="https://www.drastic.tv/index.php/component/content/article/63-mediacmdemulationsdk?catid=56&amp;Itemid=65"><strong>MediaCMDX Emulation SDK</strong></a></li>
+</ul>
+</div>
+<p>Products that control and/or are controlled as a&nbsp;serial device include:</p>
+<div style="margin-left: 2em;">
+<ul>
+<ul>
+<li>Hardware Products</li>
+</ul>
+<li>Titan series digital disk recorders</li>
+<li>VVW series digital disk recorders (Legacy)</li>
+<li>VVCR series digitial disk recorders (Legacy)
+<ul>
+<li>Software Products</li>
+</ul>
+</li>
+<li>MediaNXS I/O Solution&nbsp;(Control of VTRs included)</li>
+<li>MediaNXS Serial Emulation Add On (For being controlled as a VTR)</li>
+</ul>
+</div>
+<p>Please note that this document is from 1994.&nbsp; Although it is 
+probably mostly accurate, we cannot guarantee&nbsp;this 
+document's&nbsp;accuracy or suitability for any purpose.&nbsp; For 
+Titan/MediaNXS control please contact Drastic's engineering department.</p>
+<p>&nbsp;</p>
+<hr width="100">
+<p><br><strong>CONTENTS<br> <br> </strong></p>
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#document_conventions">Document Conventions</a></li>
+<li><a href="#9_pin_connector">9-pin Connector Specification</a></li>
+<li><a href="#communication_format">Communication Format</a></li>
+<li><a href="#command_format">Command Format</a></li>
+<li><a href="#controller_commands">Controller Commands</a></li>
+<li><a href="#general_returns">General Returns</a></li>
+<li><a href="#system_control">System Control</a></li>
+<li><a href="#transport_control">Transport Control</a></li>
+<li><a href="#preset_select_control">Preset and Select Control</a></li>
+<li><a href="#status_sense">Status Sense</a></li>
+<li><a href="#time_code_return">Time Code Return Table</a></li>
+<li><a href="#status_return">Status Return Table</a></li>
+<li><a href="#return_from_device">Return from Device</a></li>
+<li><a href="#time_data_format">Time Data Format</a></li>
+<li><a href="#pioneer_vdr1000">Pioneer VDR 1000 Extensions</a></li>
+<li><a href="#drastic_protocol">Drastic Technologies Setup Protocol Extensions</a></li>
+<li><a href="#global_setup">Global Setup</a></li>
+<li><a href="#input_setup">Input Setup</a></li>
+<li><a href="#output_setup">Output Setup</a></li>
+<li><a href="#audio_setup">Audio Setup</a></li>
+</ul>
+<p><a name="introduction"></a></p>
+<p><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h2><strong>Introduction<br> </strong></h2>
+<p>The following is an abridged version of the VVCR RS-422 Protocol 
+Manual. This subset of commands may be used to control most broadcast 
+VTRs including the VVCR. Most of the setup commands and extensions (such
+ as the Pioneer VDR extension) will only work with specific decks, but 
+the basic motion control and editing commands should work with all 
+RS-422 controlled VTRs. For a complete protocol specification, please 
+contact:</p>
+<p><a href="https://www.drastic.tv/index.php/component/content/article/90-contact?catid=45:contact&amp;Itemid=67">Drastic Technologies</a><a name="document_conventions"></a></p>
+<p><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h2><strong>Document conventions</strong></h2>
+<p>In this protocol, the controller is defined as the equipment which 
+controls a VTR, and the device is defined as the equipment which is 
+being controlled.</p>
+<p>When two VTRs are connected (SWAP editing), the record VTR is called 
+the controller, and the play VTR is the device. When an editor is 
+connected to a VTR, the editor becomes a controller, and the VTR becomes
+ a device. Currently, the VVCR is available only as a device.</p>
+<p>CAPITALS indicate a device or controller state.</p>
+<p>The following section contains a description of the remote control signal used for Drastic Technologies VVCR 9-pin connector.</p>
+<p><a name="9_pin_connector"></a><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h2><strong>Specification of a 9-pin connector<br> </strong></h2>
+<p>Interface connector: 9 pin D-sub female.</p>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_9con_ld6r.gif" alt="DIN 9 Pin Female Connector" width="220" height="100" style="display: block; margin-left: auto; margin-right: auto;" border="0"></p>
+<p style="text-align: center;">figure. Female 9 Pin DIN Connector</p>
+<p style="text-align: center;">&nbsp;</p>
+<p>The VVCR uses RS-422 serial signals to accept commands and return 
+status information. The connections between the VVCR and its controller 
+are as follows:</p>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_econ_ld6r.gif" alt="RS-422 Signal Description" width="448" height="277" style="display: block; margin-left: auto; margin-right: auto;" border="0"></p>
+<p style="text-align: center;">figure. RS-422 Electrical Connections<br><a name="communication_format"></a></p>
+<p>&nbsp;</p>
+<p><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h2><strong>Communication format<br> </strong></h2>
+<pre>Format:              EIA RS-422A
+Mode:                No Synchronization
+Character length:    1 Start bit + 8 Data bits + 1 Stop bit
+Data rate:           38400 bps
+Parity:              Odd parity  D0 + D1 + ... D7 + P = An odd number
+Start bit:           1 bit "SPACE"
+Stop bit:            1 bit "MARK"
+</pre>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_bitcom_ld6r.gif" alt="Command Byte Bit Composition" width="715" height="134" style="display: block; margin-left: auto; margin-right: auto;" border="0"></p>
+<p style="text-align: center;">Protocol Bit Composition</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h2><strong>Command format<br> </strong></h2>
+<p>The data communication is composed of the CMD1/DATA COUNT, CMD2, DATA
+ and CHECKSUM. Commands are transmitted in order from the MSB of the 
+CMD1/DATA COUNT. When the DATA COUNT is 0, no data is transmitted (the 
+CMD1, CMD2 and checksum data bytes are still transmitted), but when the 
+DATA COUNT is not 0, the number of data bytes which corresponds with the
+ DATA COUNT are inserted between the CMD2 and CHECKSUM.</p>
+<h3><strong>1. COMMAND BLOCK FORMAT</strong></h3>
+<p>The data communication between the controller and the device is performed as follows:</p>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_blkfmt_ld6r.gif" alt="Command Block Format" width="533" height="117" style="display: block; margin-left: auto; margin-right: auto;" border="0"></p>
+<p style="text-align: center;">figure. Command Block Format</p>
+<p>&nbsp;</p>
+<h3><strong>2. COMMAND CONTENTS</strong></h3>
+<h4>CMD 1 :</h4>
+<h4>Indicates the value according to the function and direction of the command.</h4>
+<pre><span style="text-decoration: underline;">    CMD1 FUNCTION             DIRECTION
+                         Controller      Device
+</span>     0    SYSTEM CONTROL           ---&gt;
+      1    SYSTEM CONTROL RETURN    &lt;---
+      2    TRANSPORT CONTROL        ---&gt;
+      4    PRESET &amp;mp; SELECT CONTROL  ---&gt;
+      6    SENSE REQUEST            ---&gt;
+      7    SENSE RETURN             &lt;---
+</pre>
+<h4>DATA COUNT:</h4>
+<p>Indicates the number of DATA bytes (0-15) inserted between the CMD2 and ` CHECKSUM.</p>
+<h4>CMD2:</h4>
+<p>Designates the particular command.</p>
+<h4>DATA :</h4>
+<p>When the data is added to the command defined by the CMD1 and CMD2, 
+DATA-1 to DATA-15 shows the value corresponding to their contents.</p>
+<h4>CHECKSUM:</h4>
+<p>This is used for checking the data communication error, this process 
+adds from the first byte of the command block to the last DATA byte, and
+ indicates the least significant 8 bits.</p>
+<p>i.e.: COMMAND "61 4C 84"</p>
+<p>LSB MSB</p>
+<p>1000 0110 (=61) +</p>
+<p>0011 0010 (=4C) +</p>
+<p>0010 0001 (=84) +</p>
+<p>--------------------</p>
+<p>1000 1100 (=31) =</p>
+<p>CHECKSUM "31"<br><br><br><a name="controller_commands"></a><a name="general_returns"></a></p>
+<p><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h2><strong>CONTROLLER COMMANDS</strong></h2>
+<h3><strong> GENERAL RETURNS<br> </strong></h3>
+<p>Most common commands (such as play, stop, pause, etc.) simply return 
+an acknowledgement or failure of a command. Unless an alternate return 
+type is specified, one of the following two returns should be expected 
+and checked before sending the next command.</p>
+<p style="font-weight: bold;">10.01 ACK</p>
+<p>Returned by the device when a command has been successfully received.
+ Although the ACK indicates that the device has begun processing that 
+command, it does not necessarily mean that the command was completed and
+ the device is in the required state.</p>
+<p style="font-weight: bold;">11.12.XX NAK</p>
+<p>When an error has be detected, the device will return the NAK 
+(negative acknowledgement) with the following error status in the third 
+byte of the return. If the reason for the device's failure is unknown, 
+then this byte will be zero.</p>
+<p>NAK Return Byte 3 (XX):</p>
+<table>
+<tbody>
+<tr>
+<td>
+<p>BIT</p>
+</td>
+<td>
+<p>DESCRIPTION</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>0</p>
+</td>
+<td>
+<p>Unknown command was received. Check the command in this document and check your hardware.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>1</p>
+</td>
+<td>
+<p>Not used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2</p>
+</td>
+<td>
+<p>A checksum error occurs when the last byte of the command is not 
+equal to all the previous bytes added together and logically 'anded' 
+with FF hex.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>3</p>
+</td>
+<td>
+<p>Not used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>4</p>
+</td>
+<td>
+<p>A parity error occurs when one or more of the bytes in a command do 
+not have an odd parity bit transmitted with them. This indicates a 
+serial setup problem, or hardware/cabling problem.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>5</p>
+</td>
+<td>
+<p>Overrun error indicates that the command has overrun the device's 
+internal command buffer, and that the command cannot be used. This is an
+ error internal to the device that should not occur unless more than one
+ command per frame is sent.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>6</p>
+</td>
+<td>
+<p>A framing error indicates a serial setup or hardware problem with the controller.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>7</p>
+</td>
+<td>
+<p>A time out occurs when a command takes too long to be sent between bytes, or a checksum is sent too late.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><a name="system_control"></a><br><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h3><strong>SYSTEM CONTROL<br> </strong></h3>
+<p><strong>00.0C LOCAL DISABLE<br> </strong>When receiving this command,
+ all local operational functions of the device will be disabled. This 
+includes front panel transport controls, but not front panel setup 
+controls.<br><em>Send: 00 0C 0C<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">00.11 DEVICE TYPE</p>
+<p>When the device receives the DEVICE TYPE REQUEST command REQUEST the DEVICE TYPE return with 2 bytes data will be returned:<br> Return: 12.11 DEVICE TYPE</p>
+<table>
+<tbody>
+<tr>
+<td>
+<p><a name="OLE_LINK3"></a><span style="text-decoration: underline;">VTR Model</span></p>
+</td>
+<td>
+<p><span style="text-decoration: underline;">Data - 1</span></p>
+</td>
+<td>
+<p><span style="text-decoration: underline;">Data - 2</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Drastic VVCR</p>
+</td>
+<td>
+<p>FE</p>
+</td>
+<td>
+<p>01</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>JVC BR-S822U</p>
+</td>
+<td>
+<p>F0</p>
+</td>
+<td>
+<p>1F</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Panasonic AG-7750</p>
+</td>
+<td>
+<p>A0</p>
+</td>
+<td>
+<p>81</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Panasonic AU-65</p>
+</td>
+<td>
+<p>A0</p>
+</td>
+<td>
+<p>15</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Pioneer VDR-1000A</p>
+</td>
+<td>
+<p>F0</p>
+</td>
+<td>
+<p>15</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Sony BVW-75</p>
+</td>
+<td>
+<p>20</p>
+</td>
+<td>
+<p>25</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Sony PVW-2800</p>
+</td>
+<td>
+<p>20</p>
+</td>
+<td>
+<p>41</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><em>Send: 00 11 11<br> Returns: 12 11 FE 01 22<br> <br> </em><strong>00.1D LOCK ENABLE</strong></p>
+<p>When receiving this command, the front panel operation of the device 
+will be enabled. When the device is initially powered on, it will be set
+ to the LOCAL ENABLE state.<br><em>Send: 00 1D 1D<br> Returns: 10 01 11<br> <a name="transport_control"></a><br> <a href="#top">Go to top . . .</a></em></p>
+<hr width="100">
+<h3><strong>TRANSPORT CONTROL<br> </strong></h3>
+<p style="font-weight: bold;">20.00 STOP</p>
+<p>Stop the device and pass the device's input to the device's output. Cease all processing of the current material.<br><em>Send: 20 00 20<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.01 PLAY</p>
+<p>Plays from the current position at normal play speed for the material.<br><em>Send: 20 01 21<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.02 RECORD</p>
+<p>Records from the current position at normal play speed.<br><em>Send: 20 02 22<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.04 STANDBY OFF</p>
+<p>The STANDBY OFF command places the device in a stop state, passing 
+all material from the current inputs to the outputs. This should be sent
+ after a stop command to place the device in a fully idle state.<br><em>Send: 20 04 24<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.05 STANDBY ON</p>
+<p>Places the device in ready, pause mode. The current material is ready
+ for use and the current material, if possible, is presented at the 
+output.<br><em>Send: 20 05 25<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.0F EJECT</p>
+<p>If the device supports removable media, remove the media from the device.<br><em>Send: 20 0F 2F<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.10 FAST FORWARD</p>
+<p>Moves forward through the material at the highest allowable speed (Usually FORWARD 32 to 90 times play speed).<br><em>Send: 20 10 30<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.20 FAST REVERSE</p>
+<p>Moves backward through the material at the highest allowable speed (Usually REWIND 32 to 90 times play speed).<br><em>Send: 20 20 40<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">NOTE: For the commands that follow</p>
+<p>When receiving one of the following commands (JOG, VAR or SHUTTLE), 
+the device will play forward or backward according to the speed data. 
+When the command byte low nibble is 1 and only DATA-1 is used, the 
+material speed is defined as follows:</p>
+<p>TAPE SPEED=10(N/32-2)</p>
+<p>N : SPEED DATA OF DATA-1 (DECIMAL)</p>
+<p>When the command byte low nibble is 2 and both DATA-1 and DATA-2 are 
+used, the material speed is more precise. In this case the tape speed 
+will is defined as follows:</p>
+<p>TAPE SPEED= 10(N/32-2) + N'/256 {10(N+1/32-2) -10(N+1/32-2) }</p>
+<p>N : SPEED DATA OF DATA-1</p>
+<p>N' : SPEED DATA OF DATA-2</p>
+<p style="font-weight: bold;">2X.11 JOG FORWARD</p>
+<p>Move forward through the material, usually with varying speeds sent by the FORWARD controller for fine positioning.<br><em>Send: 21 11 40 48 (Jog @ play speed)</em></p>
+<p style="font-weight: bold;">2X.12 VAR FORWARD *</p>
+<p>Move forward through the material, while creating the smoothest 
+possible FORWARD output of the material. This 'smoothing' process may 
+slightly vary the requested speed.<br><em>Send: 21 11 20 52 (Jog @ half play speed)</em></p>
+<p style="font-weight: bold;">2X.13 SHUTTLE FORWARD</p>
+<p>Move forward through the material, at the exact play speed, regardless of FORWARD results. Usually used for visual searching.<br><em>Send: 21 13 42 76 (Shuttle @ slightly faster than play speed)</em></p>
+<p style="font-weight: bold;">2X.11 JOG REVERSE</p>
+<p>Move backward through the material, usually with varying speeds sent by the REVERSE controller, for fine positioning.<br><em>Send: 21 11 3E 70 (Jog @ slightly slower than play speed)</em></p>
+<p style="font-weight: bold;">2X.12 VAR REVERSE *</p>
+<p>Move backward through the material, while to creating the smoothest 
+possible REVERSE output of the material. This 'smoothing' process may 
+vary the speed slightly from the requested speed.<br><em>Send: 21 11 4A 7C (Jog @ two times reverse play speed)</em></p>
+<p style="font-weight: bold;">2X.13 SHUTTLE REVERSE</p>
+<p>Move backward through the material, at the exact play speed, regardless of REVERSE results. Usually used for visual searching.<br><em>Send: 21 13 66 9A (Shuttle @ fifteen times play speed)</em><strong>20.30 PRE-ROLL *</strong></p>
+<p>Positions the device at the current in point (IN ENTRY) minus the length of the current pre-roll (PRE-ROLL TIME PRESET).<br><em>Send: 20 30 50<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">24.31 CUE UP WITH DATA *</p>
+<p>Cues up the device to the position defined by DATA-1 to DATA-4. Once 
+the DATA device begins cueing, the PRE-ROLL/CUE-UP data bit (Byte 4, Bit
+ 0) will be set on in the STATUS return. Upon successful completion, the
+ CUE-UP COMPLETE data bit (Byte 2, Bit 0) will be set ON and the 
+PRE-ROLL/CUE UP data bit will be set OFF. If the device is unable to 
+seek to that point, then the PRE-ROLL/CUE-UP data bit will be set OFF 
+and the CUE-UP COMPLETE will NOT be set ON.</p>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_cwdata_ld6r.gif" alt="Cue up with data format" width="587" height="122" border="0"></p>
+<p>&nbsp;</p>
+<p>figure. Time Data Format</p>
+<p>&nbsp;</p>
+<p><em>Send: 24 13 58 16 02 A7 (Cue to 2 hours, 16 minutes, 58 seconds, 13 frames)<br> Returns: 10 01 11<br> Send: 24 24 36 52 21 F1 (Cue to 21 hours, 52 minutes, 36 seconds, 24 frames)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.14 FRAME STEP *</p>
+<p>Move the device's material one frame (actual or logical depending on the FORWARD media) forward and pause.<br><em>Send: 20 14 34<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.14 FRAME STEP *</p>
+<p>Move the device's material one frame (actual or logical depending on the REVERSE media) backward and pause.<br><em>Send: 20 24 44<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.40 PREVIEW *</p>
+<p>Play the current edit. Cue the device to the pre-roll point (in point
+ minus pre-roll duration), play the device through the in point to the 
+point two seconds (assuming a two second post-roll) after the out point.<br><em>Send: 20 40 60<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.41 REVIEW *</p>
+<p>Play the last edit. Cue the device to the last pre-roll point (last 
+in point minus pre-roll duration), play the device through the last in 
+point to the point two seconds (assuming a two second post-roll) after 
+the last out point.<br><em>Send: 20 41 61<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.42 AUTO EDIT *</p>
+<p>Pre-roll the device to the pre-roll point (in point minus the 
+pre-roll). Play the device from the pre-roll point to the in point. At 
+the in point, begin recording the selected material (as per EDIT PRESET)
+ from the in point to the out point. Upon reaching the out point, play 
+the material after the out point for two seconds.<br><em>Send: 20 42 62<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.60 FULL EE OFF</p>
+<p>Full 'Edit To Edit' mode off attempts to pass all material from the 
+device to the output. This device has no effect on the current EDIT 
+PRESET, but it does set all channels to the device, unless the device is
+ in an idle state.<br><em>Send: 20 60 80<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.61 FULL EE ON</p>
+<p>Full 'Edit to Edit' mode on attempts to pass all inputs to the device
+ to the device's output. This device has no effect on the current EDIT 
+PRESET but it does set all channels to the device's inputs.<br><em>Send: 20 61 81<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.63 SELECT EE ON</p>
+<p>Sets each EDIT PRESET channel assigned by the DATA-1 of the EDIT 
+PRESET command to the edit to edit mode. All selected channels are 
+passed through from the device's inputs to the device's outputs. To 
+clear the SELECTED EE mode, use the EE OFF or the EDIT OFF command.<br><em>Send: 20 63 83<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.64 EDIT OFF</p>
+<p>An EDIT OFF completes an edit in progress, or resets the channels on a
+ preview started with a SELECT EE ON. The edit is initiated by an EDIT 
+ON command that begins recording on the device's channels that were 
+selected with the EDIT PRESET command. The EDIT OFF command stops the 
+recording exactly 8 (default setting for EDIT OFF) frames after the 
+command is received.<br><em>Send: 20 64 84<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">20.65 EDIT ON</p>
+<p>The EDIT ON command initiates the recording of an edit setup by EDIT 
+PRESET, exactly 8 (default setting for EDIT ON) frames after the command
+ is received. Normally, to create an edit, all devices in the edit are 
+pre-rolled, each device is placed in play mode, and the speed of each 
+device is adjusted until all devices are running synchronously. Eight 
+frames before the recording device's in point, and EDIT ON command is 
+sent to begin recording. Eight frames before the device's out point, an 
+EDIT OFF command is sent to end the edit.<br><em>Send: 20 65 84<br> Returns: 10 01 11<br> <a name="preset_select_control"></a><br> <a href="#top">Go to top . . .</a></em></p>
+<hr width="100">
+<h3><strong>PRESET &amp; SELECT CONTROL<br> </strong></h3>
+<p style="font-weight: bold;">44.00 TIMER-1 PRESET</p>
+<p>This command presets the device's control (CTL) counter to the value 
+which has been given by the DATA-1 to DATA-4 bytes in the command. For 
+the data format, refer to the CUE UP WITH DATA command. The mode of the 
+Drop Frame (DF) or Non Drop Frame (NDF) is decided according to bit-6 of
+ DATA-1:<br> DATA 1, BIT 6 Drop Frame</p>
+<p>0 OFF</p>
+<p>1 ON<br><em>Send: 44 00 00 10 20 01 75 (CTL counter set to 1 hour, 20 minutes, 10 seconds, 0 frames)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">44.04 TIME CODE PRESET</p>
+<p>Presets the value, given by DATA-1 to DATA-4, to the time code start 
+of the PRESET time code generator. This command will only effect devices
+ capable of recording time code independent of the inputs. For the data 
+format, refer to the CUE UP WITH DATA command. The mode of the Drop 
+Frame (DF) or Non Drop Frame (NDF) is decided according to bit-6 of 
+DATA-1:</p>
+<p>DATA 1, BIT 6 Drop Frame</p>
+<p>0 OFF</p>
+<p>1 ON<br><em>Send: 44 04 00 15 30 00 75 (Preset TC set to 30 minutes, 15 seconds, 0 frames)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">44.05 USER-BIT PRESET</p>
+<p>Presets the user bit values in the time code recording of the device,
+ if the device supports user bits, to the value given by DATA-1 to 
+DATA-4 as follows:<br><em>Send: 44 05 60 63 44 45 95 (Set UB to 06364454)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.08 TIMER-1 RESET</p>
+<p>Resets the control (CTL) counter to zero.<br><em>Send: 40 08 48<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.10 IN ENTRY</p>
+<p>Store the current position of the device as the in point for the next edit.<br><em>Send: 40 10 50<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.11 OUT ENTRY</p>
+<p>Store the current position of the device as the out point for the next edit.<br><em>Send: 40 11 51<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">44.14 IN PRESET</p>
+<p>Set the in point for the next edit to the time specified by DATA-1 
+through DATA-4. See the CUE UP WITH DATA command for the data format.<br><em>Send: 44 14 21 16 25 04 68 (Set in point to 4 hours, 25 minutes, 16 seconds, 21 frames)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">44.15 OUT PRESET</p>
+<p>Set the out point for the next edit to the time specified by DATA-1 
+through DATA-4. See the CUE UP WITH DATA command for the data format.<br><em>Send: 44 15 05 09 27 04 92 (Set out point to 4 hours, 27 minutes, 9 seconds, 5 frames)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.18 IN SHIFT + *</p>
+<p>Adds one frame to the current in point time code value.<br><em>Send: 40 18 58<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.19 IN SHIFT - *</p>
+<p>Subtracts one frame from the current in point time code value.<br><em>Send: 40 19 59<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.1A OUT SHIFT + *</p>
+<p>Adds one frame to the current out point time code value.<br><em>Send: 40 1A 5A<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.1B OUT SHIFT - *</p>
+<p>Subtracts one frame from the current out point time code value.<br><em>Send: 40 1B 5B<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.20 IN RESET *</p>
+<p>Reset the value of the in point to zero.<br><em>Send: 40 20 60<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.21 OUT RESET *</p>
+<p>Reset the value of the out point to zero.<br><em>Send: 40 21 61<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.24 IN RECALL</p>
+<p>Sets the current in point to the last in point that was set. Whenever
+ the in point is changed or used, a backup copy of the time code is 
+saved. This time code can be recovered by the IN RECALL command.<br><em>Send: 40 24 64<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.25 OUT RECALL</p>
+<p>Sets the current out point to the last in point that was set. 
+Whenever the out point is changed or used, a backup copy of the time 
+code is saved. This time code can be recovered by the OUT RECALL 
+command.<br><em>Send: 40 25 65<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">41.30 EDIT PRESET</p>
+<p>The EDIT PRESET command sets which channels will be recorded in the 
+next edit, or previewed during the next SELECTED EE ON preview. The edit
+ may be created in either 'insert' or 'assemble' mode. Insert mode 
+allows any channel combination, whereas assemble mode selects all 
+available channels. DATA-1 bits indicate whether the channel is to be 
+recorded (set on) or passed through (set off) as follows:</p>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_editpr_ld6r.gif" alt="Edit Preset Format" width="583" height="93" style="display: block; margin-left: auto; margin-right: auto;" border="0"></p>
+<p style="text-align: center;">figure. Basic Edit Preset Data</p>
+<p>&nbsp;</p>
+<p><em>Send: 41 30 62 D3 (Insert Video and Audio-2 in next edit)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">44.31 PRE-ROLL TIME</p>
+<p>Presets the duration of the pre-roll to the length given by the 
+DATA-1 to PRESET DATA-4. For the data format, refer to the CUE UP WITH 
+DATA command.<br><em>Send: 44 31 00 05 00 00 7A (Set the pre-roll duration to 5 seconds)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">41.36 TIMER MODE SELECT</p>
+<p>Selects the default timer to return, by the DATA-1 value as follows:</p>
+<p>DATA-1</p>
+<p>00 : Time Code</p>
+<p>01 : Control (CTL) Counter</p>
+<p>FF: device setting dependent.<br><em>Send: 41 36 11 88 (Set the device to time code head)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.40 AUTO MODE OFF</p>
+<p>This command switches the device from AUTO mode.<br><em>Send: 40 40 80<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">40.41 AUTO MODE ON</p>
+<p>This command switches the device to AUTO mode.<br><em>Send: 40 41 81<br> Returns: 10 01 11</em></p>
+<p><a name="status_sense"></a><br><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h3><strong>STATUS SENSE<br> </strong></h3>
+<p style="font-weight: bold;">61.0A TC GENERATOR DATA</p>
+<p>Request the type of time code data the device is generating, based on
+ the type SENSE of data required. It will then respond according to the 
+contents of DATA-1.</p>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_tcgen_ld6r.gif" alt="Timecode Generator Return" width="583" height="97" style="display: block; margin-left: auto; margin-right: auto;" border="0"></p>
+<p style="text-align: center;">figure. Time Code Generator Return</p>
+<p>&nbsp;</p>
+<p>DATA-1=01: Request for GEN TC -&gt; GEN TIME DATA 74.08 Respond</p>
+<p>DATA-1=10: Request for GEN UB -&gt; GEN UB DATA 74.09 Respond</p>
+<p>DATA-1=11: Request for GEN TC &amp;mp;UB -&gt; GEN TC &amp;mp; UB DATA 78.08 Respond<br><em>Send: 61 0A 11 7C<br> Returns: 10 01 11</em><br><a name="time_code_return"></a></p>
+<p style="font-weight: bold;">61.0C CURRENT TIME</p>
+<p>Requests the time data or user bit. The device will respond according
+ to the SENSE DATA-1 contents, indicated by the CURRENT TIME SENSE 
+RETURN chart.</p>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_tcrtn_ld6r.gif" alt="Timecode Return Format" width="600" height="619" style="display: block; margin-left: auto; margin-right: auto;" border="0"></p>
+<p style="text-align: center;">figure. Time Code Return</p>
+<p>&nbsp;</p>
+<p><em>Send: 61 0C 04 11 (Request CTL counter position)<br> Returns: 74 00 01 02 03 04 7E (Return 04:03:02:01)<br> Send: 61 0C 03 11 (Request LTC or VITC time code position)<br> Returns: 74 14 10 20 30 24 7E (Return 24:30:20:10 LTC Interpolated w/CTL)<br> Send: 61 0C 02 10 (Request LTC or VITC time code position)<br> Returns: 78 16 12 25 00 00 10 56 9A C5 (Return 24:30:20:10 LTC Interpolated w/CTL)</em></p>
+<p style="font-weight: bold;">60.10 IN DATA SENSE</p>
+<p>Requests the current in point. See the CUE UP WITH DATA command for the time code return format.<br><em>Send: 60 10 70<br> Returns: 74 10 10 20 30 24 7E (Return in point of 24:30:20:10)</em></p>
+<p style="font-weight: bold;">60.11 OUT DATA SENSE</p>
+<p>Requests the current out point. See the CUE UP WITH DATA command for the time code return format.<br><em>Send: 60 11 71<br> Returns: 74 11 24 30 20 10 7F (Return in point of 10:20:30:24)</em><br><a name="status_return"></a></p>
+<p style="font-weight: bold;">61.20 STATUS SENSE</p>
+<p>Requests the device status. The device will respond with the STATUS DATA</p>
+<p>7X .20 command according to the contents of DATA-1 of the controller command.</p>
+<p>DATA-1</p>
+<p>MSD (Bit7~4): Indicates the initial DATA No.l of the 7X .20 STATUS DATA to be returned.</p>
+<p>LSD (Bit3~0): Indicates the number of data bytes in 7X .20 STATUS DATA to be returned.</p>
+<p>ex. When the DATA-1 is 34.</p>
+<p>The device will return four bytes starting from the third byte,</p>
+<p>i.e. DATA No.3 to DATA No.6 of the 74 .20 STATUS DATA</p>
+<p><a href="#top">Go to top . . .</a></p>
+<p><strong><a name="status_return"></a>STATUS RETURN TABLE<br> </strong></p>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_stats_ld6r.gif" alt="Status Command Return Chart" width="852" height="1130" style="display: block; margin-left: auto; margin-right: auto;" border="0"></p>
+<p style="text-align: center;">figure. Status Return Chart</p>
+<p>Note: * indicates a bit not set to 1 on a PLAYER device.</p>
+<p><span style="text-decoration: underline;">DATA-0</span></p>
+<p>BIT-0 LOCAL</p>
+<p>This bit will be set to 1 when the device will only accept commands from the controller, and not the panel.<br> BIT-2 HARDWARE ERROR</p>
+<p>This bit will be set to 1 when a hardware error occurs in the device.<br> BIT-5 CASSETTE OUT</p>
+<p>The removable media is not present in the device.</p>
+<p><span style="text-decoration: underline;">DATA-1</span></p>
+<p>BIT-0 PLAY</p>
+<p>This bit will be set to 1 when the device goes into the PLAY, REC or EDIT mode, or the device is in the CAPSTAN OVERRIDE mode.<br> BIT-1 RECORD</p>
+<p>This bit will be set to 1 when the device goes into the REC mode, or when the DATA-4/BIT-4 : EDIT is set to 1.<br> BIT-2 FAST FORWARD</p>
+<p>This bit will be set to 1 when the device goes into the FAST FORWARD mode.<br> BIT-3 REWIND</p>
+<p>This bit will be set to 1 when the device goes into the FAST REVERSE mode.<br> BIT-4 EJECT</p>
+<p>This bit will be set to 1 when the device ejects its media.<br>BIT-5 STOP</p>
+<p>This bit will be set to 1 when the device is in stop mode.</p>
+<p>BIT-6 TENSION RELEASE</p>
+<p>This bit will be set to 1 when the device is in idle mode.</p>
+<p>BIT-6 STANDBY ON</p>
+<p>This bit will be set to 1 when the device is in standby mode.</p>
+<p><span style="text-decoration: underline;">DATA-2</span></p>
+<p>BIT-0 CUE UP COMPLETE</p>
+<p>This bit will be set to 1 when the device completes a CUE UP WITH DATA command and the material is at the requested position.<br> BIT-1 STILL</p>
+<p>This bit will be set to 1 when the device is stopped and displays the current frame of media.</p>
+<p>BIT-2 REVERSE/FORWARD</p>
+<p>This bit will be set to 1 when the device is outputting its material 
+in reverse of the normal order. When moving in the normal direction, it 
+will be 0.<br> BIT-3 VAR MODE</p>
+<p>This bit will be set to 1 when the device goes into the VAR command mode.</p>
+<p>BIT-4 JOG MODE</p>
+<p>This bit will be set to 1 when the device goes into the JOG command mode.</p>
+<p>BIT-5 SHUTTLE MODE</p>
+<p>This bit will be set to 1 when the device goes into the SHUTTLE command mode.<br> BIT-7 SERVO LOCK</p>
+<p>This bit will be set to 1 when the playback or record is servo locked with the input or reference sync.</p>
+<p><span style="text-decoration: underline;">DATA-3</span></p>
+<p>BIT-0 IN</p>
+<p>Set to 1 if an in point has been set.<br> BIT-1 OUT</p>
+<p>Set to 1 if an out point has been set.</p>
+<p>BIT-7 AUTO MODE</p>
+<p>Set to 1 if the device has been placed in AUTO mode.</p>
+<p><span style="text-decoration: underline;">DATA-4</span></p>
+<p>BIT-0 PRE-ROLL OR CUE UP COMPLETE</p>
+<p>This bit will be set to 1 when the device goes into the PRE-ROLL and 
+CUE-UP modes (a PRE-ROLL is also performed in the auto-edit, preview and
+ review modes).<br> BIT-1 REVIEW</p>
+<p>This bit will be set to 1 when the device is in REVIEW mode.</p>
+<p>BIT-2 AUTO EDIT</p>
+<p>This bit will be set to 1 when the device is preform an AUTO EDIT.<br> BIT-3 PREVIEW</p>
+<p>This bit will be set to 1 when the device is in the PREVIEW mode.<br> BIT-4 EDIT MODE</p>
+<p>Both the bit and the DATA-1/BIT-1 : REC will be set to 1 when the 
+device is in EDIT mode (between EDIT ON and EDIT OFF or AUTO EDIT 
+between the in and out points).<br> BIT-6 FULL EE ON</p>
+<p>This bit will be set to 1 when the device is in full edit to edit mode.<br> BIT-7 SELECTED EE</p>
+<p>This bit will be set to 1 when the device is in 'Selected Edit To Edit' mode.</p>
+<p><span style="text-decoration: underline;">DATA-6</span> (Not supported on most devices)</p>
+<p>BIT-4 LAMP REVERSE</p>
+<p>This bit will be set to 1 when the device is searching backwards.<br> BIT-5 LAMP FORWARD</p>
+<p>This bit will be set to 1 when the device is searching forwards.<br> BIT-4 LAMP STILL</p>
+<p>This bit will be set to 1 when the device has finished searching.</p>
+<p><span style="text-decoration: underline;">DATA-7</span></p>
+<p>BIT-0 IN-OUT STATUS</p>
+<p>This bit will be set to 1 in the device PREVIEW or AUTO EDIT mode and
+ the material is running between the in point and out point.<br> BIT-4 SYNC ACTIVE</p>
+<p>This bit will be set to 1 in the device sensing valid sync on the device's input.</p>
+<p><span style="text-decoration: underline;">DATA-8</span></p>
+<p>BIT-0 RECORD INHIBIT</p>
+<p>If this bit is set to 1, record/edit commands will be ignored.<br> BIT-4 END OF TAPE</p>
+<p>Set to 1 if the device has reached the end of its media.<br> BIT-5 NEAR END</p>
+<p>Set to 1 if the device is near the end of its media.</p>
+<p style="font-weight: bold;">60.30 PRE-ROLL TIME</p>
+<p>This command is used for requesting the current pre-roll duration. 
+For the SENSE return data format, see the CUE UP WITH DATA command.<br><em>Send: 60 30 90<br> Returns: 74 30 00 05 00 00 A9 (Pre-roll is five seconds)</em></p>
+<p style="font-weight: bold;">60.36 TIMER MODE</p>
+<p>This command is used for requesting the device's default timer SENSE return type, based on return DATA-1:<br> DATA-1 :</p>
+<p>00: Time Code</p>
+<p>01: Control (CTL) Counter<br><em>Send: 60 36 96<br> Returns: 71 36 00 A6 (Sense mode time code)</em><br><a name="return_from_device"></a></p>
+<p><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h3><strong>RETURN FROM DEVICE<br> </strong></h3>
+<p style="font-weight: bold;">10.01 ACK</p>
+<p>Returned by the device when a command has been successfully received.
+ Although the ACK indicates that the device has begun processing that 
+command, it does not necessarily mean that the command was completed and
+ the device is in the required state.</p>
+<p style="font-weight: bold;">11.12.XX NAK</p>
+<p>When an error has be detected, the device will return the NAK 
+(negative acknowledgement) with the following error status in the third 
+byte of the return. If the reason for the device's failure is unknown, 
+then this byte will be zero.</p>
+<p>NAK Return Byte 3 (XX):</p>
+<table>
+<tbody>
+<tr>
+<td>
+<p>BIT</p>
+</td>
+<td>
+<p>DESCRIPTION</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>0</p>
+</td>
+<td>
+<p>Unknown command was received. Check the command in this document and check your hardware.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>1</p>
+</td>
+<td>
+<p>Not used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2</p>
+</td>
+<td>
+<p>A checksum error occurs when the last byte of the command is not 
+equal to all the previous bytes added together and logically 'anded' 
+with FF hex.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>3</p>
+</td>
+<td>
+<p>Not used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>4</p>
+</td>
+<td>
+<p>A parity error occurs when one or more of the bytes in a command do 
+not have an odd parity bit transmitted with them. This indicates a 
+serial setup problem, or hardware/cabling problem.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>5</p>
+</td>
+<td>
+<p>Overrun error indicates that the command has overrun the device's 
+internal command buffer, and that the command cannot be used. This is an
+ error internal to the device that should not occur unless more than one
+ command per frame is sent.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>6</p>
+</td>
+<td>
+<p>A framing error indicates a serial setup or hardware problem with the controller.</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>7</p>
+</td>
+<td>
+<p>A time out occurs when a command takes too long to be sent between bytes, or a checksum is sent too late.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<p style="font-weight: bold;">12.11 DEVICE TYPE</p>
+<p>Returns the type of device connected and configured.</p>
+<table>
+<tbody>
+<tr>
+<td>
+<p><span style="text-decoration: underline;">VTR Model</span></p>
+</td>
+<td>
+<p><span style="text-decoration: underline;">Data - 1</span></p>
+</td>
+<td>
+<p><span style="text-decoration: underline;">Data - 2</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Drastic VVCR</p>
+</td>
+<td>
+<p>FE</p>
+</td>
+<td>
+<p>01</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>JVC BR-S822U</p>
+</td>
+<td>
+<p>F0</p>
+</td>
+<td>
+<p>1F</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Panasonic AG-7750</p>
+</td>
+<td>
+<p>A0</p>
+</td>
+<td>
+<p>81</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Panasonic AU-65</p>
+</td>
+<td>
+<p>A0</p>
+</td>
+<td>
+<p>15</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Pioneer VDR-1000A</p>
+</td>
+<td>
+<p>F0</p>
+</td>
+<td>
+<p>15</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Sony BVW-75</p>
+</td>
+<td>
+<p>20</p>
+</td>
+<td>
+<p>25</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Sony PVW-2800</p>
+</td>
+<td>
+<p>20</p>
+</td>
+<td>
+<p>41</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p style="font-weight: bold;">74.08 GENERATOR TC DATA</p>
+<p>Returned with the TC TIME data, generated by the device.</p>
+<p>For the data format, refer to the CUE UP WITH DATA command.</p>
+<p style="font-weight: bold;">74.09 GENERATOR UB DATA</p>
+<p>Returned with the UB data of the TC generated by the device.</p>
+<p>For the data format, refer to the U-BIT PRESET.</p>
+<p style="font-weight: bold;">78.08 GENERATOR TC &amp;mp; UB</p>
+<p>Returned with the TIME and UB data of the TC generated by the device.
+ DATA DATA-1 through DATA-4 are time data and DATA-4 through DATA-8 are 
+User Bit data. For the data format, refer to the CUE UP WITH DATA 
+command and U-BIT PRESET.</p>
+<p style="font-weight: bold;">74.10 IN DATA</p>
+<p>Returned with the in point data. For the data format, refer to the CUE UP WITH DATA command.</p>
+<p style="font-weight: bold;">74.11 OUT DATA</p>
+<p>Returned with the out point data. For the data format, refer to the CUE UP WITH DATA command.</p>
+<p style="font-weight: bold;">74.14 LTC TIME DATA</p>
+<p>When the device LTC TIME DATA is requested, if the data of LTC played
+ INTERPOLATED back by the device is corrected by the CTL or it is read 
+incorrectly, this TIME DATA command will be returned to the controller 
+with the LTC TIME data. For the data format, refer to the CUE UP WITH 
+DATA command.</p>
+<p style="font-weight: bold;">71.36 TIMER MODE</p>
+<p>Refer to the TIMER MODE SENSE command.</p>
+<p style="font-weight: bold;">74.00 TIMER-1</p>
+<p>Returned with the CTL counter data. At this time, the BIT-6 of DATA-1
+ is DATA set to 1, and 0, when the device CTL counter is set to DF/NDF 
+mode. For the data format, refer to the CUE UP WITH DATA command.</p>
+<p style="font-weight: bold;">74.04 LTC TIME DATA</p>
+<p>When the LTC TIME DATA device is requested, and the LTC data is read 
+correctly, this command is returned to the controller with four data 
+items. For the data format, refer to the CUE UP WITH DATA command.</p>
+<p style="font-weight: bold;">78.04 LTC TIME &amp;mp; UB</p>
+<p>Returned with data that is added to DATA-1 to DATA-4 as LTC TIME DATA
+ UB DATA and DATA-5 to DATA-8 as LTC UB DATA. For the data format, refer
+ to the CUE UP WITH DATA and U-BIT PRESET command.</p>
+<p style="font-weight: bold;">74.05 LTC UB DATA</p>
+<p>Returned with the LTC UB DATA. For the data format, refer to the U-BIT PRESET 44.05 command.</p>
+<p style="font-weight: bold;">78.14 LTC INTERPOLATED</p>
+<p>When the device's LTC TIME DATA and UB DATA is requested, and the 
+INTERPOLATED LTC data is played back by the device, corrected by the 
+CTL, or read TIME &amp;mp; UB DATA incorrectly, this command will be 
+returned to the controller with data added to DATA-1 to DATA-4 as LTC 
+TIME DATA, and DATA-5 to DATA-8 as LTC UB DATA. For the data format, 
+refer to the CUE UP WITH DATA and U-BIT PRESET command.</p>
+<p style="font-weight: bold;">74.06 VITC TIME DATA</p>
+<p>Returned with the VITC TIME DATA. For the data format, refer to the CUE UP WITH DATA 24.31 command.</p>
+<p style="font-weight: bold;">78.06 VITC TIME &amp;mp; UB</p>
+<p>Returned with data that is added to DATA-1 to DATA-4 as VITC TIME 
+DATA DATA and DATA-5 to DATA-8 as VITC UB DATA. For the data format, 
+refer to the CUE UP WITH DATA and U-BIT PRESET command.</p>
+<p style="font-weight: bold;">74.16 VITC HOLD TIME</p>
+<p>When the device VITC TIME DATA is requested, and is read correctly, 
+this DATA command will be returned to the controller with the VITC TIME 
+DATA. For the data format, refer to the CUE UP WITH DATA command.</p>
+<p style="font-weight: bold;">78.16 VITC HOLD TIME</p>
+<p>When the VITC TIME DATA and VITC UB DATA of the device are &amp;mp; 
+UB DATA requested and read incorrectly, this command will be returned to
+ the controller with data which is added to DATA-1 to DATA-4 as VITC 
+TIME DATA and DATA-5 to DATA-8 as VITC UB DATA. For the data format, 
+refer to the CUE UP WITH DATA and U-BIT PRESET command.<br><br><a name="time_data_format"></a></p>
+<p>TIME DATA FORMAT</p>
+<p><img src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/p_tdata_ld6r.gif" alt="Time Return Data Chart" width="572" height="292" style="display: block; margin-left: auto; margin-right: auto;" border="0"></p>
+<p style="text-align: center;">figure. Time Data Return Format</p>
+<p>&nbsp;</p>
+<p>1. DATA-1/BIT-6:DF FLAG ("1" DF, "0" NDF)</p>
+<p>When the device receives the CURRENT TIME SENSE 61.0C command, and has been set to the DB mode, the device will be set to 1.</p>
+<p>When the device receives the TIME CODE PRESET 44.04 command, and the 
+TIME CODE GENERATOR has been set to the DF mode, the device will be set 
+to 1.</p>
+<p>2. DATA-1/BIT-7: CF FLAG (1 CF ON, 0 CF OFF)</p>
+<p>When the device receives the CURRENT TIME SENSE 61.0C command, and has been set to the CG mode, the device will be set to 1.<br><a name="pioneer_vdr1000"></a></p>
+<p><a href="#top">Go to top . . .</a></p>
+<hr width="100">
+<h2><strong>PIONEER VDR-1000 EXTENSIONS<br> </strong></h2>
+<p style="font-weight: bold;">E1.11 VDR STATUS</p>
+<p>Returns the current VDR status. The VDR status is similar to the 
+STATUS SENSE SENSE command. DATA-1 describes what portion of the status 
+is required.</p>
+<p>Please note that the AUTO MODE and VDR DUAL PLAY modes should be set before this status becomes valid.</p>
+<p>DATA-1</p>
+<p>MSD (Bit7~4): Indicates the initial DATA No.l of the 7X .20 STATUS DATA to be returned.</p>
+<p>LSD (Bit3~0): Indicates the number of data bytes in 7X .20 STATUS DATA to be returned.</p>
+<p>ex. When the DATA-1 is 02.</p>
+<p>The device will return two bytes starting from the zero byte,</p>
+<p>i.e. DATA No.0 to DATA No.1 of the F2 .20 VDR STATUS DATA</p>
+<p><strong>FX.11 VDR STATUS</strong><strong>SENSE<br> </strong>Returned after a VDR STATUS SENSE command.</p>
+<p>DATA-1</p>
+<p>BIT-0 NEXT CMD OK If this bit is set, it indicates that the next 
+segment command may be sent. The VDR is capable of holding two segments 
+(the current segment and the next segment).</p>
+<p>BIT-7 DUAL PLAY If this bit is set, then the VDR is in dual play 
+mode. Dual play mode allows the VDR to cue one video segment while 
+playing another.</p>
+<p>DATA-2</p>
+<p>BIT-0 VDR PLAY If this bit is set, then the VDR is currently playing a segment.</p>
+<p>BIT-1 VDR STILL If this bit is set, the VDR has finished playing all entered segments.<br><br><em>Send: E1 11 02 F4<br> Returns: F2 11 81 01 85 (VDR playing seg, ready for next seg)</em></p>
+<p style="font-weight: bold;">E0.15 VDR AUTO PLAY</p>
+<p>VDR auto play is the command that causes the VDR to play an edit list
+ non linearly. The auto play command instructs the VDR to set the next 
+segment based on the standard in point and out point values (ENTRY 
+IN/OUT, PRESET IN/OUT). When the first AUTO PLAY is called, the VDR sets
+ and begins playing back the segment. Each successive AUTO PLAY command,
+ so long as it is sent during the current segment play, sets a segment 
+to be played upon completion of the current segment. The next segment's 
+in point, out point and auto play command should not be set until the 
+NEXT CMD OK bit in the VDR status is set to 1.<br><em>Send: E0 15 F5 (Set seg to in/out and set to play)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">E0.2A DUAL PLAY ON</p>
+<p>Before using any VDR commands, the AUTO MODE ON command should be 
+sent as well as the DUAL PLAY ON command. This will enable the VDR 
+extension commands, and prepare the system for VDR playback.<br><em>Send: E0 2A 0A<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">E0.2B DUAL PLAY OFF</p>
+<p>After the VDR dual play has completed, the DUAL PLAY mode should be turned off, allowing for normal 422 commands to be used.<br><em>Send: E0 2B 0B<br> Returns: 10 01 11<br> <a name="drastic_protocol"></a><a name="global_setup"></a><br> <a href="#top">Go to top . . .</a></em></p>
+<hr width="100">
+<h2><strong>DRASTIC VVCR PROTOCOL EXTENSIONS<br> </strong></h2>
+<h3>GLOBAL SETUP</h3>
+<p style="font-weight: bold;">C1.08 SET VTR TYPE</p>
+<p>Set the emulation response type (see table in setup doc)</p>
+<p>DATA-1</p>
+<p>00-53 Decimal</p>
+<p><em>Send: C1 08 2D D4 (Set VDR-1000 response type)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">C0.09 GET VTR TYPE</p>
+<p>Get the emulation response type (see table in setup doc)</p>
+<p>DATA-1 (return)</p>
+<p>00-53 Decimal</p>
+<p><em>Send: C0 09 C9<br> Returns: D1 09 2D 07 (Emulation set to VDR-1000)</em></p>
+<p style="font-weight: bold;">C1.18 SET TC TYPE</p>
+<p>Set time code return type to Drop or Non-Drop frame returns (NTSC Only).</p>
+<p>DATA-1 00: Non drop frame time code</p>
+<p>01: Drop frame time code</p>
+<p><em>Send: C1 18 01 DA (Set time code to Drop Frame)<br> Returns: 10 01 11 (NTSC) Returns: 11 12 01 24 (PAL)</em></p>
+<p style="font-weight: bold;">C0.19 GET TC TYPE</p>
+<p>Get time code return type to Drop or Non-Drop frame returns (NTSC Only).</p>
+<p>DATA-1 (return)</p>
+<p>00: Non drop frame time code</p>
+<p>01: Drop frame time code</p>
+<p><em>Send: C0 19 D9<br> Returns: D1 19 00 EA (Non Drop frame time code)</em></p>
+<p style="font-weight: bold;">C1.1A SET QUALITY</p>
+<p>Set the recording quality for the compression.</p>
+<p>DATA-1</p>
+<p>0-64: 0 lowest quality, 64 highest quality</p>
+<p><em>Send: C1 1A 32 E0 (Set quality to half)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">C0.1B GET QUALITY</p>
+<p>Get the recording quality of the compression.</p>
+<p>DATA-1</p>
+<p>0-64: 0 lowest quality, 64 highest quality</p>
+<p><em>Send: C0 1B DB<br> Returns: D1 1B 64 50 (Highest quality set)</em></p>
+<p style="font-weight: bold;">C1.1C SET GENLOCK</p>
+<p>Set the genlock on or off.</p>
+<p>DATA-1</p>
+<p>00: Master lock internally</p>
+<p>01: Genlock to external reference in</p>
+<p><em>Send: C1 1C 01 DE (Set Genlock to external)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">CO.1D GET GENLOCK</p>
+<p>Get the current genlock setting.</p>
+<p>DATA-1 (return)</p>
+<p>00: Master is locking internally</p>
+<p>01: Genlocking to external in</p>
+<p><em>Send: C0 1D DD<br> Returns: D1 1D 00 EE (Genlock is internal)</em></p>
+<p style="font-weight: bold;">C1.1E SET GENLOCK TYPE</p>
+<p>Set the genlock type.</p>
+<p>DATA-1</p>
+<p>00: Genlock Type Broadcast</p>
+<p>01: Genlock Type VTR</p>
+<p><em>Send: C1 1E 01 DD (Genlock type is VTR)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">C0.1F GET GENLOCK TYPE</p>
+<p>Get the genlock type.</p>
+<p>DATA-1 (return)</p>
+<p>00: Genlock Type TV</p>
+<p>01: Genlock Type VTR</p>
+<p><em>Send: C1 1F E0<br> Returns: D1 1F 00 F0 (Genlock type is TV)</em></p>
+<p style="font-weight: bold;">C0.51 GET FIELDS/SECOND</p>
+<p>Get the number of fields per second.</p>
+<p>DATA-1 (return)</p>
+<p>3C: NTSC (decimal 60 fields)</p>
+<p>32: PAL (decimal 50 fields)</p>
+<p><em>Send: C0 51 11<br> Returns: D1 51 3C 5E (NTSC 60 fields per second)<br> <a name="input_setup"></a><br> <a href="#top">Go to top . . .</a></em></p>
+<h3>INPUT SETUP</h3>
+<p style="font-weight: bold;">C1.60 SET INPUT</p>
+<p>Select the current video input.</p>
+<p>DATA-1</p>
+<p>00: S-Video</p>
+<p>01: Component Video</p>
+<p>02: Composite Video</p>
+<p>03: D1 Digital Video</p>
+<p><em>Send: C1 60 01 22 (Set input to component)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">CO.61 GET INPUT</p>
+<p>Returns the current input.</p>
+<p>DATA-1 (return)</p>
+<p>00: S-Video</p>
+<p>01: Component Video</p>
+<p>02: Composite Video</p>
+<p>03: D1 Digital Video</p>
+<p><em>Send: C0 61 12<br> Returns: D1 61 00 32 (Input is set to S-Video)</em></p>
+<p><a name="output_setup"></a><br><a href="#top">Go to top . . .</a></p>
+<h3>OUTPUT SETUP</h3>
+<p style="font-weight: bold;">C1.80 SET ENCODER CHROMA BANDWIDTH</p>
+<p>Set the output bandwidth of the encoder based on output type.</p>
+<p>DATA-1</p>
+<p>00: Standard Band (Composite)</p>
+<p>01: High Band (Y/C, Component)</p>
+<p><em>Send: C1 80 00 40 (Set bandwidth to standard band)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">CO.81 GET ENCODER CHROMA BANDWIDTH</p>
+<p>Get the encoder output bandwidth.</p>
+<p>DATA-1 (return)</p>
+<p>00: Standard Band (Composite)</p>
+<p>01: High Band (Y/C, Component)</p>
+<p><em>Send: C0 81 40<br> Returns: D1 81 01 53 (Encoder bandwidth set to high band)</em></p>
+<p style="font-weight: bold;">C1.84 SET SUB-CARRIER PHASE</p>
+<p>Set the output sub-carrier phase of the encoder.</p>
+<p>DATA-1</p>
+<p>00-FF</p>
+<p>00: 0 Degrees</p>
+<p>FF: 360 Degrees</p>
+<p>(1.4 degree increments)</p>
+<p><em>Send: C1 84 7F C4 (Set sub-carrier phase to 180)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">CO.85 GET SUB-CARRIER PHASE</p>
+<p>Get the encoder output horizontal phase.</p>
+<p>DATA-1 (return)</p>
+<p>00-FF</p>
+<p>00: 0 Degrees</p>
+<p>FF: 360 Degrees</p>
+<p>(1.4 degree increments)</p>
+<p><em>Send: C0 85 45<br> Returns: D1 85 00 56 (Encoder Sub-Carrier is set to 0 degrees)</em></p>
+<p style="font-weight: bold;">C1.8A SET COMPONENT OUT BLANKING PEDESTAL</p>
+<p>Set the component output blanking pedestal.</p>
+<p>DATA-1</p>
+<p>00: Pedestal Off</p>
+<p>01: Pedestal On</p>
+<p><em>Send: C1 8A 00 46 (Set component output pedestal off)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">CO.8B GET COMPONENT OUT BLANKING PEDESTAL</p>
+<p>Get the component output blanking pedestal.</p>
+<p>DATA-1 (return)</p>
+<p>00: Pedestal Off</p>
+<p>01: Pedestal On</p>
+<p><em>Send: C0 8B 46<br> Returns: D1 8B 01 5D (Component output pedestal is on)<br> <br> <a name="audio_setup"></a><br> <a href="#top">Go to top . . .</a></em></p>
+<h3>AUDIO SETUP</h3>
+<p style="font-weight: bold;">C0.90 GET AUDIO INPUTS</p>
+<p>Get the number of audio inputs.</p>
+<p>DATA-1 (return)</p>
+<p>00-20: 1 to 32 inputs</p>
+<p><em>Send: C0 90 51<br> Returns: D1 90 02 63 (The device has two audio inputs)</em></p>
+<p>C0.91 GET AUDIO OUTPUTS</p>
+<p>Get the number of audio outputs.</p>
+<p>DATA-1</p>
+<p>00-20: 1 to 32 inputs</p>
+<p><em>Send: C0 91 52<br> Returns: D1 91 02 64 (The device has two audio outputs)</em></p>
+<p style="font-weight: bold;">C2.92 SET AUDIO IN LEVEL</p>
+<p>Set one of the audio inputs level.</p>
+<p>DATA-1</p>
+<p>00-20: Channel to set</p>
+<p>DATA-2</p>
+<p>00-FF: New channel level.</p>
+<p><em>Send: C2 92 01 7F D4 (Set audio channel 1 to level 127)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">C1.93 GET AUDIO IN LEVEL</p>
+<p>Get one of the audio input's level.</p>
+<p>DATA-1</p>
+<p>00-20: Channel to return</p>
+<p>DATA-1 (return)</p>
+<p>00-FF: Current channel level</p>
+<p><em>Send: C1 93 00 54 (Request level for audio channel 0)<br> Returns: D1 93 5F C3 (Audio channel 0 at level 95)</em></p>
+<p style="font-weight: bold;">C2.9C SET AUDIO OUT LEVEL</p>
+<p>Set one of the audio output level.</p>
+<p>DATA-1</p>
+<p>00-20: Channel to set</p>
+<p>DATA-2</p>
+<p>00-FF: New channel level</p>
+<p><em>Send: C2 9C 01 7F DE (Set audio output 1 to level 127)<br> Returns: 10 01 11</em></p>
+<p style="font-weight: bold;">C1.9D GET AUDIO OUT LEVEL</p>
+<p>Get one of the audio output's level.</p>
+<p>DATA-1</p>
+<p>00-20: Output to return</p>
+<p>DATA-1 (return)</p>
+<p>00-FF: Current output level</p>
+<p><em>Send: C1 9D 00 5E (Request level for audio output 0)<br> Returns: D1 9D 5F CD (Audio output 0 at level 95)</em></p>
+<p style="font-weight: bold;">C0.EF SHUTDOWN DEVICE</p>
+<p>Closes and exits the current device.<br><em>Send: C0 EF AF<br> Returns: 10 01 11<br> <br> <a name="drastic_non_linear"></a><a href="#top">Go to top . . .</a></em></p>
+<p>&nbsp;</p>
+<p>NOTE: This area contains legacy material from previous Drastic 
+Technologies websites. It is provided for reference only, and contains 
+information, products and links that may no longer exist and which are 
+no longer supported by Drastic. For current Drastic Technologies 
+products, please see our main site here:<code></code></p>
+<p>&nbsp;<a href="http://drastic.tv/">http://www.drastic.tv</a></p>
+<hr>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p></p><details><summary>Trademarks, Registered Trademarks, and Copyrights</summary>
+<p>&nbsp;</p>
+<p style="padding-left: 30px;"><a href="https://www.drastic.tv/component/content/article/229-drastic-trademarks-registered-trademarks-and-copyrights?Itemid=101"><strong>Trademarks, Registered Trademarks, and Copyrights</strong></a></p>
+<span style="font-size: 8pt;"> <strong>Drastic Technologies, Ltd.</strong> – trademarks specified <a href="https://www.drastic.tv/component/content/article/229-drastic-trademarks-registered-trademarks-and-copyrights?Itemid=101">here</a>.<br><strong>L3Harris Technologies, Inc.</strong> - Louth is a trademark of L3Harris Technologies, Inc.<br><strong>Iteris, Inc.</strong> - Odetics is a registered trademark of Iteris, Inc.<br><strong>Sony Corporation</strong> – Sony, Sony DVD Architect, DVD, Catalyst, and Vegas are trademarks of Sony Corporation and/or its affiliates. <br>All other trademarks are the property of their respective owners.</span></details><p></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>        </div>
+
+        
+        
+        
+    
+
+        
+    
+
+   
+                </div>
+
+			</div>
+</div>
+</div>
+											</div>
+				</div>
+						
+	</section>
+
+<section id="sp-bottom">
+
+				
+	
+<div class="row">
+	<div id="sp-bottom1" class="col-lg-12 "><div class="sp-column "><div class="sp-module "><div class="sp-module-content"><div class="mod-sppagebuilder  sp-page-builder" data-module_id="107">
+	<div class="page-content">
+		<section id="section-id-1526481031867" class="sppb-section"><div class="sppb-row-container"><div class="sppb-row"><div class="sppb-col-md-3  " id="column-wrap-id-1526481031864"><div id="column-id-1526481031864" class="sppb-column  "><div class="sppb-column-addons"><div id="sppb-addon-wrapper-467599bf-5240-48fb-b896-e1c32dcb76ac" class="sppb-addon-wrapper  addon-root-empty-space"><div id="sppb-addon-467599bf-5240-48fb-b896-e1c32dcb76ac" class="clearfix  "><div class="sppb-empty-space  clearfix"></div><style type="text/css">#sppb-addon-467599bf-5240-48fb-b896-e1c32dcb76ac{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-467599bf-5240-48fb-b896-e1c32dcb76ac{
+border-radius: 0px;
+}#sppb-addon-wrapper-467599bf-5240-48fb-b896-e1c32dcb76ac{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-467599bf-5240-48fb-b896-e1c32dcb76ac{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-467599bf-5240-48fb-b896-e1c32dcb76ac{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-467599bf-5240-48fb-b896-e1c32dcb76ac{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-467599bf-5240-48fb-b896-e1c32dcb76ac{
+
+
+}}#sppb-addon-467599bf-5240-48fb-b896-e1c32dcb76ac .sppb-addon-title{
+}</style><style type="text/css">#sppb-addon-467599bf-5240-48fb-b896-e1c32dcb76ac .sppb-empty-space{
+height: 85px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-467599bf-5240-48fb-b896-e1c32dcb76ac .sppb-empty-space{height: 35px;}}
+@media (max-width: 991.98px) {#sppb-addon-467599bf-5240-48fb-b896-e1c32dcb76ac .sppb-empty-space{height: 35px;}}
+@media (max-width: 767.98px) {#sppb-addon-467599bf-5240-48fb-b896-e1c32dcb76ac .sppb-empty-space{height: 35px;}}
+@media (max-width: 575.98px) {#sppb-addon-467599bf-5240-48fb-b896-e1c32dcb76ac .sppb-empty-space{height: 35px;}}</style></div></div><div id="sppb-addon-wrapper-1526481031871" class="sppb-addon-wrapper  addon-root-image"><div id="sppb-addon-1526481031871" class="clearfix  "><div class="sppb-addon sppb-addon-single-image   sppb-addon-image-shape"><div class="sppb-addon-content"><div class="sppb-addon-single-image-container"><a href="https://www.drastic.tv/"><img class="sppb-img-responsive " src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/dt-logo-footer_ld6r.png" alt="Image" title="" width="111" height="111"></a></div></div></div><style type="text/css">#sppb-addon-1526481031871{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-1526481031871{
+border-radius: 0px;
+padding-top: 45;
+padding-right: 0px;
+padding-bottom: 0px;
+padding-left: 0px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481031871{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481031871{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481031871{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481031871{}}#sppb-addon-wrapper-1526481031871{
+margin-top: 45;
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-1526481031871{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-1526481031871{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-1526481031871{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-1526481031871{
+
+
+}}#sppb-addon-1526481031871 .sppb-addon-title{
+margin-top: 129px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481031871 .sppb-addon-title{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481031871 .sppb-addon-title{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481031871 .sppb-addon-title{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481031871 .sppb-addon-title{}}</style><style type="text/css">#sppb-addon-1526481031871 .sppb-addon-single-image-container img{
+border-radius: 0px;
+}#sppb-addon-1526481031871 img{ transform-origin: 50% 50%; }#sppb-addon-1526481031871 img{
+}#sppb-addon-1526481031871 .sppb-addon-single-image-container{
+border-radius: 0px;
+}#sppb-addon-1526481031871{
+text-align: left;
+}</style></div></div><div id="sppb-addon-wrapper-1526481614625" class="sppb-addon-wrapper  addon-root-empty-space"><div id="sppb-addon-1526481614625" class="clearfix  "><div class="sppb-empty-space  clearfix"></div><style type="text/css">#sppb-addon-1526481614625{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-1526481614625{
+border-radius: 0px;
+}#sppb-addon-wrapper-1526481614625{
+margin-top: 44;
+margin-right: 44;
+margin-bottom: 44;
+margin-left: 44;
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-1526481614625{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-1526481614625{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-1526481614625{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-1526481614625{
+
+
+}}#sppb-addon-1526481614625 .sppb-addon-title{
+}</style><style type="text/css">#sppb-addon-1526481614625 .sppb-empty-space{
+height: 77px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481614625 .sppb-empty-space{height: 35px;}}
+@media (max-width: 991.98px) {#sppb-addon-1526481614625 .sppb-empty-space{height: 35px;}}
+@media (max-width: 767.98px) {#sppb-addon-1526481614625 .sppb-empty-space{height: 35px;}}
+@media (max-width: 575.98px) {#sppb-addon-1526481614625 .sppb-empty-space{height: 35px;}}#sppb-addon-1526481614625 .sppb-empty-space{ transform-origin: 50% 50%; }</style></div></div><div id="sppb-addon-wrapper-1526481031874" class="sppb-addon-wrapper  addon-root-text-block"><div id="sppb-addon-1526481031874" class="clearfix  "><div class="sppb-addon sppb-addon-text-block "><div class="sppb-addon-content  "><p><span style="color: #000000;">For
+ more than three decades, Drastic™ has been developing cutting edge 
+digital video solutions for television, post production and sports 
+broadcasting, from real time web delivery to 8K broadcast.</span></p>
+<p><span style="color: #000000;">We offer standalone software for the 
+end user or enterprise, integrated solutions for automated workflows, 
+and OEM tools for custom applications or branded devices.</span></p></div></div><style type="text/css">#sppb-addon-1526481031874{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-1526481031874{
+border-radius: 0px;
+padding-top: 30;
+padding-right: 30;
+padding-bottom: 30;
+padding-left: 30;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481031874{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481031874{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481031874{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481031874{}}#sppb-addon-wrapper-1526481031874{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-1526481031874{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-1526481031874{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-1526481031874{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-1526481031874{
+
+
+}}#sppb-addon-1526481031874 .sppb-addon-title{
+}</style><style type="text/css">#sppb-addon-1526481031874 .sppb-addon-text-block{
+}#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content{}}#sppb-addon-1526481031874 .sppb-textblock-column{
+}#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h6{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481031874 .sppb-addon-text-block .sppb-addon-content h6{}}</style></div></div><div id="sppb-addon-wrapper-1526503924374" class="sppb-addon-wrapper  sppb-hidden-xl  addon-root-empty-space"><div id="sppb-addon-1526503924374" class="clearfix  "><div class="sppb-empty-space  clearfix"></div><style type="text/css">#sppb-addon-1526503924374{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-1526503924374{
+border-radius: 0px;
+padding-top: 20;
+padding-right: 20;
+padding-bottom: 20;
+padding-left: 20;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526503924374{}}
+@media (max-width: 991.98px) {#sppb-addon-1526503924374{}}
+@media (max-width: 767.98px) {#sppb-addon-1526503924374{}}
+@media (max-width: 575.98px) {#sppb-addon-1526503924374{}}#sppb-addon-wrapper-1526503924374{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-1526503924374{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-1526503924374{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-1526503924374{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-1526503924374{
+
+
+}}#sppb-addon-1526503924374 .sppb-addon-title{
+}</style><style type="text/css">#sppb-addon-1526503924374 .sppb-empty-space{
+height: 50px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526503924374 .sppb-empty-space{height: 50px;}}
+@media (max-width: 991.98px) {#sppb-addon-1526503924374 .sppb-empty-space{height: 50px;}}
+@media (max-width: 767.98px) {#sppb-addon-1526503924374 .sppb-empty-space{height: 50px;}}
+@media (max-width: 575.98px) {#sppb-addon-1526503924374 .sppb-empty-space{height: 50px;}}</style></div></div></div></div></div><div class="sppb-col-md-3  " id="column-wrap-id-1526481031866"><div id="column-id-1526481031866" class="sppb-column "><div class="sppb-column-addons"><div id="sppb-addon-wrapper-1526481929236" class="sppb-addon-wrapper  addon-root-text-block"><div id="sppb-addon-1526481929236" class="clearfix  "><div class="sppb-addon sppb-addon-text-block "><h3 class="sppb-addon-title">Resources</h3><div class="sppb-addon-content  "><ul>
+<li><a href="https://www.drastic.tv/support-59/supporttipstechnical/77-how-to-license-drastic-products"><span style="color: #000000;">Licensing</span></a></li>
+<li><a href="https://www.drastic.tv/support-59/supportdocumention"><span style="color: #000000;">Documentation</span></a></li>
+<li><a href="https://www.drastic.tv/support-59/supporttipstechnical"><span style="color: #000000;">Technical Articles</span></a></li>
+<li><a href="https://www.drastic.tv/77-solutions"><span style="color: #000000;">Solutions</span></a></li>
+<li><a href="https://www.drastic.tv/company-60/privacy"><span style="color: #000000;">Privacy</span></a></li>
+<li><a href="https://www.drastic.tv/images/documentation/eula-en.txt"><span style="color: #000000;">EULA</span></a></li>
+<li><a href="https://www.drastic.tv/images/documentation/catalog_2026.pdf"><span style="color: #000000;">Catalog</span></a></li>
+<li><a href="https://www.drastic.tv/component/content/article/229-drastic-trademarks-registered-trademarks-and-copyrights"><span style="color: #000000;">Trademarks</span></a></li>
+</ul></div></div><style type="text/css">#sppb-addon-1526481929236{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-1526481929236{
+color: rgb(0, 0, 0);
+border-radius: 0px;
+padding-top: 15;
+padding-right: 15;
+padding-bottom: 15;
+padding-left: 15;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481929236{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481929236{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481929236{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481929236{}}#sppb-addon-wrapper-1526481929236{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-1526481929236{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-1526481929236{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-1526481929236{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-1526481929236{
+
+
+}}#sppb-addon-1526481929236 .sppb-addon-title{
+margin-top: 129px;
+color: #000000;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481929236 .sppb-addon-title{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481929236 .sppb-addon-title{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481929236 .sppb-addon-title{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481929236 .sppb-addon-title{}}
+#sppb-addon-1526481929236 .sppb-addon-title{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481929236 .sppb-addon-title{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481929236 .sppb-addon-title{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481929236 .sppb-addon-title{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481929236 .sppb-addon-title{}}#sppb-addon-1526481929236 .sppb-addon-title{font-weight:500;font-size:22px;line-height:25px;margin-bottom:40px;font-style:normal;}#sppb-addon-1526481929236 ul{width:100%;padding:0 0 0 0;margin:0px;}#sppb-addon-1526481929236 ul li{width:100%;padding:0px !important;margin:0 !important;border:none !important;}#sppb-addon-1526481929236 ul li a{padding:6px 0 !important;margin:0;color:#bababa;display:inline-block;}#sppb-addon-1526481929236 ul li a:before{padding:0 10px 0 0;display:inline-block;content:"\f054";font-family:"Font Awesome 5 Free";font-weight:900;font-size:inherit;}#sppb-addon-1526481929236 ul li a:hover{color:#fff;}</style><style type="text/css">#sppb-addon-1526481929236 .sppb-addon-text-block{
+}#sppb-addon-1526481929236 .sppb-addon-text-block{ transform-origin: 50% 50%; }#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content{}}#sppb-addon-1526481929236 .sppb-textblock-column{
+}#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h6{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481929236 .sppb-addon-text-block .sppb-addon-content h6{}}</style></div></div><div id="sppb-addon-wrapper-1526503952048" class="sppb-addon-wrapper  sppb-hidden-xl  addon-root-empty-space"><div id="sppb-addon-1526503952048" class="clearfix  "><div class="sppb-empty-space  clearfix"></div><style type="text/css">#sppb-addon-1526503952048{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-1526503952048{
+border-radius: 0px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526503952048{}}
+@media (max-width: 991.98px) {#sppb-addon-1526503952048{}}
+@media (max-width: 767.98px) {#sppb-addon-1526503952048{}}
+@media (max-width: 575.98px) {#sppb-addon-1526503952048{}}#sppb-addon-wrapper-1526503952048{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-1526503952048{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-1526503952048{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-1526503952048{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-1526503952048{
+
+
+}}#sppb-addon-1526503952048 .sppb-addon-title{
+}</style><style type="text/css">#sppb-addon-1526503952048 .sppb-empty-space{
+height: 50px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526503952048 .sppb-empty-space{height: 50px;}}
+@media (max-width: 991.98px) {#sppb-addon-1526503952048 .sppb-empty-space{height: 50px;}}
+@media (max-width: 767.98px) {#sppb-addon-1526503952048 .sppb-empty-space{height: 50px;}}
+@media (max-width: 575.98px) {#sppb-addon-1526503952048 .sppb-empty-space{height: 50px;}}</style></div></div></div></div></div><div class="sppb-col-md-3  " id="column-wrap-id-60c0e99a-2d69-46e4-83b7-4b2be2d326d9"><div id="column-id-60c0e99a-2d69-46e4-83b7-4b2be2d326d9" class="sppb-column "><div class="sppb-column-addons"><div id="sppb-addon-wrapper-e291df68-1615-49f4-a114-f71c03e25154" class="sppb-addon-wrapper  addon-root-text-block"><div id="sppb-addon-e291df68-1615-49f4-a114-f71c03e25154" class="clearfix  "><div class="sppb-addon sppb-addon-text-block "><h3 class="sppb-addon-title">Products</h3><div class="sppb-addon-content  "><ul>
+<li><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/net-x-code"><span style="color: #000000;">Net-X-Code Server</span><span style="color: #000000;"> multichannel ingest</span></a></li>
+<li><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/netxrouter-srt-rist-udp-rtp"><span style="color: #000000;">NETXROUTER</span><span style="color: #000000;"> IP routing</span></a></li>
+<li><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement"><span style="color: #000000;">DrasticScope</span><span style="color: #000000;"> Signal Analysis</span></a></li>
+<li><a href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist/testpatterngenerator"><span style="color: #000000;">Test Pattern Generator</span></a></li>
+<li><a href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist/videoqc"><span style="color: #000000;">videoQC</span><span style="color: #000000;"> Media Player</span></a></li>
+<li><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/flowcaster"><span style="color: #000000;">FlowCaster</span><span style="color: #000000;"> IP collaboration</span></a></li>
+<li><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-workstation"><span style="color: #000000;">MediaReactor</span><span style="color: #000000;"> file format plugins</span></a></li>
+<li><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-client-server"><span style="color: #000000;">Command Line</span><span style="color: #000000;"> Transcoding</span></a></li>
+<li><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist"><span style="color: #000000;">OEM/Developer</span><span style="color: #000000;"> Products</span></a></li>
+</ul></div></div><style type="text/css">#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154{
+color: rgb(0, 0, 0);
+border-radius: 0px;
+padding-top: 15;
+padding-right: 15;
+padding-bottom: 15;
+padding-left: 15;
+}
+@media (max-width: 1199.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154{}}
+@media (max-width: 991.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154{}}
+@media (max-width: 767.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154{}}
+@media (max-width: 575.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154{}}#sppb-addon-wrapper-e291df68-1615-49f4-a114-f71c03e25154{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-e291df68-1615-49f4-a114-f71c03e25154{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-e291df68-1615-49f4-a114-f71c03e25154{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-e291df68-1615-49f4-a114-f71c03e25154{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-e291df68-1615-49f4-a114-f71c03e25154{
+
+
+}}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{
+margin-top: 129px;
+color: #000000;
+}
+@media (max-width: 1199.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{}}
+@media (max-width: 991.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{}}
+@media (max-width: 767.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{}}
+@media (max-width: 575.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{}}
+#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{
+}
+@media (max-width: 1199.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{}}
+@media (max-width: 991.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{}}
+@media (max-width: 767.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{}}
+@media (max-width: 575.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{}}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-title{font-weight:500;font-size:22px;line-height:25px;margin-bottom:40px;font-style:normal;}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 ul{width:100%;padding:0 0 0 0;margin:0px;}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 ul li{width:100%;padding:0px !important;margin:0 !important;border:none !important;}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 ul li a{padding:6px 0 !important;margin:0;color:#bababa;display:inline-block;}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 ul li a:before{padding:0 10px 0 0;display:inline-block;content:"\f054";font-family:"Font Awesome 5 Free";font-weight:900;font-size:inherit;}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 ul li a:hover{color:#fff;}</style><style type="text/css">#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block{
+}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block{ transform-origin: 50% 50%; }#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content{
+}
+@media (max-width: 1199.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 991.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 767.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 575.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content{}}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-textblock-column{
+}#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h6{
+}
+@media (max-width: 1199.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 991.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 767.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 575.98px) {#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-e291df68-1615-49f4-a114-f71c03e25154 .sppb-addon-text-block .sppb-addon-content h6{}}</style></div></div><div id="sppb-addon-wrapper-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1" class="sppb-addon-wrapper  sppb-hidden-xl  addon-root-empty-space"><div id="sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1" class="clearfix  "><div class="sppb-empty-space  clearfix"></div><style type="text/css">#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{
+border-radius: 0px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{}}
+@media (max-width: 991.98px) {#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{}}
+@media (max-width: 767.98px) {#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{}}
+@media (max-width: 575.98px) {#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{}}#sppb-addon-wrapper-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1{
+
+
+}}#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1 .sppb-addon-title{
+}</style><style type="text/css">#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1 .sppb-empty-space{
+height: 50px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1 .sppb-empty-space{height: 50px;}}
+@media (max-width: 991.98px) {#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1 .sppb-empty-space{height: 50px;}}
+@media (max-width: 767.98px) {#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1 .sppb-empty-space{height: 50px;}}
+@media (max-width: 575.98px) {#sppb-addon-5e4c7ab2-4843-4c8a-b543-c5acbbcb0fe1 .sppb-empty-space{height: 50px;}}</style></div></div></div></div></div><div class="sppb-col-md-3  " id="column-wrap-id-1526481031868"><div id="column-id-1526481031868" class="sppb-column  "><div class="sppb-column-addons"><div id="sppb-addon-wrapper-1526481959053" class="sppb-addon-wrapper  addon-root-text-block"><div id="sppb-addon-1526481959053" class="clearfix  "><div class="sppb-addon sppb-addon-text-block "><h3 class="sppb-addon-title">Contact Us</h3><div class="sppb-addon-content  "><p><span style="color:#000000;"><strong>Address</strong>:&nbsp;</span></p><p style="padding-left: 40px;"><span style="color:#000000;">523 The Queensway, Suite 201</span></p><p style="padding-left: 40px;"><span style="color:#000000;">Toronto, ON</span></p><p style="padding-left: 40px;"><span style="color:#000000;">M8Y 1J7, Canada</span></p><p><span style="color:#000000;"><strong>Phone:</strong> +1 (416) 255 5636</span></p><p><span style="color:#000000;"><strong>Email:</strong> </span><a style="color: #000000;" href="mailto:sales@drastictech.com"><span style="color:#000000;">sales@drastictech.com</span></a></p><p><span style="color:#000000;"><strong>Fax:</strong> + 1 (416) 255 8780</span></p></div></div><style type="text/css">#sppb-addon-1526481959053{
+}#sppb-addon-1526481959053{
+color: rgb(0, 0, 0);
+border-radius: 0px;
+padding-top: 15;
+padding-right: 15;
+padding-bottom: 15;
+padding-left: 15;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481959053{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481959053{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481959053{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481959053{}}#sppb-addon-wrapper-1526481959053{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-1526481959053{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-1526481959053{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-1526481959053{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-1526481959053{
+
+
+}}#sppb-addon-1526481959053 .sppb-addon-title{
+margin-top: 129px;
+color: #000000;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481959053 .sppb-addon-title{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481959053 .sppb-addon-title{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481959053 .sppb-addon-title{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481959053 .sppb-addon-title{}}
+#sppb-addon-1526481959053 .sppb-addon-title{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481959053 .sppb-addon-title{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481959053 .sppb-addon-title{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481959053 .sppb-addon-title{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481959053 .sppb-addon-title{}}#sppb-addon-1526481959053 .sppb-addon-title{font-weight:500;font-size:22px;line-height:25px;margin-bottom:40px;font-style:normal;}#sppb-addon-1526481959053 address{margin-bottom:20px;font-style:normal;line-height:1.42857143;}</style><style type="text/css">#sppb-addon-1526481959053 .sppb-addon-text-block{
+}#sppb-addon-1526481959053 .sppb-addon-text-block{ transform-origin: 50% 50%; }#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content{}}#sppb-addon-1526481959053 .sppb-textblock-column{
+}#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h6{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 991.98px) {#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 767.98px) {#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 575.98px) {#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1526481959053 .sppb-addon-text-block .sppb-addon-content h6{}}</style></div></div><div id="sppb-addon-wrapper-1684327997051" class="sppb-addon-wrapper  addon-root-text-block"><div id="sppb-addon-1684327997051" class="clearfix  "><div class="sppb-addon sppb-addon-text-block "><div class="sppb-addon-content  "><p><span style="font-size: 14pt; color: #000000;"><strong>Follow us</strong></span></p>
+<p style="color: yellow;"><span style="color: #000000;">on Social Media</span></p></div></div><style type="text/css">#sppb-addon-1684327997051{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-1684327997051{
+color: rgb(0, 0, 0);
+border-radius: 0px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1684327997051{}}
+@media (max-width: 991.98px) {#sppb-addon-1684327997051{}}
+@media (max-width: 767.98px) {#sppb-addon-1684327997051{}}
+@media (max-width: 575.98px) {#sppb-addon-1684327997051{}}#sppb-addon-wrapper-1684327997051{
+margin-top: 30px;
+margin-right: 0px;
+margin-bottom: 0px;
+margin-left: 0px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-1684327997051{}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-1684327997051{}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-1684327997051{}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-1684327997051{}}#sppb-addon-1684327997051 .sppb-addon-title{
+margin-top: 129px;
+color: #000000;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1684327997051 .sppb-addon-title{}}
+@media (max-width: 991.98px) {#sppb-addon-1684327997051 .sppb-addon-title{}}
+@media (max-width: 767.98px) {#sppb-addon-1684327997051 .sppb-addon-title{}}
+@media (max-width: 575.98px) {#sppb-addon-1684327997051 .sppb-addon-title{}}</style><style type="text/css">#sppb-addon-1684327997051 .sppb-addon-text-block{
+}#sppb-addon-1684327997051 .sppb-addon-text-block{ transform-origin: 50% 50%; }#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 991.98px) {#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 767.98px) {#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 575.98px) {#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content{}}#sppb-addon-1684327997051 .sppb-textblock-column{
+}#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h6{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 991.98px) {#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 767.98px) {#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 575.98px) {#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1684327997051 .sppb-addon-text-block .sppb-addon-content h6{}}</style></div></div><div id="sppb-addon-wrapper-1f185899-2682-4748-8284-72241a8c36e1" class="sppb-addon-wrapper  addon-root-text-block"><div id="sppb-addon-1f185899-2682-4748-8284-72241a8c36e1" class="clearfix  "><div class="sppb-addon sppb-addon-text-block "><div class="sppb-addon-content  "><table style="border-collapse: collapse; width: 99.9756%;" border="1"><colgroup><col style="width: 20.0214%;"><col style="width: 20.0214%;"><col style="width: 20.0214%;"><col style="width: 20.0214%;"><col style="width: 19.9708%;"></colgroup>
+<tbody>
+<tr>
+<td><a href="https://bsky.app/profile/drastictech.bsky.social"><img class="mx-auto d-block" style="display: block; margin-left: auto; margin-right: auto;" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/bluesky_35_ld6r.png" alt="bluesky" width="40" height="35"></a></td>
+<td style="text-align: center;"><a href="https://www.facebook.com/drastic.tv"><img class="mx-auto d-block" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/facebook_35_ld6r.png" alt="facebook" width="40" height="40"></a></td>
+<td><a href="https://www.instagram.com/drastic.tv/"><img class="mx-auto d-block" style="display: block; margin-left: auto; margin-right: auto;" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/instagram_35_ld6r.png" width="40" height="40"></a></td>
+<td><a href="https://www.linkedin.com/company/drastic-technologies/"><img class="mx-auto d-block" style="display: block; margin-left: auto; margin-right: auto;" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/linkedin_35_ld6r.png" width="40" height="40"></a></td>
+<td><a href="https://www.youtube.com/DrasticTechnologies"><img class="mx-auto d-block" style="display: block; margin-left: auto; margin-right: auto;" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/youtube_35_ld6r.png" width="51" height="40"></a></td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p></div></div><style type="text/css">#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1{
+border-radius: 0px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1{}}
+@media (max-width: 991.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1{}}
+@media (max-width: 767.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1{}}
+@media (max-width: 575.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1{}}#sppb-addon-wrapper-1f185899-2682-4748-8284-72241a8c36e1{
+margin-top: 30px;
+margin-right: 0px;
+margin-bottom: 0px;
+margin-left: 0px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-1f185899-2682-4748-8284-72241a8c36e1{}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-1f185899-2682-4748-8284-72241a8c36e1{}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-1f185899-2682-4748-8284-72241a8c36e1{}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-1f185899-2682-4748-8284-72241a8c36e1{}}#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-title{
+margin-top: 129px;
+color: #000000;
+}
+@media (max-width: 1199.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-title{}}
+@media (max-width: 991.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-title{}}
+@media (max-width: 767.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-title{}}
+@media (max-width: 575.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-title{}}</style><style type="text/css">#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block{
+}#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 991.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 767.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 575.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content{}}#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-textblock-column{
+}#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h6{
+}
+@media (max-width: 1199.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 991.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 767.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 575.98px) {#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-1f185899-2682-4748-8284-72241a8c36e1 .sppb-addon-text-block .sppb-addon-content h6{}}</style></div></div></div></div></div></div></div></section><section id="section-id-c7b35b8d-847f-4ec7-8a0c-721dedeee9ab" class="sppb-section"><div class="sppb-row-container"><div class="sppb-row"><div class="sppb-col-md-3  " id="column-wrap-id-2e80b220-f880-4248-8495-c99ef34d5139"><div id="column-id-2e80b220-f880-4248-8495-c99ef34d5139" class="sppb-column "><div class="sppb-column-addons"><div id="sppb-addon-wrapper-2a4a683f-254c-4b18-bb43-247c34dd23d7" class="sppb-addon-wrapper  addon-root-text-block"><div id="sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7" class="clearfix  "><div class="sppb-addon sppb-addon-text-block "><div class="sppb-addon-content  "><p>© Drastic Technologies Ltd. 2026</p></div></div><style type="text/css">#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7{
+color: rgb(0, 0, 0);
+border-radius: 0px;
+padding-top: 15;
+padding-right: 15;
+padding-bottom: 15;
+padding-left: 15;
+}
+@media (max-width: 1199.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7{}}
+@media (max-width: 991.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7{}}
+@media (max-width: 767.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7{}}
+@media (max-width: 575.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7{}}#sppb-addon-wrapper-2a4a683f-254c-4b18-bb43-247c34dd23d7{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-2a4a683f-254c-4b18-bb43-247c34dd23d7{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-2a4a683f-254c-4b18-bb43-247c34dd23d7{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-2a4a683f-254c-4b18-bb43-247c34dd23d7{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-2a4a683f-254c-4b18-bb43-247c34dd23d7{
+
+
+}}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-title{
+color: #000000;
+}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-title{font-weight:500;font-size:22px;line-height:25px;margin-bottom:40px;font-style:normal;}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 ul{width:100%;padding:0 0 0 0;margin:0px;}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 ul li{width:100%;padding:0px !important;margin:0 !important;border:none !important;}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 ul li a{padding:6px 0 !important;margin:0;color:#bababa;display:inline-block;}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 ul li a:before{padding:0 10px 0 0;display:inline-block;content:"\f054";font-family:"Font Awesome 5 Free";font-weight:900;font-size:inherit;}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 ul li a:hover{color:#fff;}</style><style type="text/css">#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block{
+}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block{ transform-origin: 50% 50%; }#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content{
+}
+@media (max-width: 1199.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 991.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 767.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content{}}
+@media (max-width: 575.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content{}}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-textblock-column{
+}#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h6{
+}
+@media (max-width: 1199.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 991.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 767.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h6{}}
+@media (max-width: 575.98px) {#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h1,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h2,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h3,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h4,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h5,#sppb-addon-2a4a683f-254c-4b18-bb43-247c34dd23d7 .sppb-addon-text-block .sppb-addon-content h6{}}</style></div></div><div id="sppb-addon-wrapper-b5520f13-e175-4386-8069-3417ea517e3f" class="sppb-addon-wrapper  sppb-hidden-xl  addon-root-empty-space"><div id="sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f" class="clearfix  "><div class="sppb-empty-space  clearfix"></div><style type="text/css">#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f{
+box-shadow: 0 0 0 0 #ffffff;
+}#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f{
+border-radius: 0px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f{}}
+@media (max-width: 991.98px) {#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f{}}
+@media (max-width: 767.98px) {#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f{}}
+@media (max-width: 575.98px) {#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f{}}#sppb-addon-wrapper-b5520f13-e175-4386-8069-3417ea517e3f{
+
+
+
+
+}
+@media (max-width: 1199.98px) {#sppb-addon-wrapper-b5520f13-e175-4386-8069-3417ea517e3f{
+
+
+}}
+@media (max-width: 991.98px) {#sppb-addon-wrapper-b5520f13-e175-4386-8069-3417ea517e3f{
+
+
+}}
+@media (max-width: 767.98px) {#sppb-addon-wrapper-b5520f13-e175-4386-8069-3417ea517e3f{
+
+
+}}
+@media (max-width: 575.98px) {#sppb-addon-wrapper-b5520f13-e175-4386-8069-3417ea517e3f{
+
+
+}}#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f .sppb-addon-title{
+}</style><style type="text/css">#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f .sppb-empty-space{
+height: 50px;
+}
+@media (max-width: 1199.98px) {#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f .sppb-empty-space{height: 50px;}}
+@media (max-width: 991.98px) {#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f .sppb-empty-space{height: 50px;}}
+@media (max-width: 767.98px) {#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f .sppb-empty-space{height: 50px;}}
+@media (max-width: 575.98px) {#sppb-addon-b5520f13-e175-4386-8069-3417ea517e3f .sppb-empty-space{height: 50px;}}</style></div></div></div></div></div></div></div></section><style type="text/css">.sp-page-builder .page-content #section-id-1526481031867{background-color:#ffffff;}.sp-page-builder .page-content #section-id-1526481031867{padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;}#column-id-1526481031864{border-radius:0px;}#column-wrap-id-1526481031864{max-width:16.666667%;flex-basis:16.666667%;}@media (max-width:1199.98px) {#column-wrap-id-1526481031864{max-width:16.666667%;flex-basis:16.666667%;}}@media (max-width:991.98px) {#column-wrap-id-1526481031864{max-width:16.666667%;flex-basis:16.666667%;}}@media (max-width:767.98px) {#column-wrap-id-1526481031864{max-width:100%;flex-basis:100%;}}@media (max-width:575.98px) {#column-wrap-id-1526481031864{max-width:100%;flex-basis:100%;}}#column-id-1526481031864 .sppb-column-overlay{border-radius:0px;}#column-id-1526481031866{border-radius:0px;}#column-wrap-id-1526481031866{max-width:25%;flex-basis:25%;}@media (max-width:1199.98px) {#column-wrap-id-1526481031866{max-width:25%;flex-basis:25%;}}@media (max-width:991.98px) {#column-wrap-id-1526481031866{max-width:25%;flex-basis:25%;}}@media (max-width:767.98px) {#column-wrap-id-1526481031866{max-width:100%;flex-basis:100%;}}@media (max-width:575.98px) {#column-wrap-id-1526481031866{max-width:100%;flex-basis:100%;}}#column-id-1526481031866 .sppb-column-overlay{border-radius:0px;}#column-id-60c0e99a-2d69-46e4-83b7-4b2be2d326d9{border-radius:0px;}#column-wrap-id-60c0e99a-2d69-46e4-83b7-4b2be2d326d9{max-width:25%;flex-basis:25%;}@media (max-width:1199.98px) {#column-wrap-id-60c0e99a-2d69-46e4-83b7-4b2be2d326d9{max-width:25%;flex-basis:25%;}}@media (max-width:991.98px) {#column-wrap-id-60c0e99a-2d69-46e4-83b7-4b2be2d326d9{max-width:25%;flex-basis:25%;}}@media (max-width:767.98px) {#column-wrap-id-60c0e99a-2d69-46e4-83b7-4b2be2d326d9{max-width:100%;flex-basis:100%;}}@media (max-width:575.98px) {#column-wrap-id-60c0e99a-2d69-46e4-83b7-4b2be2d326d9{max-width:100%;flex-basis:100%;}}#column-id-60c0e99a-2d69-46e4-83b7-4b2be2d326d9 .sppb-column-overlay{border-radius:0px;}#column-wrap-id-1526481031868{max-width:25%;flex-basis:25%;}@media (max-width:1199.98px) {#column-wrap-id-1526481031868{max-width:25%;flex-basis:25%;}}@media (max-width:991.98px) {#column-wrap-id-1526481031868{max-width:25%;flex-basis:25%;}}@media (max-width:767.98px) {#column-wrap-id-1526481031868{max-width:100%;flex-basis:100%;}}@media (max-width:575.98px) {#column-wrap-id-1526481031868{max-width:100%;flex-basis:100%;}}.sp-page-builder .page-content #section-id-c7b35b8d-847f-4ec7-8a0c-721dedeee9ab{background-color:#ffffff;}.sp-page-builder .page-content #section-id-c7b35b8d-847f-4ec7-8a0c-721dedeee9ab{padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;}#column-id-2e80b220-f880-4248-8495-c99ef34d5139{border-radius:0px;}#column-wrap-id-2e80b220-f880-4248-8495-c99ef34d5139{max-width:25%;flex-basis:25%;}@media (max-width:1199.98px) {#column-wrap-id-2e80b220-f880-4248-8495-c99ef34d5139{max-width:100%;flex-basis:100%;}}@media (max-width:991.98px) {#column-wrap-id-2e80b220-f880-4248-8495-c99ef34d5139{max-width:100%;flex-basis:100%;}}@media (max-width:767.98px) {#column-wrap-id-2e80b220-f880-4248-8495-c99ef34d5139{max-width:100%;flex-basis:100%;}}@media (max-width:575.98px) {#column-wrap-id-2e80b220-f880-4248-8495-c99ef34d5139{max-width:100%;flex-basis:100%;}}#column-id-2e80b220-f880-4248-8495-c99ef34d5139 .sppb-column-overlay{border-radius:0px;}</style>	</div>
+</div></div></div></div></div></div>
+				
+	</section>
+				</main>
+			</div>
+		</div>
+
+		<!-- Off Canvas Menu -->
+		<div class="offcanvas-overlay"></div>
+		<!-- Rendering the offcanvas style -->
+		<!-- If canvas style selected then render the style -->
+		<!-- otherwise (for old templates) attach the offcanvas module position -->
+					<div class="offcanvas-menu left-1 offcanvas-arrow-right" tabindex="-1" inert="">
+	<div class="d-flex align-items-center justify-content-between p-3 pt-4">
+				<a href="#" class="close-offcanvas" role="button" aria-label="Close Off-canvas">
+			<div class="burger-icon" aria-hidden="true">
+				<span></span>
+				<span></span>
+				<span></span>
+			</div>
+		</a>
+	</div>
+	
+	<div class="offcanvas-inner">
+		<div class="d-flex header-modules mb-3">
+			
+					</div>
+		
+					<div class="sp-module "><div class="sp-module-content"><ul class="mod-menu mod-list menu nav-pills">
+<li class="item-101 default no-uppercase"><a href="https://www.drastic.tv/index.php">Home</a></li><li class="item-123 menu-deeper menu-parent no-uppercase" aria-haspopup="true" aria-expanded="false"><a href="https://www.drastic.tv/index.php/productsmenu-56">Products<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-363 menu-deeper menu-parent" aria-haspopup="true" aria-expanded="false"><a href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist">Video I/O Software<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-368"><a href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist/videoqc">videoQC - Automated &amp; Visual Tools</a></li><li class="item-797"><a href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist/testpatterngenerator">TestPatternGenerator</a></li><li class="item-371"><a href="https://www.drastic.tv/index.php/productsmenu-56/videoiosoftwarelist/tccalc">Time Code Calc</a></li></ul></li><li class="item-364 menu-deeper menu-parent" aria-haspopup="true" aria-expanded="false"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement">Test and Measurement<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-373"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/networkvideoanalyzer">2110Scope</a></li><li class="item-374"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/hdrscope-waveform-vectorscope">HDRScope Waveform/Vectorscope</a></li><li class="item-375"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/4kscope">4KScope Waveform/Vectorscope</a></li><li class="item-376"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/sdi-hdmi-scope">sdiScope Waveform/Vectorscope</a></li><li class="item-377"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/drasticscope-free-waveform-vectorscope">Free Waveform/Vectorscope</a></li><li class="item-846"><a href="https://www.drastic.tv/index.php/productsmenu-56/test-and-measurement/netxscope">NetXScope</a></li></ul></li><li class="item-365 menu-deeper menu-parent" aria-haspopup="true" aria-expanded="false"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist">Network Streaming/PFR<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-394"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/net-x-code">Net-X-Code Server</a></li><li class="item-397"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/net-x-code-pfr">FastClip/Partial File Restore</a></li><li class="item-393"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/flowcaster">FlowCaster - Remote Collaboration</a></li><li class="item-395"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/media-file-scanner">Media File Scanner</a></li><li class="item-733"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/netxrouter-srt-rist-udp-rtp">NETXROUTER - IP Distribution</a></li><li class="item-396"><a href="https://www.drastic.tv/index.php/productsmenu-56/networkstreaminglist/net-x-code-iptv">IP Video Capture/Stream</a></li></ul></li><li class="item-366 menu-deeper menu-parent" aria-haspopup="true" aria-expanded="false"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist">File Conversion/Plugins<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-547"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/dolby-vision-for-adobe">Dolby Vision for Adobe</a></li><li class="item-398"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-workstation">MediaReactor Workstation Plugins</a></li><li class="item-399"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-lite-adobe">MediaReactor Lite for Adobe</a></li><li class="item-400"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-lite-avid">MediaReactor Lite for Avid</a></li><li class="item-401"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-for-autodesk">MediaReactor For Autodesk</a></li><li class="item-402"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/cc-convert">ccConvert for Closed Captions</a></li><li class="item-403"><a href="https://www.drastic.tv/index.php/productsmenu-56/mediareactorlist/mediareactor-client-server">Net-X-Convert &amp; Net-X-Proxy</a></li></ul></li><li class="item-367 menu-deeper menu-parent" aria-haspopup="true" aria-expanded="false"><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist">SDK and API<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-404"><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist/dt-media-read">DTMediaRead SDK</a></li><li class="item-405"><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist/dt-media-write">DTMediaWrite SDK</a></li><li class="item-407"><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist/rs-422-device-emulation">RS-422 Device Emulation</a></li><li class="item-408"><a href="https://www.drastic.tv/index.php/productsmenu-56/sdkandapilist/rs-422-device-control">RS-422 Device Control</a></li></ul></li></ul></li><li class="item-164 menu-deeper menu-parent no-uppercase" aria-haspopup="true" aria-expanded="false"><a href="https://www.drastic.tv/index.php/sales">Sales<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-833"><a href="https://www.drastic.tv/index.php/sales/testpatterngenerator-sales">Test Pattern Generator</a></li><li class="item-381"><a href="https://www.drastic.tv/index.php/sales/mediareactor">MediaReactor</a></li><li class="item-734"><a href="https://www.drastic.tv/index.php/sales/netxrouter-ip-routing">NETXROUTER</a></li><li class="item-383"><a href="https://www.drastic.tv/index.php/sales/netxcode-server">Net-X-Code Server</a></li><li class="item-382"><a href="https://www.drastic.tv/index.php/sales/netxconvert-proxy">Net-X-Convert &amp; Net-X-Proxy</a></li><li class="item-548"><a href="https://www.drastic.tv/index.php/sales/flowcaster-sales">FlowCaster</a></li><li class="item-379"><a href="https://www.drastic.tv/index.php/sales/ccconvert-how-to-buy-menu">ccConvert</a></li><li class="item-378"><a href="https://www.drastic.tv/index.php/sales/videoqc">videoQC</a></li><li class="item-549"><a href="https://www.drastic.tv/index.php/sales/signal-analysis-scopes">Signal Analysis/Scopes</a></li></ul></li><li class="item-273 active menu-deeper menu-parent left-drop no-uppercase" aria-haspopup="true" aria-expanded="false"><a href="https://www.drastic.tv/index.php/support-59">Support<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-384"><a href="https://www.drastic.tv/index.php/support-59/supportdownloads">Downloads</a></li><li class="item-385"><a href="https://www.drastic.tv/index.php/support-59/supportdocumention">Documentation</a></li><li class="item-774"><a href="https://www.drastic.tv/index.php/support-59/licensing">Licensing</a></li><li class="item-386"><a href="https://www.drastic.tv/index.php/support-59/supporttipstechnical">Tips, Tricks and Technical</a></li><li class="item-387 menu-deeper menu-parent" aria-haspopup="true" aria-expanded="false"><a href="#">Drastic<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-422"><a href="https://www.youtube.com/user/DrasticTechnologies" target="_blank" rel="noopener noreferrer">YouTube Tutorials</a></li><li class="item-423"><a href="https://www.facebook.com/drastic.tv" target="_blank" rel="noopener noreferrer">Facebook Group</a></li><li class="item-424"><a href="https://twitter.com/DrasticTech" target="_blank" rel="noopener noreferrer">Twitter Announcements </a></li></ul></li><li class="item-388 menu-deeper menu-parent" aria-haspopup="true" aria-expanded="false"><a href="#">FlowCaster<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-425"><a href="https://www.youtube.com/channel/UC_Ibg5kA9KZkg3GlLnUlusw" target="_blank" rel="noopener noreferrer">YouTube Tutorials</a></li><li class="item-426"><a href="https://www.facebook.com/FlowCasterTV" target="_blank" rel="noopener noreferrer">Facebook Group</a></li><li class="item-427"><a href="https://twitter.com/DrasticTech">Twitter Announcements </a></li></ul></li><li class="item-389 current active"><a href="https://www.drastic.tv/index.php/support-59/legacysoftwarehardware" aria-current="location">Legacy Software/Hardware</a></li></ul></li><li class="item-362 menu-deeper menu-parent" aria-haspopup="true" aria-expanded="false"><a href="https://www.drastic.tv/index.php/company-60">Company<span class="menu-toggler"></span></a><ul class="mod-menu__sub list-unstyled small menu-child"><li class="item-540"><a href="https://www.drastic.tv/index.php/company-60/newsletters/archive/listing">Newsletters</a></li><li class="item-391"><a href="https://www.drastic.tv/index.php/company-60/privacy">Privacy</a></li><li class="item-392"><a href="https://www.drastic.tv/index.php/company-60/company-61">About Us</a></li></ul></li><li class="item-320"><a href="https://www.drastic.tv/index.php/search-icon">Search Icon</a></li></ul>
+</div></div>		
+		
+		
+		
+					
+				
+		<!-- custom module position -->
+		
+	</div>
+</div>				
+
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async="" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/google-analytics_analytics_ld6r.js"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-F459MMPKMM');
+</script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="VVCR%20422%20Serial%20Protocol%20-%20www.drastic.tv_files/google-analytics_analytics_003_ld6r.js"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'AW-983438073');
+</script>
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-54T988K');</script>
+<!-- End Google Tag Manager -->
+
+		
+
+		<!-- Go to top -->
+					
+<deepl-input-controller translate="no"></deepl-input-controller></body></html>
