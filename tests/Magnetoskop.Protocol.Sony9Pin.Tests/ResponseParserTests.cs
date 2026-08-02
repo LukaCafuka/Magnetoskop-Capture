@@ -100,7 +100,28 @@ public class StatusBitsParserTests
     public void Stop_StatusBits()
     {
         var data = new byte[] { 0x00, 0x20 };
-        Assert.Equal(TransportState.Stopped, StatusBitsParser.Parse(data).Transport);
+        var status = StatusBitsParser.Parse(data);
+        Assert.Equal(TransportState.Stopped, status.Transport);
+        Assert.False(status.Standby);
+    }
+
+    [Fact]
+    public void StopWithStandbyBit_ReportsStandbyFlagIndependentOfTransport()
+    {
+        // Data-1 bit5 Stop + bit7 Standby (threaded stop / Standby On).
+        var data = new byte[] { 0x00, 0xA0 };
+        var status = StatusBitsParser.Parse(data);
+        Assert.Equal(TransportState.Stopped, status.Transport);
+        Assert.True(status.Standby);
+    }
+
+    [Fact]
+    public void StandbyOnlyBit_ReportsTransportStandby()
+    {
+        var data = new byte[] { 0x00, 0x80 };
+        var status = StatusBitsParser.Parse(data);
+        Assert.Equal(TransportState.Standby, status.Transport);
+        Assert.True(status.Standby);
     }
 
     [Fact]

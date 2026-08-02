@@ -51,6 +51,45 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Yellow when status-sense Standby is on; gray when off (follows deck, including auto Stby Off). -->
+        <Style x:Key="StandbyToggleButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#D0D0D0"/>
+            <Setter Property="Foreground" Value="#1A1A1A"/>
+            <Setter Property="BorderBrush" Value="#A8A8A8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsStandbyOn}" Value="True">
+                    <Setter Property="Background" Value="#C9A227"/>
+                    <Setter Property="Foreground" Value="#1A1A1A"/>
+                    <Setter Property="BorderBrush" Value="#A8841A"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="TimecodeText" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Consolas"/>
             <Setter Property="FontSize" Value="26"/>
@@ -273,6 +312,10 @@
                         VerticalAlignment="Top" MinWidth="80" Height="36"/>
                 <Button Content="⏏ Eject" Command="{Binding EjectCommand}"
                         VerticalAlignment="Top" MinWidth="80" Height="36" Margin="16,0,0,0"/>
+                <Button Content="Standby" Command="{Binding ToggleStandbyCommand}"
+                        Style="{StaticResource StandbyToggleButton}"
+                        VerticalAlignment="Top" MinWidth="90" Height="36" Margin="16,0,0,0"
+                        ToolTip="Toggle standby (yellow = on / threaded). Follows deck status, including auto standby-off."/>
             </StackPanel>
         </Border>
 

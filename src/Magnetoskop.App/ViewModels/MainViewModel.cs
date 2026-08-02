@@ -102,6 +102,10 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isVtrConnected;
 
+    /// <summary>True when status-sense reports Standby (threaded stop). Drives the Standby toggle color.</summary>
+    [ObservableProperty]
+    private bool _isStandbyOn;
+
     [ObservableProperty]
     private string _transportStateText = "—";
 
@@ -566,6 +570,9 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand] private Task FastForwardAsync() => SendTransportAsync(TransportCommand.FastForward);
     [RelayCommand] private Task RewindAsync() => SendTransportAsync(TransportCommand.Rewind);
     [RelayCommand] private Task EjectAsync() => SendTransportAsync(TransportCommand.Eject);
+    [RelayCommand]
+    private Task ToggleStandbyAsync() =>
+        SendTransportAsync(IsStandbyOn ? TransportCommand.StandbyOff : TransportCommand.StandbyOn);
 
     private async Task SendTransportAsync(TransportCommand command)
     {
@@ -729,12 +736,14 @@ public sealed partial class MainViewModel : ObservableObject
         RunOnUi(() =>
         {
             IsVtrConnected = status.IsConnected;
+            IsStandbyOn = status.IsConnected && status.Standby;
             TransportStateText = status.Transport.ToString();
 
             var flags = new List<string>();
             if (status.TapeOut) flags.Add("TAPE OUT");
             if (status.IsLocal) flags.Add("LOCAL");
             if (status.ServoLock) flags.Add("SERVO LOCK");
+            if (status.Standby) flags.Add("STANDBY");
             if (status.RecordInhibited) flags.Add("REC INHIBIT");
             if (status.NearEndOfTape) flags.Add("NEAR EOT");
             if (status.EndOfTape) flags.Add("EOT");

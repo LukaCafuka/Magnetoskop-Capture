@@ -47,6 +47,11 @@ public sealed record VtrStatus
     /// <summary>True when the deck's local/remote switch inhibits remote control.</summary>
     public bool IsLocal { get; init; }
     public bool TapeOut { get; init; }
+    /// <summary>
+    /// Status Data-1 bit 7: tape threaded / scanner locked while stopped (Standby On).
+    /// Independent of <see cref="Transport"/> (a stopped deck may still report Standby).
+    /// </summary>
+    public bool Standby { get; init; }
     public bool ServoLock { get; init; }
     public bool ServoRefMissing { get; init; }
     public bool RecordInhibited { get; init; }

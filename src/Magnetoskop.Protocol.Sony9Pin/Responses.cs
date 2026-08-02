@@ -152,6 +152,8 @@ public static class StatusBitsParser
             IsLocal = (d0 & 0x01) != 0,
             TapeOut = (d0 & 0x20) != 0,
             ServoRefMissing = (d0 & 0x10) != 0,
+            // Data-1 bit 7 — keep independent of Transport so UI can track standby while Stopped.
+            Standby = (d1 & 0x80) != 0,
             ServoLock = (d2 & 0x80) != 0,
             TapeReverse = (d2 & 0x04) != 0,
             RecordInhibited = (d8 & 0x01) != 0,

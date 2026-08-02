@@ -39,6 +39,9 @@ What you should see:
   device-type request with a recognized code, an "Identified: …" line appears.
 - The transport state (Stopped/Playing/…) updates live, along with status flags
   (TAPE OUT, SERVO LOCK, REC INHIBIT, …).
+- Transport buttons: Rew / Play / Stop / FF / Eject. **Standby** toggles threaded
+  stop (yellow = standby on, gray = off). The color follows live deck status, so
+  if the VTR auto-turns standby off after idle, the button updates on its own.
 - **TIME INFORMATION** shows CTL, LTC, VITC, and user bits. Values the deck cannot
   read in the current transport mode (e.g. LTC during fast wind) display as
   `--:--:--:--`.
