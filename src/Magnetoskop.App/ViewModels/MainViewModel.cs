@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Magnetoskop.App.Services;
 using Magnetoskop.App.Views;
+using Magnetoskop.Capture.Audio;
 using Magnetoskop.Core.Abstractions;
 using Magnetoskop.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -25,6 +26,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly VtrConnectionService _vtr;
     private readonly IVideoCaptureService _videoCapture;
     private readonly IAudioCaptureService _audioCapture;
+    private readonly AudioMonitorService _audioMonitor;
     private readonly IRecordingService _recorder;
     private readonly CaptureSessionCoordinator _session;
     private readonly SettingsService _settings;
@@ -42,6 +44,7 @@ public sealed partial class MainViewModel : ObservableObject
         VtrConnectionService vtr,
         IVideoCaptureService videoCapture,
         IAudioCaptureService audioCapture,
+        AudioMonitorService audioMonitor,
         IRecordingService recorder,
         CaptureSessionCoordinator session,
         SettingsService settings,
@@ -51,6 +54,7 @@ public sealed partial class MainViewModel : ObservableObject
         _vtr = vtr;
         _videoCapture = videoCapture;
         _audioCapture = audioCapture;
+        _audioMonitor = audioMonitor;
         _recorder = recorder;
         _session = session;
         _settings = settings;
@@ -85,6 +89,7 @@ public sealed partial class MainViewModel : ObservableObject
             ?? VtrProfiles.FirstOrDefault(p => p.Id == VtrDeviceProfile.Generic.Id)
             ?? VtrDeviceProfile.Generic;
         AudioManuallySelected = saved.AudioManuallySelected;
+        AudioMonitoringEnabled = saved.AudioMonitoringEnabled;
         AutoPlayOnRecord = saved.AutoPlayOnRecord;
         ShowLogPanel = saved.ShowLogPanel;
         // Keep runtime logger in sync with persisted preference (also set at host bootstrap).
@@ -155,6 +160,10 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>When true the user picked an audio device manually; otherwise auto-select applies.</summary>
     [ObservableProperty]
     private bool _audioManuallySelected;
+
+    /// <summary>When true, play the live capture input through the default output device.</summary>
+    [ObservableProperty]
+    private bool _audioMonitoringEnabled;
 
     [ObservableProperty]
     private string _outputDirectory = "";
@@ -365,6 +374,7 @@ public sealed partial class MainViewModel : ObservableObject
         s.VideoDeviceId = SelectedVideoDevice?.Id;
         s.AudioDeviceId = SelectedAudioDevice?.Id;
         s.AudioManuallySelected = AudioManuallySelected;
+        s.AudioMonitoringEnabled = AudioMonitoringEnabled;
         s.VtrConnectionId = SelectedVtrConnection?.Id;
         s.VtrProfileId = SelectedVtrProfile?.Id;
         s.FfmpegPath = Recording.FfmpegLocator.ConfiguredPath;
@@ -576,6 +586,7 @@ public sealed partial class MainViewModel : ObservableObject
             _previewTask = Task.Run(() => PreviewLoopAsync(reader, _previewCts.Token), CancellationToken.None);
             IsPreviewRunning = true;
             AppendLog($"Preview started ({SelectedVideoDevice.Name})");
+            await _audioMonitor.SyncAsync(AudioMonitoringEnabled);
         }
         catch (Exception ex)
         {
@@ -585,6 +596,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     private async Task StopPreviewInternalAsync()
     {
+        await _audioMonitor.SyncAsync(false);
+
         if (_previewCts is not null)
         {
             await _previewCts.CancelAsync();
@@ -600,6 +613,12 @@ public sealed partial class MainViewModel : ObservableObject
         if (_videoCapture.IsCapturing) await _videoCapture.StopAsync();
         if (_audioCapture.IsCapturing) await _audioCapture.StopAsync();
         IsPreviewRunning = false;
+    }
+
+    partial void OnAudioMonitoringEnabledChanged(bool value)
+    {
+        _ = _audioMonitor.SyncAsync(value);
+        SaveSettings();
     }
 
     private async Task PreviewLoopAsync(ChannelReader<VideoFrame> reader, CancellationToken ct)

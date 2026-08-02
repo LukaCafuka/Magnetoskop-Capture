@@ -88,6 +88,8 @@ public sealed class AppSettings
     public string? VideoDeviceId { get; set; }
     public string? AudioDeviceId { get; set; }
     public bool AudioManuallySelected { get; set; }
+    /// <summary>When true, play the live capture input through the default output device.</summary>
+    public bool AudioMonitoringEnabled { get; set; }
     public string? VtrConnectionId { get; set; }
     public string? VtrProfileId { get; set; }
     public string? FfmpegPath { get; set; }

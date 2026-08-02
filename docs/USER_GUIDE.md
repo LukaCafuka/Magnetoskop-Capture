@@ -61,8 +61,9 @@ recording is in progress).
    is auto-selected by name match (capture cards usually expose both); picking
    an audio device manually overrides auto-select.
 2. Live video appears on the left; the stereo level meters below the device
-   pickers should move with the audio. Press ⟳ to re-enumerate devices if
-   hardware was plugged in after launch.
+   pickers should move with the audio. Enable **Monitor audio** to hear the
+   selected input on the default speakers/headphones. Press ⟳ to re-enumerate
+   devices if hardware was plugged in after launch.
 
 ## 5. Transport control
 

@@ -244,6 +244,10 @@
                                   SelectedItem="{Binding SelectedAudioDevice}"
                                   DisplayMemberPath="Name" Margin="0,0,0,8"
                                   SelectionChanged="AudioDevice_SelectionChanged"/>
+                        <CheckBox IsChecked="{Binding AudioMonitoringEnabled}"
+                                  Foreground="#DDDDDD" Margin="0,0,0,8"
+                                  Content="Monitor audio"
+                                  ToolTip="Play the selected audio input through the default speakers/headphones"/>
                         <TextBlock Text="Audio levels" Style="{StaticResource TimecodeLabel}"/>
                         <Grid Margin="0,2,0,0">
                             <Grid.RowDefinitions>

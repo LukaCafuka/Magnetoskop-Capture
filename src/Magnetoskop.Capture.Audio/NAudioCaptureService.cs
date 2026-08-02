@@ -208,6 +208,14 @@ public sealed class NAudioCaptureService : IAudioCaptureService
                 _format = null;
                 Array.Clear(_peaks);
                 IsCapturing = false;
+                lock (_gate)
+                {
+                    foreach (var sub in _subscribers)
+                    {
+                        sub.Writer.TryComplete();
+                    }
+                    _subscribers.Clear();
+                }
                 _logger.LogInformation("Audio capture stopped");
             }
         }, cancellationToken);

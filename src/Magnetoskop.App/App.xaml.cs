@@ -54,6 +54,7 @@ public partial class App : Application
                 services.AddSingleton<NAudioCaptureService>();
                 services.AddSingleton<SimulatedAudioCaptureService>();
                 services.AddSingleton<IAudioCaptureService, CompositeAudioCaptureService>();
+                services.AddSingleton<AudioMonitorService>();
 
                 // Recording via external FFmpeg process (FFV1/H.264/ProRes).
                 services.AddSingleton<IRecordingService, FfmpegRecordingService>();

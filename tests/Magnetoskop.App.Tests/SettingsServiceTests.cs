@@ -21,6 +21,7 @@ public class SettingsServiceTests : IDisposable
 
         Assert.Null(settings.OutputDirectory);
         Assert.False(settings.AutoPlayOnRecord);
+        Assert.False(settings.AudioMonitoringEnabled);
         Assert.False(settings.DebugLoggingEnabled);
         Assert.False(settings.ShowLogPanel);
         Assert.NotNull(settings.Video);
@@ -41,6 +42,7 @@ public class SettingsServiceTests : IDisposable
         service.Current.VtrProfileId = "pvw-2600p";
         service.Current.FfmpegPath = @"C:\tools\ffmpeg.exe";
         service.Current.AutoPlayOnRecord = true;
+        service.Current.AudioMonitoringEnabled = true;
         service.Current.DebugLoggingEnabled = true;
         service.Current.ShowLogPanel = true;
         service.Save();
@@ -59,6 +61,7 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal("pvw-2600p", reloaded.VtrProfileId);
         Assert.Equal(@"C:\tools\ffmpeg.exe", reloaded.FfmpegPath);
         Assert.True(reloaded.AutoPlayOnRecord);
+        Assert.True(reloaded.AudioMonitoringEnabled);
         Assert.True(reloaded.DebugLoggingEnabled);
         Assert.True(reloaded.ShowLogPanel);
 
