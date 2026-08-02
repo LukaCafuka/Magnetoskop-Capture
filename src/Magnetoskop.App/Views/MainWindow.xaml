@@ -205,10 +205,8 @@
                         <ComboBox ItemsSource="{Binding VtrConnections}"
                                   SelectedItem="{Binding SelectedVtrConnection}"
                                   Margin="0,0,0,8"/>
-                        <TextBlock Foreground="#999999" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"
-                                   Text="Deck model: File → Settings… (default Generic Sony 9-pin)"/>
-                        <Button Content="Connect" HorizontalAlignment="Left"
-                                Command="{Binding ConnectVtrCommand}"/>
+                        <TextBlock Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                                   Text="Connects automatically when selected. Deck model: File → Settings… (default Generic Sony 9-pin)"/>
                     </StackPanel>
                 </Border>
 
@@ -246,10 +244,6 @@
                                   SelectedItem="{Binding SelectedAudioDevice}"
                                   DisplayMemberPath="Name" Margin="0,0,0,8"
                                   SelectionChanged="AudioDevice_SelectionChanged"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Button Content="Start preview" Command="{Binding StartPreviewCommand}"/>
-                            <Button Content="Stop preview" Command="{Binding StopPreviewCommand}"/>
-                        </StackPanel>
                         <TextBlock Text="Audio levels" Style="{StaticResource TimecodeLabel}"/>
                         <Grid Margin="0,2,0,0">
                             <Grid.RowDefinitions>

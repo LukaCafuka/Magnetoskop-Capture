@@ -35,6 +35,8 @@ public sealed partial class MainViewModel : ObservableObject
     private CancellationTokenSource? _previewCts;
     private Task? _previewTask;
     private WriteableBitmap? _previewBitmap;
+    private bool _suppressPreviewRestart;
+    private bool _suppressVtrConnect;
 
     public MainViewModel(
         VtrConnectionService vtr,
@@ -75,8 +77,10 @@ public sealed partial class MainViewModel : ObservableObject
 
         VtrConnections = new ObservableCollection<VtrConnectionOption>(_vtr.GetConnectionOptions());
         VtrProfiles = new ObservableCollection<VtrDeviceProfile>(_vtr.GetDeviceProfiles());
+        _suppressVtrConnect = true;
         SelectedVtrConnection = VtrConnections.FirstOrDefault(o => o.Id == saved.VtrConnectionId)
             ?? VtrConnections.FirstOrDefault();
+        _suppressVtrConnect = false;
         SelectedVtrProfile = VtrProfiles.FirstOrDefault(p => p.Id == saved.VtrProfileId)
             ?? VtrProfiles.FirstOrDefault(p => p.Id == VtrDeviceProfile.Generic.Id)
             ?? VtrDeviceProfile.Generic;
@@ -210,7 +214,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         try
         {
-            await RefreshDevicesAsync();
+            await RefreshDevicesCoreAsync();
 
             // Reconnect to the saved VTR target (COM port + profile) when one was
             // persisted; otherwise connect the default simulator.
@@ -238,6 +242,8 @@ public sealed partial class MainViewModel : ObservableObject
             DeviceDescription = _vtr.DeviceDescription;
             AppendLog($"Connected: {_vtr.DeviceDescription}");
             UpdateCompatibilityInfo();
+
+            await StartPreviewAsync();
         }
         catch (Exception ex)
         {
@@ -245,8 +251,13 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private async Task ConnectVtrAsync()
+    partial void OnSelectedVtrConnectionChanged(VtrConnectionOption? value)
+    {
+        if (_suppressVtrConnect || value is null) return;
+        _ = ApplyVtrConnectionAsync();
+    }
+
+    private async Task ApplyVtrConnectionAsync()
     {
         if (SelectedVtrConnection is null || SelectedVtrProfile is null) return;
         try
@@ -302,11 +313,26 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void RefreshVtrConnections()
     {
-        var selected = SelectedVtrConnection?.Id;
-        VtrConnections.Clear();
-        foreach (var option in _vtr.GetConnectionOptions()) VtrConnections.Add(option);
-        SelectedVtrConnection = VtrConnections.FirstOrDefault(o => o.Id == selected)
-            ?? VtrConnections.FirstOrDefault();
+        var previousId = SelectedVtrConnection?.Id;
+        _suppressVtrConnect = true;
+        try
+        {
+            VtrConnections.Clear();
+            foreach (var option in _vtr.GetConnectionOptions()) VtrConnections.Add(option);
+            SelectedVtrConnection = VtrConnections.FirstOrDefault(o => o.Id == previousId)
+                ?? VtrConnections.FirstOrDefault();
+        }
+        finally
+        {
+            _suppressVtrConnect = false;
+        }
+
+        // Only reconnect when the restored selection differs (e.g. previous COM port gone).
+        if (SelectedVtrConnection is not null
+            && SelectedVtrConnection.Id != previousId)
+        {
+            _ = ApplyVtrConnectionAsync();
+        }
     }
 
     public async Task ShutdownAsync()
@@ -419,6 +445,16 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshDevicesAsync()
     {
+        await RefreshDevicesCoreAsync();
+        if (!IsRecording)
+        {
+            await RestartPreviewAsync();
+        }
+    }
+
+    private async Task RefreshDevicesCoreAsync()
+    {
+        _suppressPreviewRestart = true;
         try
         {
             var video = await _videoCapture.EnumerateDevicesAsync();
@@ -453,13 +489,47 @@ public sealed partial class MainViewModel : ObservableObject
         {
             ReportError("Device enumeration failed", ex);
         }
+        finally
+        {
+            _suppressPreviewRestart = false;
+        }
     }
 
     partial void OnSelectedVideoDeviceChanged(CaptureDeviceInfo? value)
     {
+        if (_suppressPreviewRestart || IsRecording) return;
+
         if (value is not null && !AudioManuallySelected)
         {
-            _ = AutoSelectAudioAsync();
+            _ = ApplyVideoDeviceChangeAsync();
+        }
+        else
+        {
+            _ = RestartPreviewAsync();
+        }
+    }
+
+    partial void OnSelectedAudioDeviceChanged(CaptureDeviceInfo? value)
+    {
+        if (_suppressPreviewRestart || IsRecording) return;
+        _ = RestartPreviewAsync();
+    }
+
+    private async Task ApplyVideoDeviceChangeAsync()
+    {
+        _suppressPreviewRestart = true;
+        try
+        {
+            await AutoSelectAudioAsync();
+        }
+        finally
+        {
+            _suppressPreviewRestart = false;
+        }
+
+        if (!IsRecording)
+        {
+            await RestartPreviewAsync();
         }
     }
 
@@ -482,7 +552,13 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ---- Preview ------------------------------------------------------------
 
-    [RelayCommand]
+    private async Task RestartPreviewAsync()
+    {
+        if (IsRecording || SelectedVideoDevice is null) return;
+        await StopPreviewInternalAsync();
+        await StartPreviewAsync();
+    }
+
     private async Task StartPreviewAsync()
     {
         if (IsPreviewRunning || SelectedVideoDevice is null) return;
@@ -505,13 +581,6 @@ public sealed partial class MainViewModel : ObservableObject
         {
             ReportError("Failed to start preview", ex);
         }
-    }
-
-    [RelayCommand]
-    private async Task StopPreviewAsync()
-    {
-        await StopPreviewInternalAsync();
-        AppendLog("Preview stopped");
     }
 
     private async Task StopPreviewInternalAsync()
