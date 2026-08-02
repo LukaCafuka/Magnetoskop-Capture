@@ -78,7 +78,8 @@ public sealed partial class MainViewModel : ObservableObject
         SelectedVtrConnection = VtrConnections.FirstOrDefault(o => o.Id == saved.VtrConnectionId)
             ?? VtrConnections.FirstOrDefault();
         SelectedVtrProfile = VtrProfiles.FirstOrDefault(p => p.Id == saved.VtrProfileId)
-            ?? VtrProfiles.FirstOrDefault();
+            ?? VtrProfiles.FirstOrDefault(p => p.Id == VtrDeviceProfile.Generic.Id)
+            ?? VtrDeviceProfile.Generic;
         AudioManuallySelected = saved.AudioManuallySelected;
         AutoPlayOnRecord = saved.AutoPlayOnRecord;
         ShowLogPanel = saved.ShowLogPanel;
@@ -344,21 +345,51 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OpenSettings()
+    private async Task OpenSettingsAsync()
     {
-        var vm = new SettingsViewModel(_debugLogger.Enabled, ShowLogPanel);
+        var previousProfileId = SelectedVtrProfile?.Id;
+        var vm = new SettingsViewModel(
+            _debugLogger.Enabled,
+            ShowLogPanel,
+            VtrProfiles,
+            SelectedVtrProfile?.Id);
         var window = new SettingsWindow(vm)
         {
             Owner = Application.Current?.MainWindow,
         };
-        if (window.ShowDialog() == true)
+        if (window.ShowDialog() != true)
         {
-            ShowLogPanel = vm.ShowLogPanel;
-            _debugLogger.SetEnabled(vm.DebugLoggingEnabled);
-            SaveSettings();
-            AppendLog(vm.DebugLoggingEnabled
-                ? $"Debug logging enabled → {_debugLogger.CurrentLogPath ?? DebugSessionFileLoggerProvider.LogDirectory}"
-                : "Debug logging disabled");
+            return;
+        }
+
+        ShowLogPanel = vm.ShowLogPanel;
+        _debugLogger.SetEnabled(vm.DebugLoggingEnabled);
+        SelectedVtrProfile = vm.SelectedVtrProfile;
+        SaveSettings();
+
+        AppendLog(vm.DebugLoggingEnabled
+            ? $"Debug logging enabled → {_debugLogger.CurrentLogPath ?? DebugSessionFileLoggerProvider.LogDirectory}"
+            : "Debug logging disabled");
+        AppendLog($"VTR profile: {SelectedVtrProfile.DisplayName}");
+
+        // Reconnect on a live COM session so the new profile takes effect immediately.
+        if (SelectedVtrProfile.Id != previousProfileId
+            && SelectedVtrConnection is { } connection
+            && connection.Id != VtrConnectionOption.SimulatorId
+            && _vtr.IsConnected)
+        {
+            try
+            {
+                await _vtr.SwitchAsync(connection, SelectedVtrProfile);
+                IsVtrConnected = _vtr.IsConnected;
+                DeviceDescription = _vtr.DeviceDescription;
+                AppendLog($"Reconnected with profile {SelectedVtrProfile.DisplayName}");
+                UpdateCompatibilityInfo();
+            }
+            catch (Exception ex)
+            {
+                ReportError("Failed to reconnect after VTR profile change", ex);
+            }
         }
     }
 

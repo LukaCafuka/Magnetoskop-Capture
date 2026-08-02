@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:Magnetoskop.App.ViewModels"
         Title="Settings"
-        Width="480" Height="320"
-        MinWidth="420" MinHeight="280"
+        Width="500" Height="420"
+        MinWidth="440" MinHeight="360"
         WindowStartupLocation="CenterOwner"
         Background="#1E1E1E"
         ResizeMode="NoResize"
@@ -25,6 +25,9 @@
             <Setter Property="MinWidth" Value="80"/>
             <Setter Property="Margin" Value="6,0,0,0"/>
         </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
     </Window.Resources>
 
     <DockPanel Margin="16">
@@ -34,22 +37,33 @@
             <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}"/>
         </StackPanel>
 
-        <StackPanel>
-            <TextBlock Text="APPLICATION" FontWeight="Bold" Margin="0,0,0,12"/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="VTR" FontWeight="Bold" Margin="0,0,0,12"/>
 
-            <CheckBox IsChecked="{Binding DebugLoggingEnabled}"
-                      Content="Enable debug logging"/>
-            <TextBlock Margin="24,0,0,4" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
-                       Text="When enabled, this instance writes a debug log file under:"/>
-            <TextBlock Margin="24,0,0,4" Foreground="#BBBBBB" FontSize="11" FontFamily="Consolas"
-                       Text="{Binding DebugLogFolderHint}" TextWrapping="Wrap"/>
-            <TextBlock Margin="24,0,0,14" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
-                       Text="Each app instance gets its own file (magnetoskop_debug_…_pid.log)."/>
+                <TextBlock Text="Device model" Foreground="#999999" FontSize="11" Margin="0,0,0,2"/>
+                <ComboBox ItemsSource="{Binding VtrProfiles}"
+                          SelectedItem="{Binding SelectedVtrProfile}"
+                          DisplayMemberPath="DisplayName"/>
+                <TextBlock Margin="0,0,0,18" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                           Text="Default is Generic Sony 9-pin, which works for most decks. Choose a specific model only when that deck needs different poll rates, timeouts, or command support."/>
 
-            <CheckBox IsChecked="{Binding ShowLogPanel}"
-                      Content="Show log panel in the main window"/>
-            <TextBlock Margin="24,0,0,0" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
-                       Text="Displays the scrolling LOG section at the bottom of the main window."/>
-        </StackPanel>
+                <TextBlock Text="APPLICATION" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                <CheckBox IsChecked="{Binding DebugLoggingEnabled}"
+                          Content="Enable debug logging"/>
+                <TextBlock Margin="24,0,0,4" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                           Text="When enabled, this instance writes a debug log file under:"/>
+                <TextBlock Margin="24,0,0,4" Foreground="#BBBBBB" FontSize="11" FontFamily="Consolas"
+                           Text="{Binding DebugLogFolderHint}" TextWrapping="Wrap"/>
+                <TextBlock Margin="24,0,0,14" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                           Text="Each app instance gets its own file (magnetoskop_debug_…_pid.log)."/>
+
+                <CheckBox IsChecked="{Binding ShowLogPanel}"
+                          Content="Show log panel in the main window"/>
+                <TextBlock Margin="24,0,0,0" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                           Text="Displays the scrolling LOG section at the bottom of the main window."/>
+            </StackPanel>
+        </ScrollViewer>
     </DockPanel>
 </Window>

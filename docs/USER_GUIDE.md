@@ -27,9 +27,11 @@ testing.
 1. Set the deck's control switch to **REMOTE**.
 2. In **RECORDER CONNECTION**, pick the adapter's COM port (press ⟳ if it was
    plugged in after the app started).
-3. Pick the **device profile** matching your deck (or *Generic Sony 9-pin* for
-   anything else).
-4. Press **Connect**.
+3. Press **Connect**. Serial control defaults to the **Generic Sony 9-pin**
+   protocol. To use a deck-specific profile (poll rates / timeouts / command
+   set), open **File → Settings…** and choose the model under **VTR**.
+4. If you change the VTR model while already connected to a COM port, the app
+   reconnects with the new profile.
 
 What you should see:
 

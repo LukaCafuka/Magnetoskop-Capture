@@ -20,6 +20,37 @@
             <Setter Property="Margin" Value="4,0"/>
             <Setter Property="MinWidth" Value="70"/>
         </Style>
+        <Style x:Key="TransportStopButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#0A3D6E"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#145A9E"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#145A9E"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#072A4D"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="TimecodeText" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Consolas"/>
             <Setter Property="FontSize" Value="26"/>
@@ -135,10 +166,8 @@
                         <ComboBox ItemsSource="{Binding VtrConnections}"
                                   SelectedItem="{Binding SelectedVtrConnection}"
                                   Margin="0,0,0,8"/>
-                        <TextBlock Text="Device profile" Style="{StaticResource TimecodeLabel}"/>
-                        <ComboBox ItemsSource="{Binding VtrProfiles}"
-                                  SelectedItem="{Binding SelectedVtrProfile}"
-                                  DisplayMemberPath="DisplayName" Margin="0,0,0,8"/>
+                        <TextBlock Foreground="#999999" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"
+                                   Text="Deck model: File → Settings… (default Generic Sony 9-pin)"/>
                         <Button Content="Connect" HorizontalAlignment="Left"
                                 Command="{Binding ConnectVtrCommand}"/>
                     </StackPanel>
@@ -227,15 +256,23 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Transport bar -->
+        <!-- Transport bar (VTR layout: REW · PLAY · FF, STOP under PLAY) -->
         <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
                 Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Content="⏪ Rew" Command="{Binding RewindCommand}"/>
-                <Button Content="▶ Play" Command="{Binding PlayCommand}" FontWeight="Bold"/>
-                <Button Content="■ Stop" Command="{Binding StopCommand}"/>
-                <Button Content="⏩ FF" Command="{Binding FastForwardCommand}"/>
-                <Button Content="⏏ Eject" Command="{Binding EjectCommand}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top">
+                <Button Content="⏪ Rew" Command="{Binding RewindCommand}"
+                        VerticalAlignment="Top" MinWidth="80" Height="36"/>
+                <StackPanel Margin="4,0" VerticalAlignment="Top">
+                    <Button Content="▶ Play" Command="{Binding PlayCommand}"
+                            FontWeight="Bold" MinWidth="80" Height="36" Margin="4,0,4,4"/>
+                    <Button Content="■ Stop" Command="{Binding StopCommand}"
+                            Style="{StaticResource TransportStopButton}"
+                            MinWidth="80" Height="36" Margin="4,0"/>
+                </StackPanel>
+                <Button Content="⏩ FF" Command="{Binding FastForwardCommand}"
+                        VerticalAlignment="Top" MinWidth="80" Height="36"/>
+                <Button Content="⏏ Eject" Command="{Binding EjectCommand}"
+                        VerticalAlignment="Top" MinWidth="80" Height="36" Margin="16,0,0,0"/>
             </StackPanel>
         </Border>
 
