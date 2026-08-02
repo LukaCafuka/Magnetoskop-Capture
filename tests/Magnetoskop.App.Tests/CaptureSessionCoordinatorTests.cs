@@ -10,8 +10,7 @@ namespace Magnetoskop.App.Tests;
 
 public class CaptureSessionCoordinatorTests
 {
-    private static readonly RecordingProfile Ffv1Profile =
-        RecordingProfile.Defaults.First(p => p.Id == "ffv1-archival");
+    private static readonly RecordingProfile Ffv1Profile = RecordingProfile.CreateFfv1Archival();
 
     private readonly FakeVtrController _vtr = new();
     private readonly FakeVideoCaptureService _video = new();

@@ -86,6 +86,7 @@ secrets.json
 ## Misc
 *.cache
 *.log
+logs/
 *.tmp
 *.temp
 *~

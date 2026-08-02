@@ -21,6 +21,16 @@ public sealed class RecordingMetadata
     public string? UserBits { get; set; }
     public long VideoFramesWritten { get; set; }
     public long VideoFramesDropped { get; set; }
+
+    /// <summary>Interlaced or Progressive — mirrors bitstream scan metadata.</summary>
+    public string? ScanType { get; set; }
+
+    /// <summary>TFF / BFF when interlaced; null when progressive.</summary>
+    public string? ScanOrder { get; set; }
+
+    public int? Width { get; set; }
+    public int? Height { get; set; }
+    public double? FrameRate { get; set; }
 }
 
 /// <summary>
@@ -185,6 +195,7 @@ public sealed class CaptureSessionCoordinator
     {
         var outputPath = BuildOutputPath(outputDirectory, profile);
         var time = _vtr.IsConnected ? _vtr.CurrentTime : null;
+        var format = _video.CurrentFormat;
 
         _activeMetadata = new RecordingMetadata
         {
@@ -196,6 +207,20 @@ public sealed class CaptureSessionCoordinator
             StartCtl = time?.Ctl?.ToString(),
             TimecodeSource = time?.PrimarySource.ToString(),
             UserBits = (time?.LtcUserBits ?? time?.VitcUserBits)?.ToString(),
+            ScanType = format is null
+                ? null
+                : Recording.FfmpegArgumentsBuilder.WillDeinterlace(format, profile) || !format.Interlaced
+                    ? "Progressive"
+                    : "Interlaced",
+            ScanOrder = format is { Interlaced: true }
+                        && !Recording.FfmpegArgumentsBuilder.WillDeinterlace(format, profile)
+                ? (format.TopFieldFirst ? "TFF" : "BFF")
+                : null,
+            Width = format?.Width,
+            Height = format?.Height,
+            FrameRate = format is null
+                ? null
+                : Recording.FfmpegArgumentsBuilder.OutputFrameRate(format, profile),
         };
         _activeOutputPath = outputPath;
 

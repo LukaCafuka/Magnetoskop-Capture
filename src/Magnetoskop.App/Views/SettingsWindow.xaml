@@ -1,0 +1,55 @@
+<Window x:Class="Magnetoskop.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:Magnetoskop.App.ViewModels"
+        Title="Settings"
+        Width="480" Height="320"
+        MinWidth="420" MinHeight="280"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        ResizeMode="NoResize"
+        d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+        </Style>
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="16,6"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Margin" Value="6,0,0,0"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="OK" IsDefault="True" Command="{Binding OkCommand}"/>
+            <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}"/>
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="APPLICATION" FontWeight="Bold" Margin="0,0,0,12"/>
+
+            <CheckBox IsChecked="{Binding DebugLoggingEnabled}"
+                      Content="Enable debug logging"/>
+            <TextBlock Margin="24,0,0,4" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                       Text="When enabled, this instance writes a debug log file under:"/>
+            <TextBlock Margin="24,0,0,4" Foreground="#BBBBBB" FontSize="11" FontFamily="Consolas"
+                       Text="{Binding DebugLogFolderHint}" TextWrapping="Wrap"/>
+            <TextBlock Margin="24,0,0,14" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                       Text="Each app instance gets its own file (magnetoskop_debug_…_pid.log)."/>
+
+            <CheckBox IsChecked="{Binding ShowLogPanel}"
+                      Content="Show log panel in the main window"/>
+            <TextBlock Margin="24,0,0,0" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                       Text="Displays the scrolling LOG section at the bottom of the main window."/>
+        </StackPanel>
+    </DockPanel>
+</Window>

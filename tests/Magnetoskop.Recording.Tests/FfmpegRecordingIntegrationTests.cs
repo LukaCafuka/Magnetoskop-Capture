@@ -39,10 +39,9 @@ public class FfmpegRecordingIntegrationTests : IAsyncLifetime
         try { Directory.Delete(_tempDir, recursive: true); } catch (IOException) { }
     }
 
-    private async Task<FileInfo> RecordAsync(string profileId, string extension, double seconds = 2.0)
+    private async Task<FileInfo> RecordAsync(RecordingProfile profile, double seconds = 2.0)
     {
-        var profile = RecordingProfile.Defaults.Single(p => p.Id == profileId);
-        var output = Path.Combine(_tempDir, $"test_{profileId}.{extension}");
+        var output = Path.Combine(_tempDir, $"test_{profile.Id}.{profile.Container}");
         await using var recorder = new FfmpegRecordingService(NullLogger<FfmpegRecordingService>.Instance);
 
         await recorder.StartAsync(profile, output, _video, _audio);
@@ -64,21 +63,21 @@ public class FfmpegRecordingIntegrationTests : IAsyncLifetime
     public async Task Ffv1Mkv_RecordsAndFinalizes()
     {
         Skip.If(FfmpegPath is null, "ffmpeg.exe not found on this machine");
-        await RecordAsync("ffv1-archival", "mkv");
+        await RecordAsync(RecordingProfile.CreateFfv1Archival());
     }
 
     [SkippableFact]
     public async Task H264Mp4_RecordsAndFinalizes()
     {
         Skip.If(FfmpegPath is null, "ffmpeg.exe not found on this machine");
-        await RecordAsync("h264-access", "mp4");
+        await RecordAsync(RecordingProfile.CreateH264Access());
     }
 
     [SkippableFact]
     public async Task ProResMov_RecordsAndFinalizes()
     {
         Skip.If(FfmpegPath is null, "ffmpeg.exe not found on this machine");
-        await RecordAsync("prores-hq", "mov");
+        await RecordAsync(RecordingProfile.CreateProResHq());
     }
 
     [SkippableFact]
@@ -86,7 +85,7 @@ public class FfmpegRecordingIntegrationTests : IAsyncLifetime
     {
         Skip.If(FfmpegPath is null, "ffmpeg.exe not found on this machine");
 
-        var profile = RecordingProfile.Defaults[0];
+        var profile = RecordingProfile.CreateFfv1Archival();
         var output = Path.Combine(_tempDir, "twice.mkv");
         await using var recorder = new FfmpegRecordingService(NullLogger<FfmpegRecordingService>.Instance);
         await recorder.StartAsync(profile, output, _video, _audio);
@@ -104,7 +103,7 @@ public class FfmpegRecordingIntegrationTests : IAsyncLifetime
         await using var recorder = new FfmpegRecordingService(NullLogger<FfmpegRecordingService>.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => recorder.StartAsync(
-            RecordingProfile.Defaults[0],
+            RecordingProfile.CreateFfv1Archival(),
             Path.Combine(_tempDir, "x.mkv"),
             stoppedVideo, _audio));
     }

@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Magnetoskop.App.Services;
+using Magnetoskop.App.Views;
 using Magnetoskop.Core.Abstractions;
 using Magnetoskop.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IRecordingService _recorder;
     private readonly CaptureSessionCoordinator _session;
     private readonly SettingsService _settings;
+    private readonly DebugSessionFileLoggerProvider _debugLogger;
     private readonly ILogger<MainViewModel> _logger;
     private readonly DispatcherTimer _meterTimer;
 
@@ -41,6 +43,7 @@ public sealed partial class MainViewModel : ObservableObject
         IRecordingService recorder,
         CaptureSessionCoordinator session,
         SettingsService settings,
+        DebugSessionFileLoggerProvider debugLogger,
         ILogger<MainViewModel> logger)
     {
         _vtr = vtr;
@@ -49,6 +52,7 @@ public sealed partial class MainViewModel : ObservableObject
         _recorder = recorder;
         _session = session;
         _settings = settings;
+        _debugLogger = debugLogger;
         _logger = logger;
 
         _vtr.StatusChanged += OnVtrStatusChanged;
@@ -62,12 +66,12 @@ public sealed partial class MainViewModel : ObservableObject
             Recording.FfmpegLocator.ConfiguredPath = saved.FfmpegPath;
         }
 
+        // No default folder: Record stays disabled until the user picks a path (File menu).
         OutputDirectory = saved.OutputDirectory is { Length: > 0 } dir && Directory.Exists(dir)
             ? dir
-            : Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
-        RecordingProfiles = new ObservableCollection<RecordingProfile>(RecordingProfile.Defaults);
-        SelectedRecordingProfile = RecordingProfiles.FirstOrDefault(p => p.Id == saved.RecordingProfileId)
-            ?? RecordingProfiles.FirstOrDefault();
+            : "";
+        SelectedRecordingProfile = (saved.Video ?? VideoEncodeSettings.FromProfile(RecordingProfile.CreateDefault()))
+            .ToProfile();
 
         VtrConnections = new ObservableCollection<VtrConnectionOption>(_vtr.GetConnectionOptions());
         VtrProfiles = new ObservableCollection<VtrDeviceProfile>(_vtr.GetDeviceProfiles());
@@ -77,6 +81,9 @@ public sealed partial class MainViewModel : ObservableObject
             ?? VtrProfiles.FirstOrDefault();
         AudioManuallySelected = saved.AudioManuallySelected;
         AutoPlayOnRecord = saved.AutoPlayOnRecord;
+        ShowLogPanel = saved.ShowLogPanel;
+        // Keep runtime logger in sync with persisted preference (also set at host bootstrap).
+        _debugLogger.SetEnabled(saved.DebugLoggingEnabled);
 
         _meterTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -116,6 +123,10 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _detectedProfileText = "";
 
+    /// <summary>When true, the bottom LOG panel is visible.</summary>
+    [ObservableProperty]
+    private bool _showLogPanel;
+
     /// <summary>Command support learned from the deck's NAK responses.</summary>
     [ObservableProperty]
     private string _capabilitiesText = "";
@@ -137,10 +148,24 @@ public sealed partial class MainViewModel : ObservableObject
     private bool _audioManuallySelected;
 
     [ObservableProperty]
-    private string _outputDirectory;
+    private string _outputDirectory = "";
+
+    /// <summary>True when a valid, existing output folder has been chosen.</summary>
+    public bool HasOutputDirectory
+        => !string.IsNullOrWhiteSpace(OutputDirectory) && Directory.Exists(OutputDirectory);
+
+    /// <summary>Path for the RECORDING panel, or a hint when unset.</summary>
+    public string OutputDirectoryDisplay
+        => HasOutputDirectory
+            ? OutputDirectory
+            : "Not set — use File → Choose save location…";
 
     [ObservableProperty]
     private RecordingProfile? _selectedRecordingProfile;
+
+    /// <summary>Summary of the current video encode settings for the RECORDING panel.</summary>
+    public string VideoSettingsSummary
+        => SelectedRecordingProfile?.DisplayName ?? "Not configured — use Video → Video settings…";
 
     [ObservableProperty]
     private bool _isRecording;
@@ -171,7 +196,6 @@ public sealed partial class MainViewModel : ObservableObject
     public ObservableCollection<VtrDeviceProfile> VtrProfiles { get; }
     public ObservableCollection<CaptureDeviceInfo> VideoDevices { get; } = new();
     public ObservableCollection<CaptureDeviceInfo> AudioDevices { get; } = new();
-    public ObservableCollection<RecordingProfile> RecordingProfiles { get; }
     public ObservableCollection<string> LogEntries { get; } = new();
 
     // ---- Lifecycle ---------------------------------------------------------
@@ -303,7 +327,10 @@ public sealed partial class MainViewModel : ObservableObject
     {
         var s = _settings.Current;
         s.OutputDirectory = OutputDirectory;
-        s.RecordingProfileId = SelectedRecordingProfile?.Id;
+        if (SelectedRecordingProfile is not null)
+        {
+            s.Video = VideoEncodeSettings.FromProfile(SelectedRecordingProfile);
+        }
         s.VideoDeviceId = SelectedVideoDevice?.Id;
         s.AudioDeviceId = SelectedAudioDevice?.Id;
         s.AudioManuallySelected = AudioManuallySelected;
@@ -311,7 +338,45 @@ public sealed partial class MainViewModel : ObservableObject
         s.VtrProfileId = SelectedVtrProfile?.Id;
         s.FfmpegPath = Recording.FfmpegLocator.ConfiguredPath;
         s.AutoPlayOnRecord = AutoPlayOnRecord;
+        s.DebugLoggingEnabled = _debugLogger.Enabled;
+        s.ShowLogPanel = ShowLogPanel;
         _settings.Save();
+    }
+
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        var vm = new SettingsViewModel(_debugLogger.Enabled, ShowLogPanel);
+        var window = new SettingsWindow(vm)
+        {
+            Owner = Application.Current?.MainWindow,
+        };
+        if (window.ShowDialog() == true)
+        {
+            ShowLogPanel = vm.ShowLogPanel;
+            _debugLogger.SetEnabled(vm.DebugLoggingEnabled);
+            SaveSettings();
+            AppendLog(vm.DebugLoggingEnabled
+                ? $"Debug logging enabled → {_debugLogger.CurrentLogPath ?? DebugSessionFileLoggerProvider.LogDirectory}"
+                : "Debug logging disabled");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenVideoSettings()
+    {
+        var source = SelectedRecordingProfile ?? RecordingProfile.CreateDefault();
+        var vm = new VideoSettingsViewModel(source);
+        var window = new VideoSettingsWindow(vm)
+        {
+            Owner = Application.Current?.MainWindow,
+        };
+        if (window.ShowDialog() == true)
+        {
+            SelectedRecordingProfile = vm.ToProfile();
+            SaveSettings();
+            AppendLog($"Video settings: {SelectedRecordingProfile.DisplayName}");
+        }
     }
 
     // ---- Device selection ----------------------------------------------------
@@ -490,10 +555,18 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ---- Recording ------------------------------------------------------------
 
-    [RelayCommand]
+    private bool CanStartRecording()
+        => !IsRecording && SelectedRecordingProfile is not null && HasOutputDirectory;
+
+    [RelayCommand(CanExecute = nameof(CanStartRecording))]
     private async Task StartRecordingAsync()
     {
         if (IsRecording || SelectedRecordingProfile is null) return;
+        if (!HasOutputDirectory)
+        {
+            ReportError("Choose a save location via File → Choose save location… before recording.", null);
+            return;
+        }
 
         if (!IsPreviewRunning)
         {
@@ -578,15 +651,32 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void BrowseOutputDirectory()
     {
-        var dialog = new Microsoft.Win32.OpenFolderDialog
+        var dialog = new Microsoft.Win32.OpenFolderDialog();
+        if (HasOutputDirectory)
         {
-            InitialDirectory = OutputDirectory,
-        };
+            dialog.InitialDirectory = OutputDirectory;
+        }
         if (dialog.ShowDialog() == true)
         {
             OutputDirectory = dialog.FolderName;
         }
     }
+
+    partial void OnOutputDirectoryChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasOutputDirectory));
+        OnPropertyChanged(nameof(OutputDirectoryDisplay));
+        StartRecordingCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnSelectedRecordingProfileChanged(RecordingProfile? value)
+    {
+        OnPropertyChanged(nameof(VideoSettingsSummary));
+        StartRecordingCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsRecordingChanged(bool value)
+        => StartRecordingCommand.NotifyCanExecuteChanged();
 
     private void UpdateAudioMeters()
     {

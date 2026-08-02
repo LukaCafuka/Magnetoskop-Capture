@@ -22,14 +22,25 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        var debugLogger = new DebugSessionFileLoggerProvider();
+
+        // Load settings early so debug logging can be enabled before the host starts.
+        var bootstrapSettings = new SettingsService(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<SettingsService>.Instance);
+        var saved = bootstrapSettings.Load();
+        debugLogger.SetEnabled(saved.DebugLoggingEnabled);
+
         _host = Host.CreateDefaultBuilder()
             .ConfigureLogging(logging =>
             {
                 logging.SetMinimumLevel(LogLevel.Debug);
                 logging.AddProvider(new FileLoggerProvider(FileLoggerProvider.DefaultDirectory));
+                logging.AddProvider(debugLogger);
             })
             .ConfigureServices(services =>
             {
+                services.AddSingleton(debugLogger);
+
                 // VTR: runtime-switchable between the simulator and Sony 9-pin on a COM port.
                 services.AddSingleton<SimulatedVtr>();
                 services.AddSingleton<ISerialPortEnumerator, SerialPortEnumerator>();

@@ -22,9 +22,6 @@ public class FfmpegArgumentsBuilderTests
         BitsPerSample = 16,
     };
 
-    private static RecordingProfile Profile(string id)
-        => RecordingProfile.Defaults.Single(p => p.Id == id);
-
     private static IReadOnlyList<string> Build(RecordingProfile profile, VideoFormat? video = null,
         AudioFormat? audio = null, string? pipe = null, string output = "out.file")
         => FfmpegArgumentsBuilder.Build(profile, video ?? Pal, audio, pipe, output);
@@ -38,12 +35,13 @@ public class FfmpegArgumentsBuilderTests
         return false;
     }
 
-    // ---- FFV1 archival (Phase 6) --------------------------------------------
+    // ---- FFV1 archival -------------------------------------------------------
 
     [Fact]
     public void Ffv1_UsesArchivalSettings()
     {
-        var args = Build(Profile("ffv1-archival"), audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mkv");
+        var profile = RecordingProfile.CreateFfv1Archival();
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mkv");
 
         Assert.True(ContainsPair(args, "-c:v", "ffv1"));
         Assert.True(ContainsPair(args, "-level", "3"));
@@ -54,42 +52,86 @@ public class FfmpegArgumentsBuilderTests
     }
 
     [Fact]
-    public void Ffv1_PreservesInterlacingWithFieldOrderTag()
+    public void Ffv1_PreservesInterlacingWithSetfieldAndFieldOrder()
     {
-        var args = Build(Profile("ffv1-archival"), audio: Pcm48k, pipe: @"\\.\pipe\a");
+        var args = Build(RecordingProfile.CreateFfv1Archival(), audio: Pcm48k, pipe: @"\\.\pipe\a");
+        Assert.True(ContainsPair(args, "-vf", "setfield=tff"));
         Assert.True(ContainsPair(args, "-field_order", "tt"));
-        // No deinterlacing filter must be present.
-        Assert.DoesNotContain("-vf", args);
         Assert.DoesNotContain("yadif", string.Join(" ", args));
+        Assert.DoesNotContain("separatefields", string.Join(" ", args));
     }
 
     [Fact]
-    public void BottomFieldFirst_TagsBb()
+    public void BottomFieldFirst_TagsBffAndBb()
     {
         var bff = Pal with { TopFieldFirst = false };
-        var args = Build(Profile("ffv1-archival"), video: bff, audio: Pcm48k, pipe: @"\\.\pipe\a");
+        var args = Build(RecordingProfile.CreateFfv1Archival(), video: bff, audio: Pcm48k, pipe: @"\\.\pipe\a");
+        Assert.True(ContainsPair(args, "-vf", "setfield=bff"));
         Assert.True(ContainsPair(args, "-field_order", "bb"));
     }
 
     [Fact]
-    public void ProgressiveSource_HasNoFieldOrder()
+    public void ProgressiveSource_TagsProgAndProgressive()
     {
         var progressive = Pal with { Interlaced = false };
-        var args = Build(Profile("ffv1-archival"), video: progressive, audio: Pcm48k, pipe: @"\\.\pipe\a");
-        Assert.DoesNotContain("-field_order", args);
+        var args = Build(RecordingProfile.CreateFfv1Archival(), video: progressive, audio: Pcm48k, pipe: @"\\.\pipe\a");
+        Assert.True(ContainsPair(args, "-vf", "setfield=prog"));
+        Assert.True(ContainsPair(args, "-field_order", "progressive"));
     }
 
-    // ---- H.264 / ProRes (Phase 7) --------------------------------------------
+    [Fact]
+    public void H265_InterlacedSource_UsesSetfieldAndFieldOrder()
+    {
+        var args = Build(RecordingProfile.CreateH265Access(), audio: Pcm48k, pipe: @"\\.\pipe\a");
+        Assert.True(ContainsPair(args, "-vf", "setfield=tff"));
+        Assert.True(ContainsPair(args, "-field_order", "tt"));
+    }
 
     [Fact]
-    public void H264_UsesCrfPresetAndFaststart()
+    public void ProRes_InterlacedSource_UsesSetfieldAndFieldOrder()
     {
-        var profile = Profile("h264-access");
+        var args = Build(RecordingProfile.CreateProResHq(), audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mov");
+        Assert.True(ContainsPair(args, "-vf", "setfield=tff"));
+        Assert.True(ContainsPair(args, "-field_order", "tt"));
+    }
+
+    [Fact]
+    public void InterlacedAllowProcessing_UsesYadif2xAndTagsProgressive()
+    {
+        var profile = RecordingProfile.CreateH264Access() with { AllowProcessing = true };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a");
+
+        Assert.True(ContainsPair(args, "-vf", "setfield=tff,yadif=1:0:0"));
+        Assert.True(ContainsPair(args, "-field_order", "progressive"));
+        Assert.DoesNotContain("+ildct+ilme", string.Join(" ", args));
+        Assert.True(FfmpegArgumentsBuilder.WillDeinterlace(Pal, profile));
+        Assert.Equal(50.0, FfmpegArgumentsBuilder.OutputFrameRate(Pal, profile));
+    }
+
+    [Fact]
+    public void InterlacedAllowProcessing_Bff_UsesYadifParityBff()
+    {
+        var bff = Pal with { TopFieldFirst = false };
+        var profile = RecordingProfile.CreateFfv1Archival() with { AllowProcessing = true };
+        var args = Build(profile, video: bff, audio: Pcm48k, pipe: @"\\.\pipe\a");
+
+        Assert.True(ContainsPair(args, "-vf", "setfield=bff,yadif=1:1:0"));
+        Assert.True(ContainsPair(args, "-field_order", "progressive"));
+    }
+
+    // ---- H.264 / H.265 / ProRes ------------------------------------------------
+
+    [Fact]
+    public void H264_UsesCrfPresetGopProfileAndFaststart()
+    {
+        var profile = RecordingProfile.CreateH264Access();
         var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mp4");
 
         Assert.True(ContainsPair(args, "-c:v", "libx264"));
         Assert.True(ContainsPair(args, "-crf", profile.Crf.ToString()));
         Assert.True(ContainsPair(args, "-preset", profile.Preset));
+        Assert.True(ContainsPair(args, "-g", profile.GopSize.ToString()));
+        Assert.True(ContainsPair(args, "-profile:v", "high"));
         Assert.True(ContainsPair(args, "-c:a", "aac"));
         Assert.True(ContainsPair(args, "-movflags", "+faststart"));
     }
@@ -97,20 +139,92 @@ public class FfmpegArgumentsBuilderTests
     [Fact]
     public void H264_InterlacedSource_EnablesInterlacedEncodingFlags()
     {
-        var args = Build(Profile("h264-access"), audio: Pcm48k, pipe: @"\\.\pipe\a");
+        var args = Build(RecordingProfile.CreateH264Access(), audio: Pcm48k, pipe: @"\\.\pipe\a");
+        Assert.True(ContainsPair(args, "-vf", "setfield=tff"));
+        Assert.True(ContainsPair(args, "-field_order", "tt"));
         Assert.True(ContainsPair(args, "-flags", "+ildct+ilme"));
+    }
+
+    [Fact]
+    public void H265_UsesLibx265WithCrf()
+    {
+        var profile = RecordingProfile.CreateH265Access();
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mp4");
+
+        Assert.True(ContainsPair(args, "-c:v", "libx265"));
+        Assert.True(ContainsPair(args, "-crf", "28"));
+        Assert.True(ContainsPair(args, "-preset", "medium"));
+        Assert.True(ContainsPair(args, "-c:a", "aac"));
+        Assert.True(ContainsPair(args, "-profile:v", "main"));
+        Assert.True(ContainsPair(args, "-pix_fmt", "yuv420p"));
+    }
+
+    [Fact]
+    public void H265_MainWithYuv422p_OmitsProfileSoX265PicksFromPixFmt()
+    {
+        // -profile:v main fails (i422 incompatible); -profile:v main422-8 also fails
+        // on current FFmpeg/x265 ("unknown profile"). Omit profile; keep yuv422p.
+        var profile = RecordingProfile.CreateH265Access() with
+        {
+            PixelFormat = "yuv422p",
+            VideoProfile = "main",
+            Container = "mkv",
+            AudioCodec = RecordingAudioCodec.PcmS16Le,
+        };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mkv");
+
+        Assert.True(ContainsPair(args, "-pix_fmt", "yuv422p"));
+        Assert.DoesNotContain("-profile:v", args);
+    }
+
+    [Fact]
+    public void H265_Yuv422p10_OmitsProfile()
+    {
+        var profile = RecordingProfile.CreateH265Access() with
+        {
+            PixelFormat = "yuv422p10le",
+            VideoProfile = "main10",
+        };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a");
+        Assert.True(ContainsPair(args, "-pix_fmt", "yuv422p10le"));
+        Assert.DoesNotContain("-profile:v", args);
+    }
+
+    [Fact]
+    public void H264_HighWithYuv422p_UpgradesToHigh422()
+    {
+        var profile = RecordingProfile.CreateH264Access() with { PixelFormat = "yuv422p" };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a");
+        Assert.True(ContainsPair(args, "-profile:v", "high422"));
+    }
+
+    [Fact]
+    public void H264_TuneNone_OmitsTuneFlag()
+    {
+        var profile = RecordingProfile.CreateH264Access() with { Tune = "" };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a");
+        Assert.DoesNotContain("-tune", args);
     }
 
     [Fact]
     public void ProRes_UsesProresKsWithProfileAnd10Bit()
     {
-        var profile = Profile("prores-hq");
+        var profile = RecordingProfile.CreateProResHq();
         var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mov");
 
         Assert.True(ContainsPair(args, "-c:v", "prores_ks"));
         Assert.True(ContainsPair(args, "-profile:v", profile.ProResProfile.ToString()));
         Assert.True(ContainsPair(args, "-pix_fmt", "yuv422p10le"));
         Assert.True(ContainsPair(args, "-c:a", "pcm_s16le"));
+        Assert.DoesNotContain("-movflags", args);
+    }
+
+    [Fact]
+    public void PixelFormatOverride_IsHonored()
+    {
+        var profile = RecordingProfile.CreateH264Access() with { PixelFormat = "yuv422p" };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a");
+        Assert.True(ContainsPair(args, "-pix_fmt", "yuv422p"));
     }
 
     // ---- Inputs -----------------------------------------------------------------
@@ -118,7 +232,7 @@ public class FfmpegArgumentsBuilderTests
     [Fact]
     public void VideoInput_DescribesRawFramesOnStdin()
     {
-        var args = Build(Profile("ffv1-archival"), audio: Pcm48k, pipe: @"\\.\pipe\a");
+        var args = Build(RecordingProfile.CreateFfv1Archival(), audio: Pcm48k, pipe: @"\\.\pipe\a");
 
         Assert.True(ContainsPair(args, "-f", "rawvideo"));
         Assert.True(ContainsPair(args, "-pix_fmt", "bgr24"));
@@ -130,7 +244,7 @@ public class FfmpegArgumentsBuilderTests
     [Fact]
     public void AudioInput_DescribesPcmPipe()
     {
-        var args = Build(Profile("ffv1-archival"), audio: Pcm48k, pipe: @"\\.\pipe\a");
+        var args = Build(RecordingProfile.CreateFfv1Archival(), audio: Pcm48k, pipe: @"\\.\pipe\a");
 
         Assert.True(ContainsPair(args, "-f", "s16le"));
         Assert.True(ContainsPair(args, "-ar", "48000"));
@@ -141,7 +255,7 @@ public class FfmpegArgumentsBuilderTests
     [Fact]
     public void VideoOnly_OmitsAudioArguments()
     {
-        var args = Build(Profile("ffv1-archival"));
+        var args = Build(RecordingProfile.CreateFfv1Archival());
         Assert.DoesNotContain("-c:a", args);
         Assert.DoesNotContain("-ar", args);
     }
@@ -150,7 +264,8 @@ public class FfmpegArgumentsBuilderTests
     public void AudioWithoutPipePath_Throws()
     {
         Assert.Throws<ArgumentException>(() =>
-            FfmpegArgumentsBuilder.Build(Profile("ffv1-archival"), Pal, Pcm48k, null, "out.mkv"));
+            FfmpegArgumentsBuilder.Build(
+                RecordingProfile.CreateFfv1Archival(), Pal, Pcm48k, null, "out.mkv"));
     }
 
     // ---- Helpers -----------------------------------------------------------------

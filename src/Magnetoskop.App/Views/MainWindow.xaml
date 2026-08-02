@@ -11,6 +11,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d">
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#DDDDDD"/>
         </Style>
@@ -29,7 +30,35 @@
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Margin" Value="0,0,0,2"/>
         </Style>
+        <Style TargetType="Menu">
+            <Setter Property="Background" Value="#2A2A2A"/>
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+            <Setter Property="Padding" Value="4,2"/>
+        </Style>
+        <Style TargetType="MenuItem">
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+            <Setter Property="Background" Value="#2A2A2A"/>
+            <Setter Property="Padding" Value="8,4"/>
+        </Style>
     </Window.Resources>
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="Choose save location…"
+                          Command="{Binding BrowseOutputDirectoryCommand}"/>
+                <Separator/>
+                <MenuItem Header="Settings…"
+                          Command="{Binding OpenSettingsCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Video">
+                <MenuItem Header="Video settings…"
+                          Command="{Binding OpenVideoSettingsCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Audio">
+                <MenuItem Header="Coming soon" IsEnabled="False"/>
+            </MenuItem>
+        </Menu>
 
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
@@ -175,16 +204,14 @@
                 <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
                     <StackPanel>
                         <TextBlock Text="RECORDING" FontWeight="Bold" Margin="0,0,0,8"/>
-                        <TextBlock Text="Profile" Style="{StaticResource TimecodeLabel}"/>
-                        <ComboBox ItemsSource="{Binding RecordingProfiles}"
-                                  SelectedItem="{Binding SelectedRecordingProfile}"
-                                  DisplayMemberPath="DisplayName" Margin="0,0,0,8"/>
+                        <TextBlock Text="Video settings" Style="{StaticResource TimecodeLabel}"/>
+                        <TextBox Text="{Binding VideoSettingsSummary, Mode=OneWay}"
+                                 IsReadOnly="True" Margin="0,0,0,8"
+                                 ToolTip="Configure via Video → Video settings…"/>
                         <TextBlock Text="Output folder" Style="{StaticResource TimecodeLabel}"/>
-                        <DockPanel Margin="0,0,0,8">
-                            <Button DockPanel.Dock="Right" Content="…" MinWidth="34"
-                                    Command="{Binding BrowseOutputDirectoryCommand}"/>
-                            <TextBox Text="{Binding OutputDirectory}" IsReadOnly="True"/>
-                        </DockPanel>
+                        <TextBox Text="{Binding OutputDirectoryDisplay, Mode=OneWay}"
+                                 IsReadOnly="True" Margin="0,0,0,8"
+                                 ToolTip="Set via File → Choose save location…"/>
                         <CheckBox IsChecked="{Binding AutoPlayOnRecord}"
                                   Foreground="#DDDDDD" Margin="0,0,0,8">
                             <TextBlock Text="Auto-play deck on record" Foreground="#DDDDDD"/>
@@ -234,9 +261,10 @@
             </DockPanel>
         </Border>
 
-        <!-- Log -->
+        <!-- Log (hidden by default; File → Settings…) -->
         <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
-                Background="#262626" Padding="10" CornerRadius="4" MaxHeight="140">
+                Background="#262626" Padding="10" CornerRadius="4" MaxHeight="140"
+                Visibility="{Binding ShowLogPanel, Converter={StaticResource BoolToVis}}">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="LOG" FontWeight="Bold" Margin="0,0,0,4"/>
                 <ListBox ItemsSource="{Binding LogEntries}"
@@ -245,4 +273,5 @@
             </DockPanel>
         </Border>
     </Grid>
+    </DockPanel>
 </Window>
