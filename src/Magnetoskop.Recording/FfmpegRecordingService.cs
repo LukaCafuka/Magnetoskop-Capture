@@ -121,12 +121,8 @@ public sealed class FfmpegRecordingService : IRecordingService
         var ct = _cts.Token;
         _stderrTask = Task.Run(() => DrainStderrAsync(process, ct), CancellationToken.None);
 
-        // Start feeding video immediately: ffmpeg reads stdin during input probing,
-        // and only opens the audio pipe afterwards. Waiting for the pipe first
-        // would deadlock.
-        _videoTask = Task.Run(() => PumpVideoAsync(videoReader, process, videoFormat, ct), CancellationToken.None);
-
-        // Now wait for ffmpeg to connect to the audio pipe.
+        // Wait for the audio pipe before any pumps. Args put audio before video so
+        // ffmpeg opens the pipe without needing stdin probe data first.
         if (_audioPipe is not null)
         {
             using var connectTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -143,6 +139,21 @@ public sealed class FfmpegRecordingService : IRecordingService
             }
         }
 
+        // Discard capture backlog from subscribe→ffmpeg-ready so A/V start aligned.
+        var discardedVideo = DrainChannel(videoReader);
+        var discardedAudio = audioReader is not null ? DrainChannel(audioReader) : 0;
+        if (discardedVideo > 0 || discardedAudio > 0)
+        {
+            _logger.LogInformation(
+                "Discarded {VideoFrames} video frame(s) and {AudioBuffers} audio buffer(s) before aligned A/V start",
+                discardedVideo, discardedAudio);
+        }
+        else
+        {
+            _logger.LogDebug("No capture backlog to discard before A/V pump start");
+        }
+
+        _videoTask = Task.Run(() => PumpVideoAsync(videoReader, process, videoFormat, ct), CancellationToken.None);
         if (audioReader is not null && _audioPipe is not null)
         {
             _audioTask = Task.Run(() => PumpAudioAsync(audioReader, _audioPipe, ct), CancellationToken.None);
@@ -169,6 +180,15 @@ public sealed class FfmpegRecordingService : IRecordingService
                 Publish(_status with { State = RecordingState.Faulted, Error = message });
             }
         }, TaskScheduler.Default);
+    }
+
+    /// <summary>Discard queued items so pumps begin from live capture, not startup backlog.</summary>
+    private static int DrainChannel<T>(System.Threading.Channels.ChannelReader<T> reader)
+    {
+        var discarded = 0;
+        while (reader.TryRead(out _))
+            discarded++;
+        return discarded;
     }
 
     private async Task PumpVideoAsync(

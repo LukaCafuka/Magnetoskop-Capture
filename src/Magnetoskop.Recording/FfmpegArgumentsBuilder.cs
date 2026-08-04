@@ -4,8 +4,9 @@ namespace Magnetoskop.Recording;
 
 /// <summary>
 /// Builds FFmpeg command lines for the recording profiles.
-/// Video enters on stdin (rawvideo), audio on a named pipe (PCM),
-/// so no OpenCV VideoWriter limitations apply.
+/// When audio is present it is listed before video so FFmpeg opens the named
+/// pipe first; video then enters on stdin (rawvideo). PCM audio streams over
+/// a Windows named pipe. No OpenCV VideoWriter limitations apply.
 /// </summary>
 public static class FfmpegArgumentsBuilder
 {
@@ -32,27 +33,38 @@ public static class FfmpegArgumentsBuilder
             "-y",
         };
 
-        // ---- Video input: raw frames on stdin ----
-        args.AddRange(new[]
-        {
-            "-f", "rawvideo",
-            "-pix_fmt", PixelFormatName(videoFormat.PixelFormat),
-            "-video_size", $"{videoFormat.Width}x{videoFormat.Height}",
-            "-framerate", FormatFrameRate(videoFormat.FrameRate),
-            "-i", "pipe:0",
-        });
-
-        // ---- Audio input: PCM on a named pipe ----
+        // Audio before video when both are present: FFmpeg opens inputs in order.
+        // Opening the named pipe first lets the recorder WaitForConnection, drain
+        // capture backlog, and start A/V pumps together — without feeding stdin
+        // during probe (which would otherwise be required and desync the streams).
+        // probesize/analyzeduration must be tiny: defaults would buffer ~5 s of PCM
+        // before opening the video input, stalling stdin writes.
         if (audioFormat is not null)
         {
             args.AddRange(new[]
             {
+                "-fflags", "nobuffer",
+                "-probesize", "32",
+                "-analyzeduration", "0",
                 "-f", PcmInputFormat(audioFormat),
                 "-ar", audioFormat.SampleRate.ToString(),
                 "-ac", audioFormat.Channels.ToString(),
                 "-i", audioPipePath!,
             });
         }
+
+        // ---- Video input: raw frames on stdin ----
+        args.AddRange(new[]
+        {
+            "-fflags", "nobuffer",
+            "-probesize", "32",
+            "-analyzeduration", "0",
+            "-f", "rawvideo",
+            "-pix_fmt", PixelFormatName(videoFormat.PixelFormat),
+            "-video_size", $"{videoFormat.Width}x{videoFormat.Height}",
+            "-framerate", FormatFrameRate(videoFormat.FrameRate),
+            "-i", "pipe:0",
+        });
 
         // Scan handling: preserve field structure, or yadif 2× deinterlace when processing is allowed.
         // setfield is required so HEVC/FFV1/ProRes actually carry scan metadata (field_order alone is not enough).

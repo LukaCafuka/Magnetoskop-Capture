@@ -253,6 +253,17 @@ public class FfmpegArgumentsBuilderTests
     }
 
     [Fact]
+    public void AvInputs_AudioPipeBeforeVideoStdin()
+    {
+        // Audio-first open order lets the recorder align pumps without stdin probe deadlock.
+        var args = Build(RecordingProfile.CreateFfv1Archival(), audio: Pcm48k, pipe: @"\\.\pipe\a");
+        var audioIn = args.ToList().IndexOf(@"\\.\pipe\a");
+        var videoIn = args.ToList().IndexOf("pipe:0");
+        Assert.True(audioIn > 0 && videoIn > 0);
+        Assert.True(audioIn < videoIn);
+    }
+
+    [Fact]
     public void VideoOnly_OmitsAudioArguments()
     {
         var args = Build(RecordingProfile.CreateFfv1Archival());
