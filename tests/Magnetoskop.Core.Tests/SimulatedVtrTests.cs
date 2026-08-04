@@ -33,6 +33,16 @@ public class SimulatedVtrTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Pause_AfterPlay_SetsStillState()
+    {
+        await _vtr.SendTransportCommandAsync(TransportCommand.Play);
+        await WaitForStatusAsync(s => s.Transport == TransportState.Playing);
+        await _vtr.SendTransportCommandAsync(TransportCommand.Pause);
+        var status = await WaitForStatusAsync(s => s.Transport == TransportState.Still);
+        Assert.Equal(TransportState.Still, status.Transport);
+    }
+
+    [Fact]
     public async Task Play_AdvancesTimecode()
     {
         await _vtr.SendTransportCommandAsync(TransportCommand.Play);

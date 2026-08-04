@@ -853,6 +853,9 @@ public sealed partial class MainViewModel : ObservableObject
     private Task StopAsync() => SendTransportAsync(TransportCommand.Stop);
 
     [RelayCommand(CanExecute = nameof(CanUseTransport))]
+    private Task PauseAsync() => SendTransportAsync(TransportCommand.Pause);
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
     private Task FastForwardAsync() => SendTransportAsync(TransportCommand.FastForward);
 
     [RelayCommand(CanExecute = nameof(CanUseTransport))]
@@ -869,6 +872,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         PlayCommand.NotifyCanExecuteChanged();
         StopCommand.NotifyCanExecuteChanged();
+        PauseCommand.NotifyCanExecuteChanged();
         FastForwardCommand.NotifyCanExecuteChanged();
         RewindCommand.NotifyCanExecuteChanged();
         EjectCommand.NotifyCanExecuteChanged();

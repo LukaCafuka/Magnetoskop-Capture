@@ -102,25 +102,36 @@
                 Background="#262626" Padding="10" Margin="10" CornerRadius="4">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Button Content="⏪ Rew" Command="{Binding RewindCommand}"
-                        VerticalAlignment="Center" MinWidth="80" Height="36"/>
-                <StackPanel Margin="4,0" VerticalAlignment="Center">
-                    <Button Content="▶ Play" Command="{Binding PlayCommand}"
-                            FontWeight="Bold" MinWidth="80" Height="36" Margin="4,0,4,4"/>
-                    <Button Content="■ Stop" Command="{Binding StopCommand}"
+                        VerticalAlignment="Top" MinWidth="80" Height="36" Margin="4,0"/>
+                <Grid Margin="4,0" VerticalAlignment="Top">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Row="0" Grid.Column="0" Content="▶ Play" Command="{Binding PlayCommand}"
+                            FontWeight="Bold" Width="80" Height="36" Margin="0,0,4,4"/>
+                    <Button Grid.Row="0" Grid.Column="1" Content="⏩ FF" Command="{Binding FastForwardCommand}"
+                            Width="80" Height="36" Margin="0,0,0,4"/>
+                    <Button Grid.Row="1" Grid.Column="0" Content="■ Stop" Command="{Binding StopCommand}"
                             Style="{StaticResource TransportStopButton}"
-                            MinWidth="80" Height="36" Margin="4,0"/>
-                </StackPanel>
-                <Button Content="⏩ FF" Command="{Binding FastForwardCommand}"
-                        VerticalAlignment="Center" MinWidth="80" Height="36"/>
+                            Width="80" Height="36" Margin="0,0,4,0"/>
+                    <Button Grid.Row="1" Grid.Column="1" Content="⏸ Pause" Command="{Binding PauseCommand}"
+                            Width="80" Height="36"
+                            ToolTip="Still/pause (Shuttle 0) without Stop"/>
+                </Grid>
                 <Button Content="⏏ Eject" Command="{Binding EjectCommand}"
-                        VerticalAlignment="Center" MinWidth="80" Height="36" Margin="16,0,0,0"/>
+                        VerticalAlignment="Top" MinWidth="80" Height="36" Margin="16,0,0,0"/>
                 <Button Content="Standby" Command="{Binding ToggleStandbyCommand}"
                         Style="{StaticResource StandbyToggleButton}"
-                        VerticalAlignment="Center" MinWidth="90" Height="36" Margin="16,0,0,0"
+                        VerticalAlignment="Top" MinWidth="90" Height="36" Margin="16,0,0,0"
                         ToolTip="Toggle standby (yellow = on / threaded). Follows deck status, including auto standby-off."/>
 
                 <Border Margin="24,0,0,0" Padding="10,6" Background="#1E1E1E" CornerRadius="4"
-                        VerticalAlignment="Center" MinWidth="220"
+                        VerticalAlignment="Top" MinWidth="220"
                         IsEnabled="{Binding CanUseTransportButtons}">
                     <StackPanel>
                         <DockPanel Margin="0,0,0,4">

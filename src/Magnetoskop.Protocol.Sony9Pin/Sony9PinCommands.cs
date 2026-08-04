@@ -22,6 +22,13 @@ public static class Sony9PinCommands
     public static CommandBlock Rewind() => new(0x20, 0x20);
     public static CommandBlock Preroll() => new(0x20, 0x30);
 
+    /// <summary>
+    /// Still/pause without Stop: Shuttle Fwd with speed 0 (<c>21 13 00</c>).
+    /// Editors use this to pause while remaining threaded.
+    /// </summary>
+    public static CommandBlock Pause()
+        => ShuttleForward(Core.Models.VariableSpeedEncoding.Still);
+
     /// <summary>2X 11 Jog Fwd with one speed byte (see speed formula in the reference).</summary>
     public static CommandBlock JogForward(byte speed) => new(0x21, 0x11, speed);
     public static CommandBlock JogReverse(byte speed) => new(0x21, 0x21, speed);

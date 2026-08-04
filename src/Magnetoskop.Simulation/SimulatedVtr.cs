@@ -102,6 +102,11 @@ public sealed class SimulatedVtr : IVtrController
                     _transport = _tapeOut ? TransportState.Unknown : TransportState.Stopped;
                     _variablePlayRate = 0;
                     break;
+                case TransportCommand.Pause:
+                    RequireTape();
+                    _transport = TransportState.Still;
+                    _variablePlayRate = 0;
+                    break;
                 case TransportCommand.FastForward:
                     RequireTape();
                     _transport = TransportState.FastForwarding;

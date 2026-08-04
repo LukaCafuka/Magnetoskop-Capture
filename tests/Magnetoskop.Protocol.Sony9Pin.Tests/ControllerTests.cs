@@ -97,6 +97,21 @@ public class ControllerTests
     }
 
     [Fact]
+    public async Task Pause_SendsShuttleZero()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+
+        await controller.SendTransportCommandAsync(TransportCommand.Pause);
+
+        var commands = transport.ReceivedCommands.ToArray();
+        Assert.Contains(commands, c =>
+            c.Cmd1 == 0x21 && c.Cmd2 == 0x13
+            && c.Data.Count == 1 && c.Data[0] == 0x00);
+    }
+
+    [Fact]
     public async Task ShuttleForward_SendsSpeedByte()
     {
         var transport = new FakeSerialTransport { Responder = DefaultResponder };

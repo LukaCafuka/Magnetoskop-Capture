@@ -25,6 +25,8 @@ public enum TransportCommand
     FastForward,
     Rewind,
     Eject,
+    /// <summary>Still/pause without Stop (Sony 9-pin Shuttle 0).</summary>
+    Pause,
     // Reserved for later phases:
     Record,
     StandbyOn,

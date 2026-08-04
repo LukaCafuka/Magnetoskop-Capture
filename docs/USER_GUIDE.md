@@ -78,7 +78,9 @@ recording is in progress).
 ## 5. Transport control
 
 The bottom bar sends commands to the connected deck:
-**⏪ Rew · ▶ Play · ■ Stop · ⏩ FF · ⏏ Eject · Standby**
+**⏪ Rew · ▶ Play · ■ Stop · ⏸ Pause · ⏩ FF · ⏏ Eject · Standby**
+
+**Pause** is still (Shuttle 0): it freezes playback without issuing **Stop**.
 
 Next to those controls, a **Jog / Shuttle** wheel searches at variable speed:
 
