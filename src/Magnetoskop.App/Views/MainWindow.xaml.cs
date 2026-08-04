@@ -37,6 +37,48 @@ public partial class MainWindow : Window
         }
     }
 
+    private bool _ltcCommitting;
+
+    private void LtcDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_viewModel.BeginEditLtcCommand.CanExecute(null)) return;
+        _viewModel.BeginEditLtcCommand.Execute(null);
+        Dispatcher.BeginInvoke(() =>
+        {
+            LtcEditBox.Focus();
+            LtcEditBox.SelectAll();
+        }, System.Windows.Threading.DispatcherPriority.Input);
+        e.Handled = true;
+    }
+
+    private async void LtcEditBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            _ltcCommitting = true;
+            try
+            {
+                await _viewModel.CommitGoToLtcCommand.ExecuteAsync(null);
+            }
+            finally
+            {
+                _ltcCommitting = false;
+            }
+        }
+        else if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+            _viewModel.CancelEditLtcCommand.Execute(null);
+        }
+    }
+
+    private void LtcEditBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (_ltcCommitting || !_viewModel.IsEditingLtc) return;
+        _viewModel.CancelEditLtcCommand.Execute(null);
+    }
+
     private static bool IsTextInputFocused()
     {
         var focused = Keyboard.FocusedElement;

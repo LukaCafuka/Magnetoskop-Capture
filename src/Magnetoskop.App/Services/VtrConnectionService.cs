@@ -153,6 +153,9 @@ public sealed class VtrConnectionService : IVtrController
         CancellationToken cancellationToken = default)
         => _current.SendVariableSpeedAsync(mode, forward, speed, cancellationToken);
 
+    public Task CueUpAsync(Timecode timecode, CancellationToken cancellationToken = default)
+        => _current.CueUpAsync(timecode, cancellationToken);
+
     public async ValueTask DisposeAsync()
     {
         Detach(_current);

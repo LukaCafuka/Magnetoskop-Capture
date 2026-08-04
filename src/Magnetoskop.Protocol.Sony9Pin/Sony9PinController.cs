@@ -173,6 +173,53 @@ public sealed class Sony9PinController : IVtrController
         await ExchangeTransportAsync(command, block, cancellationToken);
     }
 
+    public async Task CueUpAsync(Timecode timecode, CancellationToken cancellationToken = default)
+    {
+        if (!IsConnected)
+        {
+            throw new VtrCommunicationException("Not connected to the recorder.");
+        }
+
+        const TransportCommand command = TransportCommand.CueUp;
+        if (!_profile.IsCommandSupported(command))
+        {
+            throw new UnsupportedCommandException(
+                $"Profile '{_profile.DisplayName}' marks '{command}' as unsupported.");
+        }
+
+        if (Capabilities.IsSupported(command) == false)
+        {
+            throw new UnsupportedCommandException(
+                $"The recorder previously reported '{command}' as an undefined command.");
+        }
+
+        // Cue Up With Data uses the deck's timer mode (TC / Timer-1 / Timer-2).
+        // Force TIME CODE so the target matches LTC, not CTL.
+        try
+        {
+            var timerResponse = await _transceiver.ExchangeAsync(
+                Sony9PinCommands.TimerModeSelectTimeCode(), cancellationToken);
+            if (timerResponse is Sony9PinResponse.Ack)
+            {
+                _logger.LogInformation("Timer mode set to TIME CODE before Cue Up");
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Timer Mode Select before Cue Up returned {Response}; proceeding anyway",
+                    timerResponse);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Timer Mode Select before Cue Up failed; proceeding with Cue Up");
+        }
+
+        var block = Sony9PinCommands.CueUpWithData(timecode);
+        _logger.LogInformation("Cue Up {Timecode} → {Block}", timecode, block);
+        await ExchangeTransportAsync(command, block, cancellationToken);
+    }
+
     private async Task ExchangeTransportAsync(
         TransportCommand command, CommandBlock block, CancellationToken cancellationToken)
     {

@@ -46,6 +46,61 @@ public readonly record struct Timecode(
     }
 
     /// <summary>
+    /// Parses tape timecode for Cue Up.
+    /// Accepts <c>HH:MM:SS:FF</c> / <c>HH:MM:SS;FF</c>, or short <c>MM:SS:FF</c> as <c>00:MM:SS:FF</c>.
+    /// Leading zeros optional. Rejects negatives and malformed strings.
+    /// </summary>
+    public static bool TryParse(string? text, out Timecode timecode)
+    {
+        timecode = default;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        text = text.Trim();
+        if (text.StartsWith('-')) return false;
+
+        var dropFrame = text.Contains(';');
+        var parts = text.Replace(';', ':').Split(':');
+
+        int hours, minutes, seconds, frames;
+        if (parts.Length == 4)
+        {
+            if (!int.TryParse(parts[0], out hours)
+                || !int.TryParse(parts[1], out minutes)
+                || !int.TryParse(parts[2], out seconds)
+                || !int.TryParse(parts[3], out frames))
+            {
+                return false;
+            }
+        }
+        else if (parts.Length == 3)
+        {
+            // MM:SS:FF → 00:MM:SS:FF (so "1:00:00" means 1 minute, not 1 hour).
+            hours = 0;
+            if (!int.TryParse(parts[0], out minutes)
+                || !int.TryParse(parts[1], out seconds)
+                || !int.TryParse(parts[2], out frames))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+
+        if (hours is < 0 or > 23
+            || minutes is < 0 or > 59
+            || seconds is < 0 or > 59
+            || frames is < 0 or > 29)
+        {
+            return false;
+        }
+
+        timecode = new Timecode(hours, minutes, seconds, frames, DropFrame: dropFrame);
+        return true;
+    }
+
+    /// <summary>
     /// Formats CTL for the UI. By default (wrap=false), values in the upper half of the
     /// 24h day are shown as negative (-HH:MM:SS:FF). When wrap=true, the deck's 24h wrap
     /// is shown as-is (and protocol-signed negatives are expanded back to wrap).

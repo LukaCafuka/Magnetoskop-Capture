@@ -53,6 +53,11 @@ public interface IVtrController : IAsyncDisposable
         byte speed,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Cues the deck to a tape timecode (Sony 9-pin Cue Up With Data <c>24 31</c>).
+    /// </summary>
+    Task CueUpAsync(Timecode timecode, CancellationToken cancellationToken = default);
+
     /// <summary>Reads the latest known status (does not force a poll).</summary>
     VtrStatus CurrentStatus { get; }
 

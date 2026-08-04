@@ -58,6 +58,35 @@ public class TimecodeTests
         Assert.Equal(1, tc.Hours);
     }
 
+    [Theory]
+    [InlineData("01:02:03:04", 1, 2, 3, 4, false)]
+    [InlineData("1:2:3:4", 1, 2, 3, 4, false)]
+    [InlineData("01:02:03;04", 1, 2, 3, 4, true)]
+    [InlineData("1:00:00", 0, 1, 0, 0, false)]
+    [InlineData("01:02:03", 0, 1, 2, 3, false)]
+    public void TryParse_AcceptsHhMmSsFf(string text, int h, int m, int s, int f, bool drop)
+    {
+        Assert.True(Timecode.TryParse(text, out var tc));
+        Assert.Equal(h, tc.Hours);
+        Assert.Equal(m, tc.Minutes);
+        Assert.Equal(s, tc.Seconds);
+        Assert.Equal(f, tc.Frames);
+        Assert.Equal(drop, tc.DropFrame);
+        Assert.False(tc.IsNegative);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("01:02")]
+    [InlineData("-01:00:00:00")]
+    [InlineData("99:00:00:00")]
+    [InlineData("ab:cd:ef:gh")]
+    public void TryParse_RejectsInvalid(string? text)
+    {
+        Assert.False(Timecode.TryParse(text, out _));
+    }
+
     [Fact]
     public void InterpretAsSignedCtl_ConvertsWrappedNearMidnight()
     {

@@ -30,6 +30,8 @@ public class ControllerTests
             (0x00, 0x11) => new CommandBlock(0x12, 0x11, 0x21, 0x40).ToBytes(),
             // Transport commands -> ACK
             (0x20, _) => AckBytes,
+            // Preset / select (e.g. Timer Mode Select 41 36) -> ACK
+            (0x40, _) => AckBytes,
             // Status sense -> stopped, servo ref present (7A 20 = 10 status bytes)
             (0x60, 0x20) => new CommandBlock(0x7A, 0x20,
                 0x00, 0x20, 0x00, 0, 0, 0, 0, 0, 0x00, 0).ToBytes(),
@@ -94,6 +96,28 @@ public class ControllerTests
 
         Assert.Contains(transport.ReceivedCommands,
             c => (c.Cmd1 & 0xF0) == 0x20 && c.Cmd2 == 0x01);
+    }
+
+    [Fact]
+    public async Task CueUp_SendsBcdTimecode()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+
+        await controller.CueUpAsync(new Timecode(1, 0, 0, 0));
+
+        var commands = transport.ReceivedCommands.ToArray();
+        Assert.Contains(commands, c =>
+            c.Cmd1 == 0x41 && c.Cmd2 == 0x36
+            && c.Data.Count == 1 && c.Data[0] == 0x00);
+        Assert.Contains(commands, c =>
+            c.Cmd1 == 0x24 && c.Cmd2 == 0x31
+            && c.Data.Count == 4
+            && c.Data[0] == 0x00 // frames
+            && c.Data[1] == 0x00 // seconds
+            && c.Data[2] == 0x00 // minutes
+            && c.Data[3] == 0x01); // hours
     }
 
     [Fact]

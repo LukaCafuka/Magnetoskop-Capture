@@ -104,6 +104,20 @@ public class SimulatedVtrTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CueUp_SeeksToLtcAndSetsStill()
+    {
+        // LTC = CTL + 01:00:00:00 offset → cue to 01:10:00:00 → CTL 00:10:00:00
+        await _vtr.CueUpAsync(new Timecode(1, 10, 0, 0));
+        var status = await WaitForStatusAsync(s => s.Transport == TransportState.Still);
+        Assert.Equal(TransportState.Still, status.Transport);
+
+        var time = await WaitForTimeAsync(t =>
+            t.Ltc is { } ltc && ltc.Hours == 1 && ltc.Minutes == 10);
+        Assert.Equal(new Timecode(1, 10, 0, 0), time.Ltc);
+        Assert.Equal(new Timecode(0, 10, 0, 0), time.Ctl);
+    }
+
+    [Fact]
     public async Task ShuttleForward_SetsShuttleState_AndAdvancesCtl()
     {
         var first = await WaitForTimeAsync(t => t.Ctl is not null);

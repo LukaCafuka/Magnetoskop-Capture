@@ -165,6 +165,34 @@ public sealed class SimulatedVtr : IVtrController
             mode, forward ? "fwd" : "rev", speed, _variablePlayRate, _transport);
     }
 
+    public async Task CueUpAsync(Timecode timecode, CancellationToken cancellationToken = default)
+    {
+        if (!IsConnected)
+        {
+            throw new VtrCommunicationException("Not connected to the simulated VTR.");
+        }
+
+        await Task.Delay(8, cancellationToken);
+
+        lock (_gate)
+        {
+            RequireTape();
+            if (timecode.IsNegative)
+            {
+                throw new VtrCommunicationException("Cue Up does not accept negative timecode.");
+            }
+
+            var ltcFrames = timecode.ToFrameCount(FrameRate);
+            var pos = ltcFrames - TimecodeOffsetFrames;
+            _tapePositionFrames = Math.Clamp(pos, 0, TapeLengthFrames);
+            _transport = TransportState.Still;
+            _variablePlayRate = 0;
+        }
+
+        _logger.LogInformation("Simulated VTR Cue Up -> {Timecode}", timecode);
+        PublishSnapshots();
+    }
+
     private void RequireTape()
     {
         if (_tapeOut)

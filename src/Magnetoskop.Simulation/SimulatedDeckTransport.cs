@@ -204,12 +204,46 @@ public sealed class SimulatedDeckTransport : ISerialTransport
         {
             (0x00, 0x11) => HandleDeviceTypeRequest(),
             (0x00, 0x0C) or (0x00, 0x1D) => Ack(), // local disable / enable
+            // Cue Up With Data is 24 31 (group 2, 4 data bytes) — before variable-speed catch-all.
+            (0x20, 0x31) when data.Length >= 4 => HandleCueUp(data),
             (0x20, _) when data.Length > 0 => HandleVariableSpeed(cmd2, data[0]),
             (0x20, _) => HandleTransport(cmd2),
             (0x60, 0x20) => HandleStatusSense(data),
             (0x60, 0x0C) => HandleTimeSense(data),
             _ => Nak(0x01), // undefined command
         };
+    }
+
+    private byte[] HandleCueUp(ReadOnlySpan<byte> data)
+    {
+        if (!_personality.AcceptsTransportCommand(TransportCommand.CueUp))
+        {
+            return Nak(0x01);
+        }
+
+        if (!_tapeOut)
+        {
+            var tc = DecodeBcdTimecode(data);
+            var ltcFrames = tc.ToFrameCount(FrameRate);
+            var pos = ltcFrames - TimecodeOffsetFrames;
+            _tapePositionFrames = Math.Clamp(pos, 0, TapeLengthFrames);
+            _transport = TransportState.Still;
+            _variablePlayRate = 0;
+        }
+
+        return Ack();
+    }
+
+    private static Timecode DecodeBcdTimecode(ReadOnlySpan<byte> data)
+    {
+        static int FromBcd(byte b) => (b >> 4 & 0x0F) * 10 + (b & 0x0F);
+        return new Timecode(
+            Hours: FromBcd((byte)(data[3] & 0x3F)),
+            Minutes: FromBcd(data[2]),
+            Seconds: FromBcd(data[1]),
+            Frames: FromBcd((byte)(data[0] & 0x3F)),
+            DropFrame: (data[0] & 0x40) != 0,
+            ColorFrame: (data[0] & 0x80) != 0);
     }
 
     private byte[] HandleDeviceTypeRequest()

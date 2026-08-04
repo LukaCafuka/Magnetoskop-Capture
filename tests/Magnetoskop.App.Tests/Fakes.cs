@@ -39,6 +39,22 @@ public sealed class FakeVtrController : IVtrController
         return Task.CompletedTask;
     }
 
+    public Task SendVariableSpeedAsync(
+        VariableSpeedMode mode,
+        bool forward,
+        byte speed,
+        CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    public List<Timecode> CueUpTargets { get; } = new();
+
+    public Task CueUpAsync(Timecode timecode, CancellationToken cancellationToken = default)
+    {
+        CueUpTargets.Add(timecode);
+        SentCommands.Add(TransportCommand.CueUp);
+        return Task.CompletedTask;
+    }
+
     public void RaiseStatus() => StatusChanged?.Invoke(this, CurrentStatus);
     public void RaiseTime() => TimeChanged?.Invoke(this, CurrentTime);
 

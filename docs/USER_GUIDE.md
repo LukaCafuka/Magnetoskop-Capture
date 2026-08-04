@@ -50,6 +50,10 @@ What you should see:
   `--:--:--:--`. CTL below zero shows with a leading minus by default
   (e.g. `-00:00:00:01`); enable **CTL 24-hour wrap** in **File → Settings…** to
   show the deck-style wrap (`23:59:59:24`) instead.
+- Click **LTC** to edit a target timecode, then press **Enter** to cue the deck
+  there (Sony Cue Up With Data, forced to TIME CODE / LTC mode). Use
+  `HH:MM:SS:FF` (e.g. `00:01:00:00` for one minute) or short `MM:SS:FF`.
+  **Esc** or clicking away cancels. Note: `1:00:00:00` is **one hour**, not one minute.
 - If the deck rejects a command as unsupported, the app remembers it and shows it
   in the "Learned:" line of the status panel.
 

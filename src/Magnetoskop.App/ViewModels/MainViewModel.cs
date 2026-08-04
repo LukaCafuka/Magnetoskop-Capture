@@ -147,6 +147,12 @@ public sealed partial class MainViewModel : ObservableObject
     private string _ltcText = "--:--:--:--";
 
     [ObservableProperty]
+    private bool _isEditingLtc;
+
+    [ObservableProperty]
+    private string _ltcEditText = "00:00:00:00";
+
+    [ObservableProperty]
     private string _vitcText = "--:--:--:--";
 
     [ObservableProperty]
@@ -915,6 +921,54 @@ public sealed partial class MainViewModel : ObservableObject
 
     [RelayCommand(CanExecute = nameof(CanUseMediaKeys))]
     private Task MediaRewindAsync() => SendTransportAsync(TransportCommand.Rewind);
+
+    [RelayCommand]
+    private void BeginEditLtc()
+    {
+        if (!CanUseTransport() || IsEditingLtc) return;
+        LtcEditText = LtcText.StartsWith("--", StringComparison.Ordinal) || LtcText.StartsWith('-')
+            ? "00:00:00:00"
+            : LtcText;
+        IsEditingLtc = true;
+    }
+
+    [RelayCommand]
+    private void CancelEditLtc()
+    {
+        IsEditingLtc = false;
+    }
+
+    [RelayCommand]
+    private async Task CommitGoToLtcAsync()
+    {
+        if (!CanUseTransport()) return;
+
+        if (!Timecode.TryParse(LtcEditText, out var timecode))
+        {
+            ReportError(
+                "Invalid timecode. Use HH:MM:SS:FF (e.g. 00:01:00:00 for 1 minute), or MM:SS:FF.",
+                null);
+            return;
+        }
+
+        // Show the normalized value so hours vs minutes mistakes are obvious.
+        LtcEditText = timecode.ToString();
+
+        try
+        {
+            await _vtr.CueUpAsync(timecode);
+            AppendLog($"Transport: Cue Up {timecode} (LTC / TIME CODE mode)");
+            IsEditingLtc = false;
+        }
+        catch (UnsupportedCommandException ex)
+        {
+            ReportError("Cue Up not supported by this device", ex);
+        }
+        catch (Exception ex)
+        {
+            ReportError($"Cue Up to {timecode} failed", ex);
+        }
+    }
 
     /// <summary>
     /// Resolve-style J/K/L. Returns true when the key was handled (caller should mark Handled).
