@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:Magnetoskop.App.ViewModels"
         Title="Magnetoskop Capture"
-        Width="1100" Height="760"
-        MinWidth="900" MinHeight="600"
+        Width="1280" Height="900"
+        MinWidth="1100" MinHeight="780"
         Background="#1E1E1E"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -133,38 +133,101 @@
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="*" MinWidth="300"/>
+            <ColumnDefinition Width="*" MinWidth="340"/>
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
 
-        <!-- Preview -->
-        <Border Grid.Row="0" Grid.Column="0" Background="Black" Margin="0,0,10,10">
-            <Grid>
-                <Image Source="{Binding PreviewSource}" Stretch="Uniform"/>
-                <TextBlock Text="No preview"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Foreground="#555555" FontSize="20">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsPreviewRunning}" Value="False">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Grid>
-        </Border>
+        <!-- Left: preview + transport + error + log -->
+        <Grid Grid.Column="0" Margin="0,0,10,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <!-- Right panel: timecodes, status, devices, recording -->
-        <ScrollViewer Grid.Row="0" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <!-- Preview -->
+            <Border Grid.Row="0" Background="Black" Margin="0,0,0,10">
+                <Grid>
+                    <Image Source="{Binding PreviewSource}" Stretch="Uniform"/>
+                    <TextBlock Text="No preview"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="#555555" FontSize="20">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPreviewRunning}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Border>
+
+            <!-- Transport bar (VTR layout: REW · PLAY · FF, STOP under PLAY) -->
+            <Border Grid.Row="1"
+                    Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <Button Content="⏪ Rew" Command="{Binding RewindCommand}"
+                            VerticalAlignment="Top" MinWidth="80" Height="36"/>
+                    <StackPanel Margin="4,0" VerticalAlignment="Top">
+                        <Button Content="▶ Play" Command="{Binding PlayCommand}"
+                                FontWeight="Bold" MinWidth="80" Height="36" Margin="4,0,4,4"/>
+                        <Button Content="■ Stop" Command="{Binding StopCommand}"
+                                Style="{StaticResource TransportStopButton}"
+                                MinWidth="80" Height="36" Margin="4,0"/>
+                    </StackPanel>
+                    <Button Content="⏩ FF" Command="{Binding FastForwardCommand}"
+                            VerticalAlignment="Top" MinWidth="80" Height="36"/>
+                    <Button Content="⏏ Eject" Command="{Binding EjectCommand}"
+                            VerticalAlignment="Top" MinWidth="80" Height="36" Margin="16,0,0,0"/>
+                    <Button Content="Standby" Command="{Binding ToggleStandbyCommand}"
+                            Style="{StaticResource StandbyToggleButton}"
+                            VerticalAlignment="Top" MinWidth="90" Height="36" Margin="16,0,0,0"
+                            ToolTip="Toggle standby (yellow = on / threaded). Follows deck status, including auto standby-off."/>
+                </StackPanel>
+            </Border>
+
+            <!-- Error bar -->
+            <Border Grid.Row="2"
+                    Background="#5A1E1E" Padding="10,6" Margin="0,0,0,10" CornerRadius="4">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding LastError}" Value="">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="✕" MinWidth="28" Padding="4,0"
+                            ToolTip="Dismiss" Command="{Binding DismissErrorCommand}"/>
+                    <TextBlock Text="{Binding LastError}" Foreground="#FFB3B3"
+                               FontWeight="SemiBold" TextWrapping="Wrap"
+                               VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <!-- Log (hidden by default; File → Settings…) -->
+            <Border Grid.Row="3"
+                    Background="#262626" Padding="10" CornerRadius="4" MaxHeight="140"
+                    Visibility="{Binding ShowLogPanel, Converter={StaticResource BoolToVis}}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="LOG" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <ListBox ItemsSource="{Binding LogEntries}"
+                             Background="Transparent" BorderThickness="0"
+                             Foreground="#AAAAAA" FontFamily="Consolas" FontSize="11"/>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- Right panel uses full window height (not just the preview row). -->
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
                 <!-- Time information -->
                 <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
@@ -267,7 +330,7 @@
                 </Border>
 
                 <!-- Recording -->
-                <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
+                <Border Background="#262626" Padding="10" Margin="0,0,0,0" CornerRadius="4">
                     <StackPanel>
                         <TextBlock Text="RECORDING" FontWeight="Bold" Margin="0,0,0,8"/>
                         <TextBlock Text="Video settings" Style="{StaticResource TimecodeLabel}"/>
@@ -292,64 +355,6 @@
                 </Border>
             </StackPanel>
         </ScrollViewer>
-
-        <!-- Transport bar (VTR layout: REW · PLAY · FF, STOP under PLAY) -->
-        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top">
-                <Button Content="⏪ Rew" Command="{Binding RewindCommand}"
-                        VerticalAlignment="Top" MinWidth="80" Height="36"/>
-                <StackPanel Margin="4,0" VerticalAlignment="Top">
-                    <Button Content="▶ Play" Command="{Binding PlayCommand}"
-                            FontWeight="Bold" MinWidth="80" Height="36" Margin="4,0,4,4"/>
-                    <Button Content="■ Stop" Command="{Binding StopCommand}"
-                            Style="{StaticResource TransportStopButton}"
-                            MinWidth="80" Height="36" Margin="4,0"/>
-                </StackPanel>
-                <Button Content="⏩ FF" Command="{Binding FastForwardCommand}"
-                        VerticalAlignment="Top" MinWidth="80" Height="36"/>
-                <Button Content="⏏ Eject" Command="{Binding EjectCommand}"
-                        VerticalAlignment="Top" MinWidth="80" Height="36" Margin="16,0,0,0"/>
-                <Button Content="Standby" Command="{Binding ToggleStandbyCommand}"
-                        Style="{StaticResource StandbyToggleButton}"
-                        VerticalAlignment="Top" MinWidth="90" Height="36" Margin="16,0,0,0"
-                        ToolTip="Toggle standby (yellow = on / threaded). Follows deck status, including auto standby-off."/>
-            </StackPanel>
-        </Border>
-
-        <!-- Error bar -->
-        <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
-                Background="#5A1E1E" Padding="10,6" Margin="0,0,0,10" CornerRadius="4">
-            <Border.Style>
-                <Style TargetType="Border">
-                    <Setter Property="Visibility" Value="Visible"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding LastError}" Value="">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
-            <DockPanel>
-                <Button DockPanel.Dock="Right" Content="✕" MinWidth="28" Padding="4,0"
-                        ToolTip="Dismiss" Command="{Binding DismissErrorCommand}"/>
-                <TextBlock Text="{Binding LastError}" Foreground="#FFB3B3"
-                           FontWeight="SemiBold" TextWrapping="Wrap"
-                           VerticalAlignment="Center"/>
-            </DockPanel>
-        </Border>
-
-        <!-- Log (hidden by default; File → Settings…) -->
-        <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
-                Background="#262626" Padding="10" CornerRadius="4" MaxHeight="140"
-                Visibility="{Binding ShowLogPanel, Converter={StaticResource BoolToVis}}">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="LOG" FontWeight="Bold" Margin="0,0,0,4"/>
-                <ListBox ItemsSource="{Binding LogEntries}"
-                         Background="Transparent" BorderThickness="0"
-                         Foreground="#AAAAAA" FontFamily="Consolas" FontSize="11"/>
-            </DockPanel>
-        </Border>
     </Grid>
     </DockPanel>
 </Window>

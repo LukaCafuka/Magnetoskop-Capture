@@ -25,6 +25,7 @@ public class SettingsServiceTests : IDisposable
         Assert.False(settings.DebugLoggingEnabled);
         Assert.False(settings.ShowLogPanel);
         Assert.True(settings.DisableTransportDuringRecording);
+        Assert.False(settings.PreviewYadif2xEnabled);
         Assert.NotNull(settings.Video);
         Assert.Equal(nameof(RecordingCodec.H264), settings.Video!.VideoCodec);
     }
@@ -47,6 +48,7 @@ public class SettingsServiceTests : IDisposable
         service.Current.DebugLoggingEnabled = true;
         service.Current.ShowLogPanel = true;
         service.Current.DisableTransportDuringRecording = false;
+        service.Current.PreviewYadif2xEnabled = true;
         service.Save();
 
         var reloaded = CreateService().Load();
@@ -67,6 +69,7 @@ public class SettingsServiceTests : IDisposable
         Assert.True(reloaded.DebugLoggingEnabled);
         Assert.True(reloaded.ShowLogPanel);
         Assert.False(reloaded.DisableTransportDuringRecording);
+        Assert.True(reloaded.PreviewYadif2xEnabled);
 
         var profile = reloaded.Video.ToProfile();
         Assert.Equal(RecordingCodec.Ffv1, profile.VideoCodec);

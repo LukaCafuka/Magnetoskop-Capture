@@ -67,6 +67,9 @@ recording is in progress).
    pickers should move with the audio. Enable **Monitor audio** to hear the
    selected input on the default speakers/headphones. Press ⟳ to re-enumerate
    devices if hardware was plugged in after launch.
+3. For easier watching of interlaced sources, enable **Yadif 2× deinterlace
+   preview** under **File → Settings…**. This bob-deinterlaces the live preview
+   only (recording encode is unchanged).
 
 ## 5. Transport control
 

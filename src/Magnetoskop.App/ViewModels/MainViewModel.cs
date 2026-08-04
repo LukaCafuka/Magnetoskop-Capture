@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using Magnetoskop.App.Services;
 using Magnetoskop.App.Views;
 using Magnetoskop.Capture.Audio;
+using Magnetoskop.Capture.Video;
 using Magnetoskop.Core.Abstractions;
 using Magnetoskop.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -37,6 +38,7 @@ public sealed partial class MainViewModel : ObservableObject
     private CancellationTokenSource? _previewCts;
     private Task? _previewTask;
     private WriteableBitmap? _previewBitmap;
+    private readonly PreviewBobDeinterlacer _previewBob = new();
     private bool _suppressPreviewRestart;
     private bool _suppressVtrConnect;
 
@@ -93,6 +95,7 @@ public sealed partial class MainViewModel : ObservableObject
         AutoPlayOnRecord = saved.AutoPlayOnRecord;
         ShowLogPanel = saved.ShowLogPanel;
         DisableTransportDuringRecording = saved.DisableTransportDuringRecording;
+        PreviewYadif2xEnabled = saved.PreviewYadif2xEnabled;
         // Keep runtime logger in sync with persisted preference (also set at host bootstrap).
         _debugLogger.SetEnabled(saved.DebugLoggingEnabled);
 
@@ -145,6 +148,10 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>When true, VTR transport buttons are disabled while recording.</summary>
     [ObservableProperty]
     private bool _disableTransportDuringRecording = true;
+
+    /// <summary>When true, live preview applies Yadif 2× (bob) deinterlace for watching.</summary>
+    [ObservableProperty]
+    private bool _previewYadif2xEnabled;
 
     /// <summary>Command support learned from the deck's NAK responses.</summary>
     [ObservableProperty]
@@ -387,6 +394,7 @@ public sealed partial class MainViewModel : ObservableObject
         s.DebugLoggingEnabled = _debugLogger.Enabled;
         s.ShowLogPanel = ShowLogPanel;
         s.DisableTransportDuringRecording = DisableTransportDuringRecording;
+        s.PreviewYadif2xEnabled = PreviewYadif2xEnabled;
         _settings.Save();
     }
 
@@ -398,6 +406,7 @@ public sealed partial class MainViewModel : ObservableObject
             _debugLogger.Enabled,
             ShowLogPanel,
             DisableTransportDuringRecording,
+            PreviewYadif2xEnabled,
             VtrProfiles,
             SelectedVtrProfile?.Id);
         var window = new SettingsWindow(vm)
@@ -411,6 +420,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         ShowLogPanel = vm.ShowLogPanel;
         DisableTransportDuringRecording = vm.DisableTransportDuringRecording;
+        PreviewYadif2xEnabled = vm.PreviewYadif2xEnabled;
         _debugLogger.SetEnabled(vm.DebugLoggingEnabled);
         SelectedVtrProfile = vm.SelectedVtrProfile;
         SaveSettings();
@@ -636,27 +646,60 @@ public sealed partial class MainViewModel : ObservableObject
             var dispatcher = Application.Current?.Dispatcher;
             if (dispatcher is null) return;
 
-            await dispatcher.InvokeAsync(() =>
+            if (PreviewYadif2xEnabled
+                && _previewBob.TryDeinterlace(frame.Data, frame.Format, out var first, out var second))
             {
-                RenderFrame(frame);
-            });
+                var w = frame.Format.Width;
+                var h = frame.Format.Height;
+                // Pace the two bob frames so each is painted: writing both in one
+                // dispatcher callback only leaves the second field on screen (~25p).
+                var fieldPeriod = FieldPeriod(frame.Format.FrameRate);
+
+                await dispatcher.InvokeAsync(
+                    () => RenderPixels(w, h, first), DispatcherPriority.Render);
+                try
+                {
+                    await Task.Delay(fieldPeriod, ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+
+                await dispatcher.InvokeAsync(
+                    () => RenderPixels(w, h, second), DispatcherPriority.Render);
+            }
+            else
+            {
+                await dispatcher.InvokeAsync(
+                    () => RenderFrame(frame), DispatcherPriority.Render);
+            }
         }
     }
 
-    private void RenderFrame(VideoFrame frame)
+    /// <summary>Half of one capture frame — duration of one field for 2× bob preview.</summary>
+    private static TimeSpan FieldPeriod(double frameRate)
     {
-        var f = frame.Format;
+        var fps = frameRate > 1 ? frameRate : 25;
+        return TimeSpan.FromSeconds(0.5 / fps);
+    }
+
+    private void RenderFrame(VideoFrame frame)
+        => RenderPixels(frame.Format.Width, frame.Format.Height, frame.Data);
+
+    private void RenderPixels(int width, int height, byte[] bgr24)
+    {
         if (_previewBitmap is null
-            || _previewBitmap.PixelWidth != f.Width
-            || _previewBitmap.PixelHeight != f.Height)
+            || _previewBitmap.PixelWidth != width
+            || _previewBitmap.PixelHeight != height)
         {
-            _previewBitmap = new WriteableBitmap(f.Width, f.Height, 96, 96, PixelFormats.Bgr24, null);
+            _previewBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr24, null);
             PreviewSource = _previewBitmap;
         }
 
-        var stride = f.Width * 3;
+        var stride = width * 3;
         _previewBitmap.WritePixels(
-            new Int32Rect(0, 0, f.Width, f.Height), frame.Data, stride, 0);
+            new Int32Rect(0, 0, width, height), bgr24, stride, 0);
     }
 
     // ---- Transport ------------------------------------------------------------

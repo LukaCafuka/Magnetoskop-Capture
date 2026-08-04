@@ -104,6 +104,9 @@ public sealed class AppSettings
     /// <summary>When true, VTR transport buttons are disabled while a recording is active.</summary>
     public bool DisableTransportDuringRecording { get; set; } = true;
 
+    /// <summary>When true, live preview applies Yadif 2× (bob) deinterlace for easier watching.</summary>
+    public bool PreviewYadif2xEnabled { get; set; }
+
     /// <summary>Obsolete preset id from earlier builds; ignored on load.</summary>
     public string? RecordingProfileId { get; set; }
 }
