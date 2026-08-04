@@ -92,6 +92,7 @@ public sealed partial class MainViewModel : ObservableObject
         AudioMonitoringEnabled = saved.AudioMonitoringEnabled;
         AutoPlayOnRecord = saved.AutoPlayOnRecord;
         ShowLogPanel = saved.ShowLogPanel;
+        DisableTransportDuringRecording = saved.DisableTransportDuringRecording;
         // Keep runtime logger in sync with persisted preference (also set at host bootstrap).
         _debugLogger.SetEnabled(saved.DebugLoggingEnabled);
 
@@ -140,6 +141,10 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>When true, the bottom LOG panel is visible.</summary>
     [ObservableProperty]
     private bool _showLogPanel;
+
+    /// <summary>When true, VTR transport buttons are disabled while recording.</summary>
+    [ObservableProperty]
+    private bool _disableTransportDuringRecording = true;
 
     /// <summary>Command support learned from the deck's NAK responses.</summary>
     [ObservableProperty]
@@ -381,6 +386,7 @@ public sealed partial class MainViewModel : ObservableObject
         s.AutoPlayOnRecord = AutoPlayOnRecord;
         s.DebugLoggingEnabled = _debugLogger.Enabled;
         s.ShowLogPanel = ShowLogPanel;
+        s.DisableTransportDuringRecording = DisableTransportDuringRecording;
         _settings.Save();
     }
 
@@ -391,6 +397,7 @@ public sealed partial class MainViewModel : ObservableObject
         var vm = new SettingsViewModel(
             _debugLogger.Enabled,
             ShowLogPanel,
+            DisableTransportDuringRecording,
             VtrProfiles,
             SelectedVtrProfile?.Id);
         var window = new SettingsWindow(vm)
@@ -403,6 +410,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         ShowLogPanel = vm.ShowLogPanel;
+        DisableTransportDuringRecording = vm.DisableTransportDuringRecording;
         _debugLogger.SetEnabled(vm.DebugLoggingEnabled);
         SelectedVtrProfile = vm.SelectedVtrProfile;
         SaveSettings();
@@ -653,17 +661,42 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ---- Transport ------------------------------------------------------------
 
-    [RelayCommand] private Task PlayAsync() => SendTransportAsync(TransportCommand.Play);
-    [RelayCommand] private Task StopAsync() => SendTransportAsync(TransportCommand.Stop);
-    [RelayCommand] private Task FastForwardAsync() => SendTransportAsync(TransportCommand.FastForward);
-    [RelayCommand] private Task RewindAsync() => SendTransportAsync(TransportCommand.Rewind);
-    [RelayCommand] private Task EjectAsync() => SendTransportAsync(TransportCommand.Eject);
-    [RelayCommand]
+    private bool CanUseTransport()
+        => !IsRecording || !DisableTransportDuringRecording;
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
+    private Task PlayAsync() => SendTransportAsync(TransportCommand.Play);
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
+    private Task StopAsync() => SendTransportAsync(TransportCommand.Stop);
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
+    private Task FastForwardAsync() => SendTransportAsync(TransportCommand.FastForward);
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
+    private Task RewindAsync() => SendTransportAsync(TransportCommand.Rewind);
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
+    private Task EjectAsync() => SendTransportAsync(TransportCommand.Eject);
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
     private Task ToggleStandbyAsync() =>
         SendTransportAsync(IsStandbyOn ? TransportCommand.StandbyOff : TransportCommand.StandbyOn);
 
+    private void NotifyTransportCanExecuteChanged()
+    {
+        PlayCommand.NotifyCanExecuteChanged();
+        StopCommand.NotifyCanExecuteChanged();
+        FastForwardCommand.NotifyCanExecuteChanged();
+        RewindCommand.NotifyCanExecuteChanged();
+        EjectCommand.NotifyCanExecuteChanged();
+        ToggleStandbyCommand.NotifyCanExecuteChanged();
+    }
+
     private async Task SendTransportAsync(TransportCommand command)
     {
+        if (!CanUseTransport()) return;
+
         try
         {
             await _vtr.SendTransportCommandAsync(command);
@@ -802,7 +835,13 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     partial void OnIsRecordingChanged(bool value)
-        => StartRecordingCommand.NotifyCanExecuteChanged();
+    {
+        StartRecordingCommand.NotifyCanExecuteChanged();
+        NotifyTransportCanExecuteChanged();
+    }
+
+    partial void OnDisableTransportDuringRecordingChanged(bool value)
+        => NotifyTransportCanExecuteChanged();
 
     private void UpdateAudioMeters()
     {

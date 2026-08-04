@@ -12,11 +12,13 @@ public sealed partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(
         bool debugLoggingEnabled,
         bool showLogPanel,
+        bool disableTransportDuringRecording,
         IEnumerable<VtrDeviceProfile> vtrProfiles,
         string? selectedVtrProfileId)
     {
         DebugLoggingEnabled = debugLoggingEnabled;
         ShowLogPanel = showLogPanel;
+        DisableTransportDuringRecording = disableTransportDuringRecording;
         DebugLogFolderHint = DebugSessionFileLoggerProvider.LogDirectory;
 
         VtrProfiles = new ObservableCollection<VtrDeviceProfile>(vtrProfiles);
@@ -30,6 +32,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _showLogPanel;
+
+    [ObservableProperty]
+    private bool _disableTransportDuringRecording = true;
 
     [ObservableProperty]
     private VtrDeviceProfile _selectedVtrProfile = VtrDeviceProfile.Generic;

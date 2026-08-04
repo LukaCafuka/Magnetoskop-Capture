@@ -42,6 +42,9 @@ What you should see:
 - Transport buttons: Rew / Play / Stop / FF / Eject. **Standby** toggles threaded
   stop (yellow = standby on, gray = off). The color follows live deck status, so
   if the VTR auto-turns standby off after idle, the button updates on its own.
+  By default (**File → Settings…**), transport buttons are disabled while a
+  recording is active; uncheck **Disable transport buttons during recording** to
+  allow deck control during capture.
 - **TIME INFORMATION** shows CTL, LTC, VITC, and user bits. Values the deck cannot
   read in the current transport mode (e.g. LTC during fast wind) display as
   `--:--:--:--`.

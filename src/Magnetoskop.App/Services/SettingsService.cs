@@ -101,6 +101,9 @@ public sealed class AppSettings
     /// <summary>When true, show the LOG panel at the bottom of the main window.</summary>
     public bool ShowLogPanel { get; set; }
 
+    /// <summary>When true, VTR transport buttons are disabled while a recording is active.</summary>
+    public bool DisableTransportDuringRecording { get; set; } = true;
+
     /// <summary>Obsolete preset id from earlier builds; ignored on load.</summary>
     public string? RecordingProfileId { get; set; }
 }
