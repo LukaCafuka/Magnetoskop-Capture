@@ -82,6 +82,14 @@ The bottom bar sends commands to the connected deck:
 
 **Pause** is still (Shuttle 0): it freezes playback without issuing **Stop**.
 
+Keyboard **media keys** (Play/Pause, Stop, Next track = FF, Previous track = Rew)
+also drive transport while the app has focus; turn this off under **File → Settings…**
+if needed. Play/Pause toggles play vs pause.
+
+**J / K / L** (same setting): **K** toggles play/stop; **L** steps up forward speed
+(1× → 2× → 4× …); **J** starts slow reverse and steps up reverse speed. Ignored while
+typing in text fields. **Ctrl+S** toggles Standby.
+
 Next to those controls, a **Jog / Shuttle** wheel searches at variable speed:
 
 - Choose **Jog** (fine positioning, up to ~1×) or **Shuttle** (visual search, up to ~50×).

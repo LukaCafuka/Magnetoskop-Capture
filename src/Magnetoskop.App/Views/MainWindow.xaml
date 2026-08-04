@@ -10,6 +10,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d">
+    <Window.InputBindings>
+        <KeyBinding Key="MediaPlayPause" Command="{Binding MediaPlayPauseCommand}"/>
+        <KeyBinding Key="MediaStop" Command="{Binding MediaStopCommand}"/>
+        <KeyBinding Key="MediaNextTrack" Command="{Binding MediaFastForwardCommand}"/>
+        <KeyBinding Key="MediaPreviousTrack" Command="{Binding MediaRewindCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding ToggleStandbyCommand}"/>
+    </Window.InputBindings>
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style TargetType="TextBlock">

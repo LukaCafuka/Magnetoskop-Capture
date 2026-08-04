@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Channels;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -49,6 +50,9 @@ public sealed partial class MainViewModel : ObservableObject
     private VariableSpeedMode _lastWheelMode;
     private bool _suppressWheelSend;
     private WatchWindow? _watchWindow;
+    private TransportState _currentTransport = TransportState.Unknown;
+    /// <summary>JKL shuttle step: 0 stopped, +n forward, −n reverse.</summary>
+    private int _jklStep;
 
     public MainViewModel(
         VtrConnectionService vtr,
@@ -103,6 +107,7 @@ public sealed partial class MainViewModel : ObservableObject
         AutoPlayOnRecord = saved.AutoPlayOnRecord;
         ShowLogPanel = saved.ShowLogPanel;
         DisableTransportDuringRecording = saved.DisableTransportDuringRecording;
+        MediaKeysControlTransport = saved.MediaKeysControlTransport;
         PreviewYadif2xEnabled = saved.PreviewYadif2xEnabled;
         Ctl24HourWrap = saved.Ctl24HourWrap;
         // Keep runtime logger in sync with persisted preference (also set at host bootstrap).
@@ -161,6 +166,10 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>When true, VTR transport buttons are disabled while recording.</summary>
     [ObservableProperty]
     private bool _disableTransportDuringRecording = true;
+
+    /// <summary>When true, keyboard media keys drive VTR transport while the app has focus.</summary>
+    [ObservableProperty]
+    private bool _mediaKeysControlTransport = true;
 
     /// <summary>When true, live preview applies Yadif 2× (bob) deinterlace for watching.</summary>
     [ObservableProperty]
@@ -463,6 +472,7 @@ public sealed partial class MainViewModel : ObservableObject
         s.DebugLoggingEnabled = _debugLogger.Enabled;
         s.ShowLogPanel = ShowLogPanel;
         s.DisableTransportDuringRecording = DisableTransportDuringRecording;
+        s.MediaKeysControlTransport = MediaKeysControlTransport;
         s.PreviewYadif2xEnabled = PreviewYadif2xEnabled;
         s.Ctl24HourWrap = Ctl24HourWrap;
         _settings.Save();
@@ -476,6 +486,7 @@ public sealed partial class MainViewModel : ObservableObject
             _debugLogger.Enabled,
             ShowLogPanel,
             DisableTransportDuringRecording,
+            MediaKeysControlTransport,
             PreviewYadif2xEnabled,
             Ctl24HourWrap,
             VtrProfiles,
@@ -491,6 +502,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         ShowLogPanel = vm.ShowLogPanel;
         DisableTransportDuringRecording = vm.DisableTransportDuringRecording;
+        MediaKeysControlTransport = vm.MediaKeysControlTransport;
         PreviewYadif2xEnabled = vm.PreviewYadif2xEnabled;
         Ctl24HourWrap = vm.Ctl24HourWrap;
         _debugLogger.SetEnabled(vm.DebugLoggingEnabled);
@@ -864,6 +876,9 @@ public sealed partial class MainViewModel : ObservableObject
     private bool CanUseTransport()
         => !IsRecording || !DisableTransportDuringRecording;
 
+    private bool CanUseMediaKeys()
+        => MediaKeysControlTransport && CanUseTransport();
+
     [RelayCommand(CanExecute = nameof(CanUseTransport))]
     private Task PlayAsync() => SendTransportAsync(TransportCommand.Play);
 
@@ -886,6 +901,74 @@ public sealed partial class MainViewModel : ObservableObject
     private Task ToggleStandbyAsync() =>
         SendTransportAsync(IsStandbyOn ? TransportCommand.StandbyOff : TransportCommand.StandbyOn);
 
+    [RelayCommand(CanExecute = nameof(CanUseMediaKeys))]
+    private Task MediaPlayPauseAsync() =>
+        SendTransportAsync(_currentTransport == TransportState.Playing
+            ? TransportCommand.Pause
+            : TransportCommand.Play);
+
+    [RelayCommand(CanExecute = nameof(CanUseMediaKeys))]
+    private Task MediaStopAsync() => SendTransportAsync(TransportCommand.Stop);
+
+    [RelayCommand(CanExecute = nameof(CanUseMediaKeys))]
+    private Task MediaFastForwardAsync() => SendTransportAsync(TransportCommand.FastForward);
+
+    [RelayCommand(CanExecute = nameof(CanUseMediaKeys))]
+    private Task MediaRewindAsync() => SendTransportAsync(TransportCommand.Rewind);
+
+    /// <summary>
+    /// Resolve-style J/K/L. Returns true when the key was handled (caller should mark Handled).
+    /// </summary>
+    public async Task<bool> HandleJklKeyAsync(Key key)
+    {
+        if (!CanUseMediaKeys()) return false;
+        if (key is not (Key.J or Key.K or Key.L)) return false;
+
+        _jklStep = key switch
+        {
+            Key.K => JklShuttleSteps.ApplyK(_jklStep),
+            Key.L => JklShuttleSteps.ApplyL(_jklStep),
+            _ => JklShuttleSteps.ApplyJ(_jklStep),
+        };
+
+        var action = JklShuttleSteps.ToAction(_jklStep);
+        switch (action.Kind)
+        {
+            case JklActionKind.Stop:
+                await SendTransportAsync(TransportCommand.Stop, fromJkl: true);
+                break;
+            case JklActionKind.Play:
+                await SendTransportAsync(TransportCommand.Play, fromJkl: true);
+                break;
+            case JklActionKind.Shuttle:
+                await SendJklShuttleAsync(action.Forward, action.PlayRate);
+                break;
+        }
+
+        return true;
+    }
+
+    private async Task SendJklShuttleAsync(bool forward, double playRate)
+    {
+        if (!CanUseTransport()) return;
+
+        var speed = VariableSpeedEncoding.FromPlayRate(playRate, VariableSpeedMode.Shuttle);
+        try
+        {
+            await _vtr.SendVariableSpeedAsync(VariableSpeedMode.Shuttle, forward, speed);
+            var signed = forward ? playRate : -playRate;
+            AppendLog($"Transport: JKL {signed:+0.##;-0.##;0}× (N={speed})");
+        }
+        catch (UnsupportedCommandException ex)
+        {
+            ReportError("Shuttle not supported by this device", ex);
+        }
+        catch (Exception ex)
+        {
+            ReportError("JKL shuttle command failed", ex);
+        }
+    }
+
     private void NotifyTransportCanExecuteChanged()
     {
         PlayCommand.NotifyCanExecuteChanged();
@@ -895,7 +978,19 @@ public sealed partial class MainViewModel : ObservableObject
         RewindCommand.NotifyCanExecuteChanged();
         EjectCommand.NotifyCanExecuteChanged();
         ToggleStandbyCommand.NotifyCanExecuteChanged();
+        MediaPlayPauseCommand.NotifyCanExecuteChanged();
+        MediaStopCommand.NotifyCanExecuteChanged();
+        MediaFastForwardCommand.NotifyCanExecuteChanged();
+        MediaRewindCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(CanUseTransportButtons));
+    }
+
+    partial void OnMediaKeysControlTransportChanged(bool value)
+    {
+        MediaPlayPauseCommand.NotifyCanExecuteChanged();
+        MediaStopCommand.NotifyCanExecuteChanged();
+        MediaFastForwardCommand.NotifyCanExecuteChanged();
+        MediaRewindCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnJogShuttleModeChanged(VariableSpeedMode value)
@@ -990,9 +1085,19 @@ public sealed partial class MainViewModel : ObservableObject
         await SendTransportAsync(TransportCommand.Stop);
     }
 
-    private async Task SendTransportAsync(TransportCommand command)
+    private async Task SendTransportAsync(TransportCommand command, bool fromJkl = false)
     {
         if (!CanUseTransport()) return;
+
+        if (!fromJkl)
+        {
+            _jklStep = command switch
+            {
+                TransportCommand.Play => 1,
+                TransportCommand.Stop => 0,
+                _ => 0,
+            };
+        }
 
         try
         {
@@ -1162,6 +1267,7 @@ public sealed partial class MainViewModel : ObservableObject
         {
             IsVtrConnected = status.IsConnected;
             IsStandbyOn = status.IsConnected && status.Standby;
+            _currentTransport = status.Transport;
             TransportStateText = status.Transport.ToString();
             StatusBarTransportText = status.IsConnected
                 ? status.Transport.ToString()

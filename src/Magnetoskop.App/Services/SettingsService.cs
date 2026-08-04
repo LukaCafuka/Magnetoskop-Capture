@@ -106,6 +106,12 @@ public sealed class AppSettings
     /// <summary>When true, VTR transport buttons are disabled while a recording is active.</summary>
     public bool DisableTransportDuringRecording { get; set; } = true;
 
+    /// <summary>
+    /// When true, keyboard media keys (Play/Pause, Stop, Next, Previous) drive VTR transport
+    /// while the app has focus.
+    /// </summary>
+    public bool MediaKeysControlTransport { get; set; } = true;
+
     /// <summary>When true, live preview applies Yadif 2× (bob) deinterlace for easier watching.</summary>
     public bool PreviewYadif2xEnabled { get; set; }
 

@@ -13,6 +13,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         bool debugLoggingEnabled,
         bool showLogPanel,
         bool disableTransportDuringRecording,
+        bool mediaKeysControlTransport,
         bool previewYadif2xEnabled,
         bool ctl24HourWrap,
         IEnumerable<VtrDeviceProfile> vtrProfiles,
@@ -21,6 +22,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         DebugLoggingEnabled = debugLoggingEnabled;
         ShowLogPanel = showLogPanel;
         DisableTransportDuringRecording = disableTransportDuringRecording;
+        MediaKeysControlTransport = mediaKeysControlTransport;
         PreviewYadif2xEnabled = previewYadif2xEnabled;
         Ctl24HourWrap = ctl24HourWrap;
         DebugLogFolderHint = DebugSessionFileLoggerProvider.LogDirectory;
@@ -39,6 +41,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _disableTransportDuringRecording = true;
+
+    [ObservableProperty]
+    private bool _mediaKeysControlTransport = true;
 
     [ObservableProperty]
     private bool _previewYadif2xEnabled;

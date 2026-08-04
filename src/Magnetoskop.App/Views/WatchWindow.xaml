@@ -13,6 +13,11 @@
         mc:Ignorable="d">
     <Window.InputBindings>
         <KeyBinding Key="Escape" Command="{Binding CloseWatchWindowCommand}"/>
+        <KeyBinding Key="MediaPlayPause" Command="{Binding MediaPlayPauseCommand}"/>
+        <KeyBinding Key="MediaStop" Command="{Binding MediaStopCommand}"/>
+        <KeyBinding Key="MediaNextTrack" Command="{Binding MediaFastForwardCommand}"/>
+        <KeyBinding Key="MediaPreviousTrack" Command="{Binding MediaRewindCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding ToggleStandbyCommand}"/>
     </Window.InputBindings>
     <Window.Resources>
         <Style TargetType="TextBlock">

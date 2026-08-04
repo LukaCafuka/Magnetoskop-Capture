@@ -67,6 +67,11 @@
                 <TextBlock Margin="24,0,0,12" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
                            Text="Prevents accidental Stop, Eject, or other transport commands while a capture is writing."/>
 
+                <CheckBox IsChecked="{Binding MediaKeysControlTransport}"
+                          Content="Media keys control transport"/>
+                <TextBlock Margin="24,0,0,12" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                           Text="When the app has focus: media Play/Pause, Stop, Next=FF, Previous=Rew; also J/K/L shuttle (K toggles play/stop, L faster forward, J reverse). Ignored while typing in text fields."/>
+
                 <CheckBox IsChecked="{Binding Ctl24HourWrap}"
                           Content="CTL 24-hour wrap (below zero)"/>
                 <TextBlock Margin="24,0,0,18" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
