@@ -48,6 +48,7 @@ public sealed partial class MainViewModel : ObservableObject
     private bool _lastWheelForward = true;
     private VariableSpeedMode _lastWheelMode;
     private bool _suppressWheelSend;
+    private WatchWindow? _watchWindow;
 
     public MainViewModel(
         VtrConnectionService vtr,
@@ -519,6 +520,41 @@ public sealed partial class MainViewModel : ObservableObject
             SaveSettings();
             AppendLog($"Video settings: {SelectedRecordingProfile.DisplayName}");
         }
+    }
+
+    [RelayCommand]
+    private void OpenWatchWindow()
+    {
+        if (_watchWindow is { IsLoaded: true })
+        {
+            if (_watchWindow.WindowState == WindowState.Minimized)
+            {
+                _watchWindow.WindowState = WindowState.Maximized;
+            }
+
+            _watchWindow.Activate();
+            return;
+        }
+
+        var window = new WatchWindow(this)
+        {
+            Owner = Application.Current?.MainWindow,
+        };
+        _watchWindow = window;
+        window.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_watchWindow, window))
+            {
+                _watchWindow = null;
+            }
+        };
+        window.Show();
+    }
+
+    [RelayCommand]
+    private void CloseWatchWindow()
+    {
+        _watchWindow?.Close();
     }
 
     // ---- Device selection ----------------------------------------------------

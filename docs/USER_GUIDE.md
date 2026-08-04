@@ -72,6 +72,8 @@ recording is in progress).
 3. For easier watching of interlaced sources, enable **Yadif 2× deinterlace
    preview** under **File → Settings…**. This bob-deinterlaces the live preview
    only (recording encode is unchanged).
+4. Use **View → Watch window…** for a maximized preview with transport and
+   Jog/Shuttle only (Esc closes). The main window stays open underneath.
 
 ## 5. Transport control
 

@@ -151,6 +151,10 @@
                 <MenuItem Header="Video settings…"
                           Command="{Binding OpenVideoSettingsCommand}"/>
             </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="Watch window…"
+                          Command="{Binding OpenWatchWindowCommand}"/>
+            </MenuItem>
             <MenuItem Header="_Audio">
                 <MenuItem Header="Coming soon" IsEnabled="False"/>
             </MenuItem>
