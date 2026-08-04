@@ -17,6 +17,7 @@ public partial class MainWindow : Window
         DataContext = viewModel;
         Loaded += OnLoaded;
         PreviewKeyDown += OnPreviewKeyDown;
+        JogShuttleDial.Attach(JogShuttleDialSurface, viewModel);
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -138,10 +139,5 @@ public partial class MainWindow : Window
         return focused is TextBox or PasswordBox
             || focused is ComboBox { IsEditable: true }
             || focused is ComboBoxItem;
-    }
-
-    private void JogShuttleWheel_Released(object sender, MouseEventArgs e)
-    {
-        _ = _viewModel.ReleaseJogShuttleWheelAsync();
     }
 }

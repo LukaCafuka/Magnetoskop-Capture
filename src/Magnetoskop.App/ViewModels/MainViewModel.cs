@@ -49,6 +49,11 @@ public sealed partial class MainViewModel : ObservableObject
     private bool _lastWheelForward = true;
     private VariableSpeedMode _lastWheelMode;
     private bool _suppressWheelSend;
+    /// <summary>True while a variable-speed command is awaiting the deck.</summary>
+    private bool _wheelSendInFlight;
+    /// <summary>Set when a newer wheel position arrives during an in-flight send — flush after.</summary>
+    private bool _wheelSendPending;
+    private int _wheelReleaseEpoch;
     private WatchWindow? _watchWindow;
     private ConnectionsWindow? _connectionsWindow;
     private TransportState _currentTransport = TransportState.Unknown;
@@ -1182,53 +1187,107 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (!CanUseTransport() || !_vtr.IsConnected) return;
 
-        var (forward, speed) = VariableSpeedEncoding.FromWheel(WheelPosition, JogShuttleMode);
-        var now = DateTimeOffset.UtcNow;
-        if (!force
-            && speed == _lastWheelSpeed
-            && forward == _lastWheelForward
-            && JogShuttleMode == _lastWheelMode)
+        // Coalesce: never drop the latest cursor position. A prior implementation
+        // returned early during the 60ms throttle / in-flight await, so a fast sweep
+        // to the dial edge left the deck stuck at the last successfully sent speed.
+        if (_wheelSendInFlight)
         {
+            _wheelSendPending = true;
             return;
         }
 
-        if (!force && (now - _lastWheelSend).TotalMilliseconds < 60)
-        {
-            return;
-        }
-
-        _lastWheelSend = now;
-        _lastWheelSpeed = speed;
-        _lastWheelForward = forward;
-        _lastWheelMode = JogShuttleMode;
-
+        _wheelSendInFlight = true;
         try
         {
-            await _vtr.SendVariableSpeedAsync(JogShuttleMode, forward, speed);
-            if (speed == VariableSpeedEncoding.Still)
+            do
             {
-                AppendLog($"Transport: {JogShuttleMode} still");
-            }
-            else
+                _wheelSendPending = false;
+                if (_suppressWheelSend) break;
+
+                var (forward, speed) = VariableSpeedEncoding.FromWheel(WheelPosition, JogShuttleMode);
+                if (!force
+                    && speed == _lastWheelSpeed
+                    && forward == _lastWheelForward
+                    && JogShuttleMode == _lastWheelMode)
+                {
+                    break;
+                }
+
+                var elapsed = (DateTimeOffset.UtcNow - _lastWheelSend).TotalMilliseconds;
+                if (!force && elapsed < 60)
+                {
+                    await Task.Delay(Math.Max(1, 60 - (int)elapsed));
+                    // Re-read WheelPosition after the wait (cursor may have moved further).
+                    _wheelSendPending = true;
+                    force = false;
+                    continue;
+                }
+
+                if (_suppressWheelSend) break;
+
+                (forward, speed) = VariableSpeedEncoding.FromWheel(WheelPosition, JogShuttleMode);
+                if (!force
+                    && speed == _lastWheelSpeed
+                    && forward == _lastWheelForward
+                    && JogShuttleMode == _lastWheelMode)
+                {
+                    break;
+                }
+
+                _lastWheelSend = DateTimeOffset.UtcNow;
+                _lastWheelSpeed = speed;
+                _lastWheelForward = forward;
+                _lastWheelMode = JogShuttleMode;
+
+                try
+                {
+                    await _vtr.SendVariableSpeedAsync(JogShuttleMode, forward, speed);
+                    // Debug only — AppendLog on every nudge freezes the UI ListBox mid-drag.
+                    if (speed == VariableSpeedEncoding.Still)
+                    {
+                        _logger.LogDebug("Transport: {Mode} still", JogShuttleMode);
+                    }
+                    else
+                    {
+                        var rate = VariableSpeedEncoding.ToPlayRate(speed);
+                        _logger.LogDebug(
+                            "Transport: {Mode} {Sign}{Rate:0.##}× (N={Speed})",
+                            JogShuttleMode, forward ? "+" : "-", rate, speed);
+                    }
+                }
+                catch (UnsupportedCommandException ex)
+                {
+                    _wheelSendPending = false;
+                    ReportError($"{JogShuttleMode} not supported by this device", ex);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _wheelSendPending = false;
+                    ReportError($"{JogShuttleMode} command failed", ex);
+                    break;
+                }
+
+                force = false;
+            } while (_wheelSendPending && !_suppressWheelSend);
+        }
+        finally
+        {
+            _wheelSendInFlight = false;
+            if (_wheelSendPending && !_suppressWheelSend)
             {
-                var rate = VariableSpeedEncoding.ToPlayRate(speed);
-                AppendLog($"Transport: {JogShuttleMode} {(forward ? "+" : "-")}{rate:0.##}× (N={speed})");
+                _ = SendWheelAsync(force: false);
             }
-        }
-        catch (UnsupportedCommandException ex)
-        {
-            ReportError($"{JogShuttleMode} not supported by this device", ex);
-        }
-        catch (Exception ex)
-        {
-            ReportError($"{JogShuttleMode} command failed", ex);
         }
     }
 
     /// <summary>Snap the wheel to center and Stop the deck (mouse release).</summary>
     public async Task ReleaseJogShuttleWheelAsync()
     {
+        // MouseUp + LostMouseCapture both fire; only the first release should Stop.
+        var epoch = Interlocked.Increment(ref _wheelReleaseEpoch);
         _suppressWheelSend = true;
+        _wheelSendPending = false;
         try
         {
             WheelPosition = 0;
@@ -1241,6 +1300,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         if (!CanUseTransport()) return;
+        if (epoch != Volatile.Read(ref _wheelReleaseEpoch)) return;
         await SendTransportAsync(TransportCommand.Stop);
     }
 

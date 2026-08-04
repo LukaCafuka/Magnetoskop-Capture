@@ -164,13 +164,14 @@
                                              ToolTip="Variable search (up to ~50× play)"/>
                             </StackPanel>
                         </DockPanel>
-                        <Slider Minimum="-1" Maximum="1" TickFrequency="0.25"
-                                IsSnapToTickEnabled="False"
-                                Value="{Binding WheelPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsMoveToPointEnabled="True"
-                                PreviewMouseLeftButtonUp="JogShuttleWheel_Released"
-                                LostMouseCapture="JogShuttleWheel_Released"
-                                ToolTip="Hold and drag: left = reverse, right = forward. Release returns to still and stops."/>
+                        <Grid Height="22" ToolTip="Hold and drag: left = reverse, right = forward. Release returns to still and stops.">
+                            <Slider Minimum="-1" Maximum="1" TickFrequency="0.25"
+                                    IsSnapToTickEnabled="False"
+                                    IsHitTestVisible="False" Focusable="False"
+                                    Value="{Binding WheelPosition, Mode=OneWay}"/>
+                            <Border x:Name="JogShuttleDialSurface"
+                                    Background="#01FFFFFF" Cursor="SizeWE"/>
+                        </Grid>
                     </StackPanel>
                 </Border>
             </StackPanel>
