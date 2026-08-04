@@ -117,6 +117,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         // Property changers (e.g. AudioMonitoringEnabled) may SaveSettings; allow that only after load.
         _settingsReady = true;
+        RefreshStatusBarCodec();
     }
 
     // ---- Observable state ------------------------------------------------
@@ -255,6 +256,22 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _recordingStatusText = "Idle";
 
+    /// <summary>Bottom status bar: Idle / ● REC / Starting…</summary>
+    [ObservableProperty]
+    private string _statusBarRecordingText = "Idle";
+
+    /// <summary>Bottom status bar: recording elapsed, or em dash when idle.</summary>
+    [ObservableProperty]
+    private string _statusBarElapsedText = "—";
+
+    /// <summary>Bottom status bar: short codec/container summary.</summary>
+    [ObservableProperty]
+    private string _statusBarCodecText = "—";
+
+    /// <summary>Bottom status bar: VTR transport or offline.</summary>
+    [ObservableProperty]
+    private string _statusBarTransportText = "VTR offline";
+
     [ObservableProperty]
     private string _lastError = "";
 
@@ -340,6 +357,7 @@ public sealed partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             IsVtrConnected = false;
+            StatusBarTransportText = "VTR offline";
             ReportError($"Failed to connect to {SelectedVtrConnection.DisplayName}", ex);
         }
     }
@@ -1110,6 +1128,7 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnSelectedRecordingProfileChanged(RecordingProfile? value)
     {
         OnPropertyChanged(nameof(VideoSettingsSummary));
+        RefreshStatusBarCodec();
         StartRecordingCommand.NotifyCanExecuteChanged();
     }
 
@@ -1144,6 +1163,9 @@ public sealed partial class MainViewModel : ObservableObject
             IsVtrConnected = status.IsConnected;
             IsStandbyOn = status.IsConnected && status.Standby;
             TransportStateText = status.Transport.ToString();
+            StatusBarTransportText = status.IsConnected
+                ? status.Transport.ToString()
+                : "VTR offline";
 
             var flags = new List<string>();
             if (status.TapeOut) flags.Add("TAPE OUT");
@@ -1184,11 +1206,29 @@ public sealed partial class MainViewModel : ObservableObject
                 _ => status.State.ToString(),
             };
             IsRecording = status.State is RecordingState.Recording or RecordingState.Starting;
+            StatusBarRecordingText = status.State switch
+            {
+                RecordingState.Recording => "● REC",
+                RecordingState.Starting => "Starting…",
+                RecordingState.Stopping => "Stopping…",
+                RecordingState.Faulted => "Faulted",
+                _ => "Idle",
+            };
+            StatusBarElapsedText = status.State is RecordingState.Recording or RecordingState.Starting or RecordingState.Stopping
+                ? status.Elapsed.ToString(@"hh\:mm\:ss")
+                : "—";
             if (status.State == RecordingState.Faulted && status.Error is not null)
             {
                 ReportError(status.Error, null);
             }
         });
+    }
+
+    private void RefreshStatusBarCodec()
+    {
+        StatusBarCodecText = SelectedRecordingProfile is { } profile
+            ? $"{profile.VideoCodec} / {profile.AudioCodec} ({profile.Container})"
+            : "—";
     }
 
     // ---- Helpers ------------------------------------------------------------------
