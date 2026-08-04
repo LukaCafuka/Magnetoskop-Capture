@@ -32,7 +32,18 @@ public sealed class NAudioCaptureService : IAudioCaptureService
 
     public AudioFormat? CurrentFormat => _format;
 
-    public IReadOnlyList<float> PeakLevels => _peaks;
+    public IReadOnlyList<float> PeakLevels
+    {
+        get
+        {
+            lock (_gate)
+            {
+                var copy = (float[])_peaks.Clone();
+                Array.Clear(_peaks);
+                return copy;
+            }
+        }
+    }
 
     public Task<IReadOnlyList<CaptureDeviceInfo>> EnumerateDevicesAsync(CancellationToken cancellationToken = default)
     {
@@ -119,7 +130,10 @@ public sealed class NAudioCaptureService : IAudioCaptureService
                 BitsPerSample = capture.WaveFormat.BitsPerSample,
             };
 
-            _peaks = new float[format.Channels];
+            lock (_gate)
+            {
+                _peaks = new float[format.Channels];
+            }
             _samplesDelivered = 0;
 
             capture.DataAvailable += (_, e) => OnDataAvailable(e, format);
@@ -176,19 +190,19 @@ public sealed class NAudioCaptureService : IAudioCaptureService
     {
         var bytesPerSample = format.BitsPerSample / 8;
         var frameBytes = bytesPerSample * format.Channels;
-        var peaks = new float[format.Channels];
 
-        for (var offset = 0; offset + frameBytes <= data.Length; offset += frameBytes)
+        lock (_gate)
         {
-            for (var ch = 0; ch < format.Channels; ch++)
+            for (var offset = 0; offset + frameBytes <= data.Length; offset += frameBytes)
             {
-                var sample = BitConverter.ToInt16(data, offset + ch * bytesPerSample);
-                var level = Math.Abs(sample / (float)short.MaxValue);
-                if (level > peaks[ch]) peaks[ch] = level;
+                for (var ch = 0; ch < format.Channels; ch++)
+                {
+                    var sample = BitConverter.ToInt16(data, offset + ch * bytesPerSample);
+                    var level = Math.Abs(sample / (float)short.MaxValue);
+                    if (level > _peaks[ch]) _peaks[ch] = level;
+                }
             }
         }
-
-        _peaks = peaks;
     }
 
     public Task StopAsync(CancellationToken cancellationToken = default)
@@ -206,7 +220,10 @@ public sealed class NAudioCaptureService : IAudioCaptureService
                 _capture.Dispose();
                 _capture = null;
                 _format = null;
-                Array.Clear(_peaks);
+                lock (_gate)
+                {
+                    Array.Clear(_peaks);
+                }
                 IsCapturing = false;
                 lock (_gate)
                 {

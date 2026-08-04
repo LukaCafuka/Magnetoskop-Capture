@@ -98,7 +98,7 @@ public sealed class FakeAudioCaptureService : IAudioCaptureService
 {
     public bool IsCapturing { get; set; }
     public AudioFormat? CurrentFormat { get; set; }
-    public IReadOnlyList<float> PeakLevels { get; } = new float[] { 0, 0 };
+    public IReadOnlyList<float> PeakLevels { get; private set; } = new float[] { 0, 0 };
 
     public Task<IReadOnlyList<CaptureDeviceInfo>> EnumerateDevicesAsync(CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<CaptureDeviceInfo>>(Array.Empty<CaptureDeviceInfo>());

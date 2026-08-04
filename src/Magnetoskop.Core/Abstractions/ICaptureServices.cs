@@ -29,7 +29,10 @@ public interface IAudioCaptureService : IAsyncDisposable
     bool IsCapturing { get; }
     AudioFormat? CurrentFormat { get; }
 
-    /// <summary>Latest peak level per channel in the 0..1 range (for UI meters).</summary>
+    /// <summary>
+    /// Peak level per channel in the 0..1 range since the last read (consume-on-read).
+    /// Implementations hold the max across capture buffers, return a copy, then zero.
+    /// </summary>
     IReadOnlyList<float> PeakLevels { get; }
 
     Task<IReadOnlyList<CaptureDeviceInfo>> EnumerateDevicesAsync(CancellationToken cancellationToken = default);

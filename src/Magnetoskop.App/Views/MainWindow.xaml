@@ -521,14 +521,13 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <ProgressBar Grid.Row="0" Height="8" Margin="0,0,0,3"
+                            <ProgressBar Grid.Row="0" Style="{StaticResource AudioLevelBar}"
+                                         Margin="0,0,0,3"
                                          Minimum="0" Maximum="1"
-                                         Value="{Binding AudioLevelLeft, Mode=OneWay}"
-                                         Foreground="#66FF99" Background="#111111"/>
-                            <ProgressBar Grid.Row="1" Height="8"
+                                         Value="{Binding AudioLevelLeft, Mode=OneWay}"/>
+                            <ProgressBar Grid.Row="1" Style="{StaticResource AudioLevelBar}"
                                          Minimum="0" Maximum="1"
-                                         Value="{Binding AudioLevelRight, Mode=OneWay}"
-                                         Foreground="#66FF99" Background="#111111"/>
+                                         Value="{Binding AudioLevelRight, Mode=OneWay}"/>
                         </Grid>
                     </StackPanel>
                 </Border>

@@ -32,7 +32,18 @@ public sealed class SimulatedAudioCaptureService : IAudioCaptureService
 
     public AudioFormat? CurrentFormat => IsCapturing ? Format : null;
 
-    public IReadOnlyList<float> PeakLevels => _peaks;
+    public IReadOnlyList<float> PeakLevels
+    {
+        get
+        {
+            lock (_gate)
+            {
+                var copy = (float[])_peaks.Clone();
+                Array.Clear(_peaks);
+                return copy;
+            }
+        }
+    }
 
     public Task<IReadOnlyList<CaptureDeviceInfo>> EnumerateDevicesAsync(CancellationToken cancellationToken = default)
     {
@@ -73,7 +84,10 @@ public sealed class SimulatedAudioCaptureService : IAudioCaptureService
         _cts?.Dispose();
         _cts = null;
         _loop = null;
-        Array.Clear(_peaks);
+        lock (_gate)
+        {
+            Array.Clear(_peaks);
+        }
         _logger.LogInformation("Simulated audio capture stopped");
     }
 
@@ -123,8 +137,11 @@ public sealed class SimulatedAudioCaptureService : IAudioCaptureService
                 data[offset + 3] = data[offset + 1];
             }
 
-            _peaks[0] = peak;
-            _peaks[1] = peak;
+            lock (_gate)
+            {
+                if (peak > _peaks[0]) _peaks[0] = peak;
+                if (peak > _peaks[1]) _peaks[1] = peak;
+            }
 
             var buffer = new AudioBuffer
             {

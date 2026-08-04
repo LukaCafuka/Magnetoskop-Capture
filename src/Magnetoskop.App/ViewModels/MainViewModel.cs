@@ -113,9 +113,9 @@ public sealed partial class MainViewModel : ObservableObject
         // Keep runtime logger in sync with persisted preference (also set at host bootstrap).
         _debugLogger.SetEnabled(saved.DebugLoggingEnabled);
 
-        _meterTimer = new DispatcherTimer(DispatcherPriority.Background)
+        _meterTimer = new DispatcherTimer(DispatcherPriority.Render)
         {
-            Interval = TimeSpan.FromMilliseconds(100),
+            Interval = TimeSpan.FromMilliseconds(33),
         };
         _meterTimer.Tick += (_, _) => UpdateAudioMeters();
         _meterTimer.Start();
@@ -1365,9 +1365,14 @@ public sealed partial class MainViewModel : ObservableObject
             AudioLevelRight = 0;
             return;
         }
+
+        // PeakLevels consumes held peaks since the last tick; release softens the fall.
+        const double release = 0.75;
         var peaks = _audioCapture.PeakLevels;
-        AudioLevelLeft = peaks.Count > 0 ? peaks[0] : 0;
-        AudioLevelRight = peaks.Count > 1 ? peaks[1] : AudioLevelLeft;
+        var left = peaks.Count > 0 ? peaks[0] : 0;
+        var right = peaks.Count > 1 ? peaks[1] : left;
+        AudioLevelLeft = Math.Max(left, AudioLevelLeft * release);
+        AudioLevelRight = Math.Max(right, AudioLevelRight * release);
     }
 
     // ---- Event handlers ---------------------------------------------------------
