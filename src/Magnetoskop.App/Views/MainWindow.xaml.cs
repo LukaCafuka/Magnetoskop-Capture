@@ -38,6 +38,7 @@ public partial class MainWindow : Window
     }
 
     private bool _ltcCommitting;
+    private bool _ctlCommitting;
 
     private void LtcDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -77,6 +78,46 @@ public partial class MainWindow : Window
     {
         if (_ltcCommitting || !_viewModel.IsEditingLtc) return;
         _viewModel.CancelEditLtcCommand.Execute(null);
+    }
+
+    private void CtlDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_viewModel.BeginEditCtlCommand.CanExecute(null)) return;
+        _viewModel.BeginEditCtlCommand.Execute(null);
+        Dispatcher.BeginInvoke(() =>
+        {
+            CtlEditBox.Focus();
+            CtlEditBox.SelectAll();
+        }, System.Windows.Threading.DispatcherPriority.Input);
+        e.Handled = true;
+    }
+
+    private async void CtlEditBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            _ctlCommitting = true;
+            try
+            {
+                await _viewModel.CommitGoToCtlCommand.ExecuteAsync(null);
+            }
+            finally
+            {
+                _ctlCommitting = false;
+            }
+        }
+        else if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+            _viewModel.CancelEditCtlCommand.Execute(null);
+        }
+    }
+
+    private void CtlEditBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (_ctlCommitting || !_viewModel.IsEditingCtl) return;
+        _viewModel.CancelEditCtlCommand.Execute(null);
     }
 
     private static bool IsTextInputFocused()

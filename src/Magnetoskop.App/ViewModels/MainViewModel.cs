@@ -144,6 +144,12 @@ public sealed partial class MainViewModel : ObservableObject
     private string _ctlText = "--:--:--:--";
 
     [ObservableProperty]
+    private bool _isEditingCtl;
+
+    [ObservableProperty]
+    private string _ctlEditText = "00:00:00:00";
+
+    [ObservableProperty]
     private string _ltcText = "--:--:--:--";
 
     [ObservableProperty]
@@ -925,7 +931,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void BeginEditLtc()
     {
-        if (!CanUseTransport() || IsEditingLtc) return;
+        if (!CanUseTransport() || IsEditingLtc || IsEditingCtl) return;
         LtcEditText = LtcText.StartsWith("--", StringComparison.Ordinal) || LtcText.StartsWith('-')
             ? "00:00:00:00"
             : LtcText;
@@ -956,7 +962,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         try
         {
-            await _vtr.CueUpAsync(timecode);
+            await _vtr.CueUpAsync(timecode, CueUpTimerMode.TimeCode);
             AppendLog($"Transport: Cue Up {timecode} (LTC / TIME CODE mode)");
             IsEditingLtc = false;
         }
@@ -967,6 +973,57 @@ public sealed partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             ReportError($"Cue Up to {timecode} failed", ex);
+        }
+    }
+
+    [RelayCommand]
+    private void BeginEditCtl()
+    {
+        if (!CanUseTransport() || IsEditingCtl || IsEditingLtc) return;
+        CtlEditText = CtlText.StartsWith("--", StringComparison.Ordinal)
+            ? "00:00:00:00"
+            : CtlText;
+        IsEditingCtl = true;
+    }
+
+    [RelayCommand]
+    private void CancelEditCtl()
+    {
+        IsEditingCtl = false;
+    }
+
+    [RelayCommand]
+    private async Task CommitGoToCtlAsync()
+    {
+        if (!CanUseTransport()) return;
+
+        // Wrap display is non-negative; signed display may use a leading '-'.
+        var allowNegative = !Ctl24HourWrap;
+        if (!Timecode.TryParse(CtlEditText, out var timecode, allowNegative))
+        {
+            ReportError(
+                allowNegative
+                    ? "Invalid CTL. Use HH:MM:SS:FF or −HH:MM:SS:FF (signed), or MM:SS:FF."
+                    : "Invalid CTL. Use HH:MM:SS:FF (24h wrap), or MM:SS:FF.",
+                null);
+            return;
+        }
+
+        CtlEditText = timecode.ToString();
+
+        try
+        {
+            await _vtr.CueUpAsync(timecode, CueUpTimerMode.Timer1);
+            AppendLog($"Transport: Cue Up {timecode} (CTL / TIMER-1 mode)");
+            IsEditingCtl = false;
+        }
+        catch (UnsupportedCommandException ex)
+        {
+            ReportError("Cue Up not supported by this device", ex);
+        }
+        catch (Exception ex)
+        {
+            ReportError($"CTL Cue Up to {timecode} failed", ex);
         }
     }
 

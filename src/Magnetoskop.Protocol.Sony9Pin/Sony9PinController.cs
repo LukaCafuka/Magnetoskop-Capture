@@ -173,7 +173,10 @@ public sealed class Sony9PinController : IVtrController
         await ExchangeTransportAsync(command, block, cancellationToken);
     }
 
-    public async Task CueUpAsync(Timecode timecode, CancellationToken cancellationToken = default)
+    public async Task CueUpAsync(
+        Timecode timecode,
+        CueUpTimerMode timerMode = CueUpTimerMode.TimeCode,
+        CancellationToken cancellationToken = default)
     {
         if (!IsConnected)
         {
@@ -194,20 +197,19 @@ public sealed class Sony9PinController : IVtrController
         }
 
         // Cue Up With Data uses the deck's timer mode (TC / Timer-1 / Timer-2).
-        // Force TIME CODE so the target matches LTC, not CTL.
         try
         {
             var timerResponse = await _transceiver.ExchangeAsync(
-                Sony9PinCommands.TimerModeSelectTimeCode(), cancellationToken);
+                Sony9PinCommands.TimerModeSelect(timerMode), cancellationToken);
             if (timerResponse is Sony9PinResponse.Ack)
             {
-                _logger.LogInformation("Timer mode set to TIME CODE before Cue Up");
+                _logger.LogInformation("Timer mode set to {Mode} before Cue Up", timerMode);
             }
             else
             {
                 _logger.LogWarning(
-                    "Timer Mode Select before Cue Up returned {Response}; proceeding anyway",
-                    timerResponse);
+                    "Timer Mode Select ({Mode}) before Cue Up returned {Response}; proceeding anyway",
+                    timerMode, timerResponse);
             }
         }
         catch (Exception ex)
@@ -216,7 +218,7 @@ public sealed class Sony9PinController : IVtrController
         }
 
         var block = Sony9PinCommands.CueUpWithData(timecode);
-        _logger.LogInformation("Cue Up {Timecode} → {Block}", timecode, block);
+        _logger.LogInformation("Cue Up {Timecode} ({Mode}) → {Block}", timecode, timerMode, block);
         await ExchangeTransportAsync(command, block, cancellationToken);
     }
 

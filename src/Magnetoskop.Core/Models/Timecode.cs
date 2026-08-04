@@ -48,15 +48,22 @@ public readonly record struct Timecode(
     /// <summary>
     /// Parses tape timecode for Cue Up.
     /// Accepts <c>HH:MM:SS:FF</c> / <c>HH:MM:SS;FF</c>, or short <c>MM:SS:FF</c> as <c>00:MM:SS:FF</c>.
-    /// Leading zeros optional. Rejects negatives and malformed strings.
+    /// Leading zeros optional. When <paramref name="allowNegative"/> is true, a leading '-' sets
+    /// <see cref="IsNegative"/> (CTL sign). Otherwise negatives are rejected.
     /// </summary>
-    public static bool TryParse(string? text, out Timecode timecode)
+    public static bool TryParse(string? text, out Timecode timecode, bool allowNegative = false)
     {
         timecode = default;
         if (string.IsNullOrWhiteSpace(text)) return false;
 
         text = text.Trim();
-        if (text.StartsWith('-')) return false;
+        var negative = false;
+        if (text.StartsWith('-'))
+        {
+            if (!allowNegative) return false;
+            negative = true;
+            text = text[1..].TrimStart();
+        }
 
         var dropFrame = text.Contains(';');
         var parts = text.Replace(';', ':').Split(':');
@@ -96,7 +103,7 @@ public readonly record struct Timecode(
             return false;
         }
 
-        timecode = new Timecode(hours, minutes, seconds, frames, DropFrame: dropFrame);
+        timecode = new Timecode(hours, minutes, seconds, frames, DropFrame: dropFrame, IsNegative: negative);
         return true;
     }
 

@@ -43,9 +43,14 @@ public static class Sony9PinCommands
 
     /// <summary>
     /// 41 36 Timer Mode Select. DATA-1 = 00 TIME CODE, 01 TIMER-1, 02 TIMER-2.
-    /// Cue Up With Data follows this mode — use TIME CODE for LTC go-to.
+    /// Cue Up With Data follows this mode.
     /// </summary>
-    public static CommandBlock TimerModeSelectTimeCode() => new(0x41, 0x36, 0x00);
+    public static CommandBlock TimerModeSelect(Core.Models.CueUpTimerMode mode)
+        => new(0x41, 0x36, (byte)mode);
+
+    /// <summary>41 36 with TIME CODE (LTC go-to).</summary>
+    public static CommandBlock TimerModeSelectTimeCode()
+        => TimerModeSelect(Core.Models.CueUpTimerMode.TimeCode);
 
     // ---- Sense requests (group 6) ----
 

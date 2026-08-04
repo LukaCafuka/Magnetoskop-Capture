@@ -121,6 +121,25 @@ public class ControllerTests
     }
 
     [Fact]
+    public async Task CueUp_Timer1_SelectsTimerModeThenCues()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+
+        await controller.CueUpAsync(new Timecode(0, 5, 0, 0), CueUpTimerMode.Timer1);
+
+        var commands = transport.ReceivedCommands.ToArray();
+        Assert.Contains(commands, c =>
+            c.Cmd1 == 0x41 && c.Cmd2 == 0x36
+            && c.Data.Count == 1 && c.Data[0] == 0x01);
+        Assert.Contains(commands, c =>
+            c.Cmd1 == 0x24 && c.Cmd2 == 0x31
+            && c.Data.Count == 4
+            && c.Data[2] == 0x05); // minutes = 5
+    }
+
+    [Fact]
     public async Task Pause_SendsShuttleZero()
     {
         var transport = new FakeSerialTransport { Responder = DefaultResponder };

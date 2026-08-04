@@ -370,7 +370,42 @@
                         <UniformGrid Columns="2">
                             <StackPanel Margin="0,0,10,8">
                                 <TextBlock Style="{StaticResource TimecodeLabel}" Text="CTL"/>
-                                <TextBlock Style="{StaticResource TimecodeText}" Text="{Binding CtlText}"/>
+                                <Grid>
+                                    <TextBlock Text="{Binding CtlText}"
+                                               Cursor="Hand"
+                                               ToolTip="Click to go to CTL (Timer-1). Enter HH:MM:SS:FF; signed −HH:MM:SS:FF when wrap is off. Esc cancels."
+                                               MouseLeftButtonDown="CtlDisplay_MouseLeftButtonDown">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource TimecodeText}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEditingCtl}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBox x:Name="CtlEditBox"
+                                             Text="{Binding CtlEditText, UpdateSourceTrigger=PropertyChanged}"
+                                             FontFamily="Consolas" FontSize="26"
+                                             Foreground="#66FF99" Background="#1A1A1A"
+                                             BorderBrush="#66FF99" CaretBrush="#66FF99"
+                                             Padding="2,0"
+                                             KeyDown="CtlEditBox_KeyDown"
+                                             LostKeyboardFocus="CtlEditBox_LostKeyboardFocus">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEditingCtl}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+                                </Grid>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,8">
                                 <TextBlock Style="{StaticResource TimecodeLabel}" Text="LTC"/>

@@ -54,6 +54,8 @@ What you should see:
   there (Sony Cue Up With Data, forced to TIME CODE / LTC mode). Use
   `HH:MM:SS:FF` (e.g. `00:01:00:00` for one minute) or short `MM:SS:FF`.
   **Esc** or clicking away cancels. Note: `1:00:00:00` is **one hour**, not one minute.
+- Click **CTL** the same way to cue on TIMER-1 / CTL (Timer Mode Select `01`).
+  Signed CTL (`−00:00:00:01`) is allowed when 24h wrap display is off.
 - If the deck rejects a command as unsupported, the app remembers it and shows it
   in the "Learned:" line of the status panel.
 

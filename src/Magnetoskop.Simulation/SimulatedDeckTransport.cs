@@ -35,6 +35,7 @@ public sealed class SimulatedDeckTransport : ISerialTransport
     private bool _tapeOut;
     private long _lastAdvanceTicks = Environment.TickCount64;
     private int _commandsSeen;
+    private CueUpTimerMode _timerMode = CueUpTimerMode.TimeCode;
 
     public SimulatedDeckTransport(DeckPersonality personality)
     {
@@ -208,10 +209,21 @@ public sealed class SimulatedDeckTransport : ISerialTransport
             (0x20, 0x31) when data.Length >= 4 => HandleCueUp(data),
             (0x20, _) when data.Length > 0 => HandleVariableSpeed(cmd2, data[0]),
             (0x20, _) => HandleTransport(cmd2),
+            (0x40, 0x36) when data.Length >= 1 => HandleTimerModeSelect(data[0]),
             (0x60, 0x20) => HandleStatusSense(data),
             (0x60, 0x0C) => HandleTimeSense(data),
             _ => Nak(0x01), // undefined command
         };
+    }
+
+    private byte[] HandleTimerModeSelect(byte mode)
+    {
+        _timerMode = mode switch
+        {
+            0x01 => CueUpTimerMode.Timer1,
+            _ => CueUpTimerMode.TimeCode,
+        };
+        return Ack();
     }
 
     private byte[] HandleCueUp(ReadOnlySpan<byte> data)
@@ -224,8 +236,16 @@ public sealed class SimulatedDeckTransport : ISerialTransport
         if (!_tapeOut)
         {
             var tc = DecodeBcdTimecode(data);
-            var ltcFrames = tc.ToFrameCount(FrameRate);
-            var pos = ltcFrames - TimecodeOffsetFrames;
+            long pos;
+            if (_timerMode == CueUpTimerMode.Timer1)
+            {
+                pos = tc.ToFrameCount(FrameRate);
+            }
+            else
+            {
+                pos = tc.ToFrameCount(FrameRate) - TimecodeOffsetFrames;
+            }
+
             _tapePositionFrames = Math.Clamp(pos, 0, TapeLengthFrames);
             _transport = TransportState.Still;
             _variablePlayRate = 0;
@@ -237,13 +257,15 @@ public sealed class SimulatedDeckTransport : ISerialTransport
     private static Timecode DecodeBcdTimecode(ReadOnlySpan<byte> data)
     {
         static int FromBcd(byte b) => (b >> 4 & 0x0F) * 10 + (b & 0x0F);
+        var negative = (data[3] & 0x40) != 0 || (data[3] & 0x80) != 0;
         return new Timecode(
             Hours: FromBcd((byte)(data[3] & 0x3F)),
             Minutes: FromBcd(data[2]),
             Seconds: FromBcd(data[1]),
             Frames: FromBcd((byte)(data[0] & 0x3F)),
             DropFrame: (data[0] & 0x40) != 0,
-            ColorFrame: (data[0] & 0x80) != 0);
+            ColorFrame: (data[0] & 0x80) != 0,
+            IsNegative: negative);
     }
 
     private byte[] HandleDeviceTypeRequest()

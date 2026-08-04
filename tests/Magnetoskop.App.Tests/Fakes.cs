@@ -47,10 +47,15 @@ public sealed class FakeVtrController : IVtrController
         => Task.CompletedTask;
 
     public List<Timecode> CueUpTargets { get; } = new();
+    public List<CueUpTimerMode> CueUpModes { get; } = new();
 
-    public Task CueUpAsync(Timecode timecode, CancellationToken cancellationToken = default)
+    public Task CueUpAsync(
+        Timecode timecode,
+        CueUpTimerMode timerMode = CueUpTimerMode.TimeCode,
+        CancellationToken cancellationToken = default)
     {
         CueUpTargets.Add(timecode);
+        CueUpModes.Add(timerMode);
         SentCommands.Add(TransportCommand.CueUp);
         return Task.CompletedTask;
     }

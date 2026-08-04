@@ -88,6 +88,15 @@ public class TimecodeTests
     }
 
     [Fact]
+    public void TryParse_AllowsNegativeWhenRequested()
+    {
+        Assert.True(Timecode.TryParse("-00:00:00:01", out var tc, allowNegative: true));
+        Assert.True(tc.IsNegative);
+        Assert.Equal(1, tc.Frames);
+        Assert.Equal("-00:00:00:01", tc.ToString());
+    }
+
+    [Fact]
     public void InterpretAsSignedCtl_ConvertsWrappedNearMidnight()
     {
         // -1 frame @ 25 fps wraps to 23:59:59:24 on a 24h CTL counter.

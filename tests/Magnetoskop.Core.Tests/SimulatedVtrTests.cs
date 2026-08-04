@@ -107,7 +107,7 @@ public class SimulatedVtrTests : IAsyncLifetime
     public async Task CueUp_SeeksToLtcAndSetsStill()
     {
         // LTC = CTL + 01:00:00:00 offset → cue to 01:10:00:00 → CTL 00:10:00:00
-        await _vtr.CueUpAsync(new Timecode(1, 10, 0, 0));
+        await _vtr.CueUpAsync(new Timecode(1, 10, 0, 0), CueUpTimerMode.TimeCode);
         var status = await WaitForStatusAsync(s => s.Transport == TransportState.Still);
         Assert.Equal(TransportState.Still, status.Transport);
 
@@ -115,6 +115,18 @@ public class SimulatedVtrTests : IAsyncLifetime
             t.Ltc is { } ltc && ltc.Hours == 1 && ltc.Minutes == 10);
         Assert.Equal(new Timecode(1, 10, 0, 0), time.Ltc);
         Assert.Equal(new Timecode(0, 10, 0, 0), time.Ctl);
+    }
+
+    [Fact]
+    public async Task CueUp_Timer1_SeeksToCtl()
+    {
+        await _vtr.CueUpAsync(new Timecode(0, 12, 0, 0), CueUpTimerMode.Timer1);
+        var status = await WaitForStatusAsync(s => s.Transport == TransportState.Still);
+        Assert.Equal(TransportState.Still, status.Transport);
+
+        var time = await WaitForTimeAsync(t =>
+            t.Ctl is { } ctl && ctl.Minutes == 12 && ctl.Hours == 0);
+        Assert.Equal(new Timecode(0, 12, 0, 0), time.Ctl);
     }
 
     [Fact]

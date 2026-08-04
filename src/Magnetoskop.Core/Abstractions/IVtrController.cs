@@ -54,9 +54,13 @@ public interface IVtrController : IAsyncDisposable
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Cues the deck to a tape timecode (Sony 9-pin Cue Up With Data <c>24 31</c>).
+    /// Cues the deck via Sony 9-pin Cue Up With Data (<c>24 31</c>) after selecting
+    /// the timer mode (<c>41 36</c>): TIME CODE for LTC, TIMER-1 for CTL.
     /// </summary>
-    Task CueUpAsync(Timecode timecode, CancellationToken cancellationToken = default);
+    Task CueUpAsync(
+        Timecode timecode,
+        CueUpTimerMode timerMode = CueUpTimerMode.TimeCode,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Reads the latest known status (does not force a poll).</summary>
     VtrStatus CurrentStatus { get; }
