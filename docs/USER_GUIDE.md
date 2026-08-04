@@ -86,9 +86,14 @@ recording is in progress).
 ## 5. Transport control
 
 The bottom bar sends commands to the connected deck:
-**⏪ Rew · ▶ Play · ■ Stop · ⏸ Pause · ⏩ FF · ⏏ Eject · Standby**
+**⏪ Rew · ▶ Play · ■ Stop · ⏸ Pause · ◀ Frame · Frame ▶ · ⏩ FF · ⏏ Eject · Standby**
 
 **Pause** is still (Shuttle 0): it freezes playback without issuing **Stop**.
+
+**◀ Frame / Frame ▶** are Sony **FRAME STEP** (`20 24` / `20 14`): move one frame
+backward or forward, then still. (There is no separate field-step command in 9-pin;
+finer field jogging uses the Jog wheel.) Keyboard **`,`** = reverse, **`.`** = forward
+when the app has focus and you are not typing in a text field.
 
 Keyboard **media keys** (Play/Pause, Stop, Next track = FF, Previous track = Rew)
 also drive transport while the app has focus; turn this off under **File → Settings…**

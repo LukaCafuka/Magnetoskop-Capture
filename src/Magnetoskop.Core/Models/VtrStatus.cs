@@ -27,6 +27,10 @@ public enum TransportCommand
     Eject,
     /// <summary>Still/pause without Stop (Sony 9-pin Shuttle 0).</summary>
     Pause,
+    /// <summary>Sony FRAME STEP forward (<c>20 14</c>) — one frame, then still.</summary>
+    FrameStepForward,
+    /// <summary>Sony FRAME STEP reverse (<c>20 24</c>) — one frame back, then still.</summary>
+    FrameStepReverse,
     // Reserved for later phases:
     Record,
     StandbyOn,

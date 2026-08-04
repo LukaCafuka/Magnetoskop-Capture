@@ -253,6 +253,8 @@ public sealed class Sony9PinController : IVtrController
         TransportCommand.Rewind => Sony9PinCommands.Rewind(),
         TransportCommand.Eject => Sony9PinCommands.Eject(),
         TransportCommand.Pause => Sony9PinCommands.Pause(),
+        TransportCommand.FrameStepForward => Sony9PinCommands.FrameStepForward(),
+        TransportCommand.FrameStepReverse => Sony9PinCommands.FrameStepReverse(),
         TransportCommand.Record => Sony9PinCommands.Record(),
         TransportCommand.StandbyOn => Sony9PinCommands.StandbyOn(),
         TransportCommand.StandbyOff => Sony9PinCommands.StandbyOff(),

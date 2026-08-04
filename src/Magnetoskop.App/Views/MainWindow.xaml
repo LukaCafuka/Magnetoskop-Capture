@@ -273,16 +273,24 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <Button Grid.Row="0" Grid.Column="0" Content="▶ Play" Command="{Binding PlayCommand}"
                                 FontWeight="Bold" Width="80" Height="36" Margin="0,0,4,4"/>
                         <Button Grid.Row="0" Grid.Column="1" Content="⏩ FF" Command="{Binding FastForwardCommand}"
-                                Width="80" Height="36" Margin="0,0,0,4"/>
+                                Width="80" Height="36" Margin="0,0,4,4"/>
+                        <Button Grid.Row="0" Grid.Column="2" Content="◀ Frame" Command="{Binding FrameStepReverseCommand}"
+                                Width="80" Height="36" Margin="0,0,4,4"
+                                ToolTip="Sony FRAME STEP reverse — one frame back, then still (, key)"/>
+                        <Button Grid.Row="0" Grid.Column="3" Content="Frame ▶" Command="{Binding FrameStepForwardCommand}"
+                                Width="80" Height="36" Margin="0,0,0,4"
+                                ToolTip="Sony FRAME STEP forward — one frame, then still (. key)"/>
                         <Button Grid.Row="1" Grid.Column="0" Content="■ Stop" Command="{Binding StopCommand}"
                                 Style="{StaticResource TransportStopButton}"
                                 Width="80" Height="36" Margin="0,0,4,0"/>
                         <Button Grid.Row="1" Grid.Column="1" Content="⏸ Pause" Command="{Binding PauseCommand}"
-                                Width="80" Height="36"
+                                Width="80" Height="36" Margin="0,0,4,0"
                                 ToolTip="Still/pause (Shuttle 0) without Stop"/>
                     </Grid>
                     <Button Content="⏏ Eject" Command="{Binding EjectCommand}"

@@ -28,12 +28,24 @@ public partial class MainWindow : Window
 
     private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key is not (Key.J or Key.K or Key.L)) return;
         if (IsTextInputFocused()) return;
 
-        if (await _viewModel.HandleJklKeyAsync(e.Key))
+        if (e.Key is Key.J or Key.K or Key.L)
         {
-            e.Handled = true;
+            if (await _viewModel.HandleJklKeyAsync(e.Key))
+            {
+                e.Handled = true;
+            }
+
+            return;
+        }
+
+        if (e.Key is Key.OemComma or Key.OemPeriod)
+        {
+            if (await _viewModel.HandleFrameStepKeyAsync(e.Key))
+            {
+                e.Handled = true;
+            }
         }
     }
 

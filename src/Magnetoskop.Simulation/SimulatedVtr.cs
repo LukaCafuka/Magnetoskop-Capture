@@ -107,6 +107,18 @@ public sealed class SimulatedVtr : IVtrController
                     _transport = TransportState.Still;
                     _variablePlayRate = 0;
                     break;
+                case TransportCommand.FrameStepForward:
+                    RequireTape();
+                    _tapePositionFrames = Math.Min(_tapePositionFrames + 1, TapeLengthFrames);
+                    _transport = TransportState.Still;
+                    _variablePlayRate = 0;
+                    break;
+                case TransportCommand.FrameStepReverse:
+                    RequireTape();
+                    _tapePositionFrames = Math.Max(_tapePositionFrames - 1, 0);
+                    _transport = TransportState.Still;
+                    _variablePlayRate = 0;
+                    break;
                 case TransportCommand.FastForward:
                     RequireTape();
                     _transport = TransportState.FastForwarding;
@@ -126,6 +138,11 @@ public sealed class SimulatedVtr : IVtrController
                     throw new UnsupportedCommandException(
                         $"The simulated VTR does not implement '{command}' yet.");
             }
+        }
+
+        if (command is TransportCommand.FrameStepForward or TransportCommand.FrameStepReverse)
+        {
+            PublishSnapshots();
         }
 
         _logger.LogInformation("Simulated VTR transport command: {Command} -> {State}", command, _transport);

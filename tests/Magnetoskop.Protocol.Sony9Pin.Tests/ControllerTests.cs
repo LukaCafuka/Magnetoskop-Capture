@@ -155,6 +155,32 @@ public class ControllerTests
     }
 
     [Fact]
+    public async Task FrameStepForward_Sends2014()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+
+        await controller.SendTransportCommandAsync(TransportCommand.FrameStepForward);
+
+        var commands = transport.ReceivedCommands.ToArray();
+        Assert.Contains(commands, c => c.Cmd1 == 0x20 && c.Cmd2 == 0x14);
+    }
+
+    [Fact]
+    public async Task FrameStepReverse_Sends2024()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+
+        await controller.SendTransportCommandAsync(TransportCommand.FrameStepReverse);
+
+        var commands = transport.ReceivedCommands.ToArray();
+        Assert.Contains(commands, c => c.Cmd1 == 0x20 && c.Cmd2 == 0x24);
+    }
+
+    [Fact]
     public async Task ShuttleForward_SendsSpeedByte()
     {
         var transport = new FakeSerialTransport { Responder = DefaultResponder };

@@ -43,6 +43,39 @@ public class SimulatedVtrTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task FrameStepForward_AdvancesOneFrameAndStills()
+    {
+        var before = await WaitForTimeAsync(t => t.Ctl is not null);
+        var beforeFrames = before.Ctl!.Value.ToFrameCount(25);
+
+        await _vtr.SendTransportCommandAsync(TransportCommand.FrameStepForward);
+
+        var status = await WaitForStatusAsync(s => s.Transport == TransportState.Still);
+        Assert.Equal(TransportState.Still, status.Transport);
+        var after = await WaitForTimeAsync(t =>
+            t.Ctl is { } ctl && ctl.ToFrameCount(25) == beforeFrames + 1);
+        Assert.Equal(beforeFrames + 1, after.Ctl!.Value.ToFrameCount(25));
+        Assert.Equal(beforeFrames + 1 + 1L * 60 * 60 * 25, after.Ltc!.Value.ToFrameCount(25));
+    }
+
+    [Fact]
+    public async Task FrameStepReverse_MovesBackOneFrameAndStills()
+    {
+        await _vtr.SendTransportCommandAsync(TransportCommand.FrameStepForward);
+        await WaitForTimeAsync(t => t.Ctl is { } c && c.ToFrameCount(25) >= 1);
+        var before = _vtr.CurrentTime;
+        var beforeFrames = before.Ctl!.Value.ToFrameCount(25);
+
+        await _vtr.SendTransportCommandAsync(TransportCommand.FrameStepReverse);
+
+        var status = await WaitForStatusAsync(s => s.Transport == TransportState.Still);
+        Assert.Equal(TransportState.Still, status.Transport);
+        var after = await WaitForTimeAsync(t =>
+            t.Ctl is { } ctl && ctl.ToFrameCount(25) == beforeFrames - 1);
+        Assert.Equal(beforeFrames - 1, after.Ctl!.Value.ToFrameCount(25));
+    }
+
+    [Fact]
     public async Task Play_AdvancesTimecode()
     {
         await _vtr.SendTransportCommandAsync(TransportCommand.Play);

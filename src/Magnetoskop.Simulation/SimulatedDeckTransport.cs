@@ -284,7 +284,9 @@ public sealed class SimulatedDeckTransport : ISerialTransport
             0x05 => TransportCommand.StandbyOn,
             0x0F => TransportCommand.Eject,
             0x10 => TransportCommand.FastForward,
+            0x14 => TransportCommand.FrameStepForward,
             0x20 => TransportCommand.Rewind,
+            0x24 => TransportCommand.FrameStepReverse,
             0x30 => TransportCommand.Preroll,
             _ => (TransportCommand?)null,
         };
@@ -298,20 +300,31 @@ public sealed class SimulatedDeckTransport : ISerialTransport
         // simply stays put and the status bits show CASSETTE OUT.
         if (!_tapeOut)
         {
-            _transport = command switch
+            if (command is TransportCommand.FrameStepForward or TransportCommand.FrameStepReverse)
             {
-                TransportCommand.Play => TransportState.Playing,
-                TransportCommand.Record => TransportState.Recording,
-                TransportCommand.Stop => TransportState.Stopped,
-                TransportCommand.FastForward => TransportState.FastForwarding,
-                TransportCommand.Rewind => TransportState.Rewinding,
-                TransportCommand.Eject => TransportState.Stopped,
-                _ => _transport,
-            };
-            _variablePlayRate = 0;
-            if (command == TransportCommand.Eject)
+                AdvanceTape();
+                var delta = command == TransportCommand.FrameStepForward ? 1 : -1;
+                _tapePositionFrames = Math.Clamp(_tapePositionFrames + delta, 0, TapeLengthFrames);
+                _transport = TransportState.Still;
+                _variablePlayRate = 0;
+            }
+            else
             {
-                _tapeOut = true;
+                _transport = command switch
+                {
+                    TransportCommand.Play => TransportState.Playing,
+                    TransportCommand.Record => TransportState.Recording,
+                    TransportCommand.Stop => TransportState.Stopped,
+                    TransportCommand.FastForward => TransportState.FastForwarding,
+                    TransportCommand.Rewind => TransportState.Rewinding,
+                    TransportCommand.Eject => TransportState.Stopped,
+                    _ => _transport,
+                };
+                _variablePlayRate = 0;
+                if (command == TransportCommand.Eject)
+                {
+                    _tapeOut = true;
+                }
             }
         }
         return Ack();

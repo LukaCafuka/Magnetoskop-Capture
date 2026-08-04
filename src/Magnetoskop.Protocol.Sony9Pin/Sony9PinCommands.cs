@@ -19,7 +19,11 @@ public static class Sony9PinCommands
     public static CommandBlock StandbyOn() => new(0x20, 0x05);
     public static CommandBlock Eject() => new(0x20, 0x0F);
     public static CommandBlock FastForward() => new(0x20, 0x10);
+    /// <summary>20 14 FRAME STEP forward — one frame, then still.</summary>
+    public static CommandBlock FrameStepForward() => new(0x20, 0x14);
     public static CommandBlock Rewind() => new(0x20, 0x20);
+    /// <summary>20 24 FRAME STEP reverse — one frame back, then still.</summary>
+    public static CommandBlock FrameStepReverse() => new(0x20, 0x24);
     public static CommandBlock Preroll() => new(0x20, 0x30);
 
     /// <summary>

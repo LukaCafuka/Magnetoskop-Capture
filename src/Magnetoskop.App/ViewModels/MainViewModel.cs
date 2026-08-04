@@ -926,6 +926,12 @@ public sealed partial class MainViewModel : ObservableObject
     private Task PauseAsync() => SendTransportAsync(TransportCommand.Pause);
 
     [RelayCommand(CanExecute = nameof(CanUseTransport))]
+    private Task FrameStepForwardAsync() => SendTransportAsync(TransportCommand.FrameStepForward);
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
+    private Task FrameStepReverseAsync() => SendTransportAsync(TransportCommand.FrameStepReverse);
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
     private Task FastForwardAsync() => SendTransportAsync(TransportCommand.FastForward);
 
     [RelayCommand(CanExecute = nameof(CanUseTransport))]
@@ -1084,6 +1090,21 @@ public sealed partial class MainViewModel : ObservableObject
         return true;
     }
 
+    /// <summary>
+    /// NLE-style frame step: <c>,</c> reverse, <c>.</c> forward.
+    /// Returns true when the key was handled.
+    /// </summary>
+    public async Task<bool> HandleFrameStepKeyAsync(Key key)
+    {
+        if (!CanUseTransport()) return false;
+        if (key is not (Key.OemComma or Key.OemPeriod)) return false;
+
+        await SendTransportAsync(key == Key.OemPeriod
+            ? TransportCommand.FrameStepForward
+            : TransportCommand.FrameStepReverse);
+        return true;
+    }
+
     private async Task SendJklShuttleAsync(bool forward, double playRate)
     {
         if (!CanUseTransport()) return;
@@ -1110,6 +1131,8 @@ public sealed partial class MainViewModel : ObservableObject
         PlayCommand.NotifyCanExecuteChanged();
         StopCommand.NotifyCanExecuteChanged();
         PauseCommand.NotifyCanExecuteChanged();
+        FrameStepForwardCommand.NotifyCanExecuteChanged();
+        FrameStepReverseCommand.NotifyCanExecuteChanged();
         FastForwardCommand.NotifyCanExecuteChanged();
         RewindCommand.NotifyCanExecuteChanged();
         EjectCommand.NotifyCanExecuteChanged();

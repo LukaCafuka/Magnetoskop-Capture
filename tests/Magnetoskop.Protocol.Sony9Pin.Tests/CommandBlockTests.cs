@@ -39,6 +39,22 @@ public class CommandBlockTests
     }
 
     [Fact]
+    public void FrameStepForward_SerializesWithCorrectChecksum()
+    {
+        // 20 14 34
+        var bytes = Sony9PinCommands.FrameStepForward().ToBytes();
+        Assert.Equal(new byte[] { 0x20, 0x14, 0x34 }, bytes);
+    }
+
+    [Fact]
+    public void FrameStepReverse_SerializesWithCorrectChecksum()
+    {
+        // 20 24 44
+        var bytes = Sony9PinCommands.FrameStepReverse().ToBytes();
+        Assert.Equal(new byte[] { 0x20, 0x24, 0x44 }, bytes);
+    }
+
+    [Fact]
     public void DeviceTypeRequest_Serializes()
     {
         var bytes = Sony9PinCommands.DeviceTypeRequest().ToBytes();
