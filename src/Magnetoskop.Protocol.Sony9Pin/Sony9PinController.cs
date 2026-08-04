@@ -142,6 +142,40 @@ public sealed class Sony9PinController : IVtrController
         }
 
         var block = MapCommand(command);
+        await ExchangeTransportAsync(command, block, cancellationToken);
+    }
+
+    public async Task SendVariableSpeedAsync(
+        VariableSpeedMode mode,
+        bool forward,
+        byte speed,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsConnected)
+        {
+            throw new VtrCommunicationException("Not connected to the recorder.");
+        }
+
+        var command = VariableSpeedEncoding.ToTransportCommand(mode, forward);
+        if (!_profile.IsCommandSupported(command))
+        {
+            throw new UnsupportedCommandException(
+                $"Profile '{_profile.DisplayName}' marks '{command}' as unsupported.");
+        }
+
+        if (Capabilities.IsSupported(command) == false)
+        {
+            throw new UnsupportedCommandException(
+                $"The recorder previously reported '{command}' as an undefined command.");
+        }
+
+        var block = MapVariableSpeed(mode, forward, speed);
+        await ExchangeTransportAsync(command, block, cancellationToken);
+    }
+
+    private async Task ExchangeTransportAsync(
+        TransportCommand command, CommandBlock block, CancellationToken cancellationToken)
+    {
         var response = await _transceiver.ExchangeAsync(block, cancellationToken);
 
         switch (response)
@@ -176,6 +210,16 @@ public sealed class Sony9PinController : IVtrController
         _ => throw new UnsupportedCommandException(
             $"Transport command '{command}' has no Sony 9-pin mapping yet."),
     };
+
+    private static CommandBlock MapVariableSpeed(VariableSpeedMode mode, bool forward, byte speed)
+        => (mode, forward) switch
+        {
+            (VariableSpeedMode.Jog, true) => Sony9PinCommands.JogForward(speed),
+            (VariableSpeedMode.Jog, false) => Sony9PinCommands.JogReverse(speed),
+            (VariableSpeedMode.Shuttle, true) => Sony9PinCommands.ShuttleForward(speed),
+            (VariableSpeedMode.Shuttle, false) => Sony9PinCommands.ShuttleReverse(speed),
+            _ => throw new UnsupportedCommandException($"Unsupported variable-speed mode '{mode}'."),
+        };
 
     // ---- Polling -----------------------------------------------------------
 

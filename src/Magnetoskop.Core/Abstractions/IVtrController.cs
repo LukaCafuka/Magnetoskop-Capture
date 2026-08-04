@@ -43,6 +43,16 @@ public interface IVtrController : IAsyncDisposable
     /// <exception cref="VtrCommunicationException">The device did not acknowledge the command.</exception>
     Task SendTransportCommandAsync(TransportCommand command, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Sends a Jog or Shuttle command with a Sony 9-pin speed byte
+    /// (<c>TapeSpeed = 10^((N/32)-2)</c> × play; <c>N=0</c> = still).
+    /// </summary>
+    Task SendVariableSpeedAsync(
+        VariableSpeedMode mode,
+        bool forward,
+        byte speed,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Reads the latest known status (does not force a poll).</summary>
     VtrStatus CurrentStatus { get; }
 

@@ -32,4 +32,9 @@ public partial class MainWindow : Window
             _viewModel.AudioManuallySelected = true;
         }
     }
+
+    private void JogShuttleWheel_Released(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        _ = _viewModel.ReleaseJogShuttleWheelAsync();
+    }
 }

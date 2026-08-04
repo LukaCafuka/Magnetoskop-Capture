@@ -97,6 +97,34 @@ public class ControllerTests
     }
 
     [Fact]
+    public async Task ShuttleForward_SendsSpeedByte()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+
+        await controller.SendVariableSpeedAsync(VariableSpeedMode.Shuttle, forward: true, speed: 0x40);
+
+        Assert.Contains(transport.ReceivedCommands, c =>
+            c.Cmd1 == 0x21 && c.Cmd2 == 0x13
+            && c.Data.Count == 1 && c.Data[0] == 0x40);
+    }
+
+    [Fact]
+    public async Task JogReverse_SendsSpeedByte()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+
+        await controller.SendVariableSpeedAsync(VariableSpeedMode.Jog, forward: false, speed: 0x30);
+
+        Assert.Contains(transport.ReceivedCommands, c =>
+            c.Cmd1 == 0x21 && c.Cmd2 == 0x21
+            && c.Data.Count == 1 && c.Data[0] == 0x30);
+    }
+
+    [Fact]
     public async Task UndefinedCommandNak_MapsToUnsupportedCommandException()
     {
         var nak = new CommandBlock(0x11, 0x12, (byte)NakError.UndefinedCommand).ToBytes();

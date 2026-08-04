@@ -26,23 +26,27 @@ public static class Bcd
         return tens * 10 + ones;
     }
 
-    /// <summary>Encodes a timecode as 4 BCD bytes (frames, seconds, minutes, hours) with CF/DF flags.</summary>
+    /// <summary>Encodes a timecode as 4 BCD bytes (frames, seconds, minutes, hours) with CF/DF flags.
+    /// Hours bit 6 is set when <see cref="Timecode.IsNegative"/> (CTL sign).</summary>
     public static byte[] EncodeTimecode(Timecode tc)
     {
         var frames = EncodeDigit(tc.Frames);
         if (tc.ColorFrame) frames |= 0x80;
         if (tc.DropFrame) frames |= 0x40;
+        var hours = EncodeDigit(tc.Hours);
+        if (tc.IsNegative) hours |= 0x40;
         return new[]
         {
             frames,
             EncodeDigit(tc.Seconds),
             EncodeDigit(tc.Minutes),
-            EncodeDigit(tc.Hours),
+            hours,
         };
     }
 
     /// <summary>Decodes 4 BCD bytes (frames, seconds, minutes, hours) into a timecode.
-    /// Bits 7/6 of the frames byte carry the CF/DF flags and are masked out.</summary>
+    /// Bits 7/6 of the frames byte carry the CF/DF flags and are masked out.
+    /// Bit 6 (and bit 7) of the hours byte is the CTL negative sign and is masked out of the hours BCD.</summary>
     public static Timecode DecodeTimecode(ReadOnlySpan<byte> data)
     {
         if (data.Length < 4)
@@ -52,13 +56,15 @@ public static class Bcd
 
         var colorFrame = (data[0] & 0x80) != 0;
         var dropFrame = (data[0] & 0x40) != 0;
+        var negative = (data[3] & 0x40) != 0 || (data[3] & 0x80) != 0;
         return new Timecode(
-            Hours: DecodeDigit(data[3]),
+            Hours: DecodeDigit((byte)(data[3] & 0x3F)),
             Minutes: DecodeDigit(data[2]),
             Seconds: DecodeDigit(data[1]),
             Frames: DecodeDigit((byte)(data[0] & 0x3F)),
             DropFrame: dropFrame,
-            ColorFrame: colorFrame);
+            ColorFrame: colorFrame,
+            IsNegative: negative);
     }
 
     /// <summary>User bits are transported raw as 4 bytes (2 binary groups per byte); no BCD math.</summary>

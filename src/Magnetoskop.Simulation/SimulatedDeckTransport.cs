@@ -31,6 +31,7 @@ public sealed class SimulatedDeckTransport : ISerialTransport
     // Deck state.
     private TransportState _transport = TransportState.Stopped;
     private double _tapePositionFrames = InitialPositionFrames;
+    private double _variablePlayRate;
     private bool _tapeOut;
     private long _lastAdvanceTicks = Environment.TickCount64;
     private int _commandsSeen;
@@ -203,6 +204,7 @@ public sealed class SimulatedDeckTransport : ISerialTransport
         {
             (0x00, 0x11) => HandleDeviceTypeRequest(),
             (0x00, 0x0C) or (0x00, 0x1D) => Ack(), // local disable / enable
+            (0x20, _) when data.Length > 0 => HandleVariableSpeed(cmd2, data[0]),
             (0x20, _) => HandleTransport(cmd2),
             (0x60, 0x20) => HandleStatusSense(data),
             (0x60, 0x0C) => HandleTimeSense(data),
@@ -250,11 +252,48 @@ public sealed class SimulatedDeckTransport : ISerialTransport
                 TransportCommand.Eject => TransportState.Stopped,
                 _ => _transport,
             };
+            _variablePlayRate = 0;
             if (command == TransportCommand.Eject)
             {
                 _tapeOut = true;
             }
         }
+        return Ack();
+    }
+
+    private byte[] HandleVariableSpeed(byte cmd2, byte speed)
+    {
+        var (command, forward) = cmd2 switch
+        {
+            0x11 => (TransportCommand.JogForward, true),
+            0x21 => (TransportCommand.JogReverse, false),
+            0x13 => (TransportCommand.ShuttleForward, true),
+            0x23 => (TransportCommand.ShuttleReverse, false),
+            _ => ((TransportCommand?)null, true),
+        };
+
+        if (command is null || !_personality.AcceptsTransportCommand(command.Value))
+        {
+            return Nak(0x01);
+        }
+
+        if (!_tapeOut)
+        {
+            var rate = VariableSpeedEncoding.ToPlayRate(speed);
+            if (rate <= 0)
+            {
+                _transport = TransportState.Still;
+                _variablePlayRate = 0;
+            }
+            else
+            {
+                _transport = command is TransportCommand.JogForward or TransportCommand.JogReverse
+                    ? TransportState.Jog
+                    : TransportState.Shuttle;
+                _variablePlayRate = forward ? rate : -rate;
+            }
+        }
+
         return Ack();
     }
 
@@ -291,12 +330,16 @@ public sealed class SimulatedDeckTransport : ISerialTransport
             TransportState.FastForwarding => 0x04,
             TransportState.Rewinding => 0x08,
             TransportState.Stopped => 0x20,
+            TransportState.Still => 0x00,
             _ => 0x00,
         };
 
         byte d2 = 0;
         if (isPlaySpeed) d2 |= 0x80; // servo lock
-        if (_transport == TransportState.Rewinding) d2 |= 0x04;
+        if (_transport == TransportState.Shuttle) d2 |= 0x20;
+        if (_transport == TransportState.Jog) d2 |= 0x10;
+        if (_transport == TransportState.Still) d2 |= 0x02;
+        if (_transport == TransportState.Rewinding || _variablePlayRate < 0) d2 |= 0x04;
 
         byte d8 = 0;
         if (isEot) d8 |= 0x10;
@@ -375,20 +418,27 @@ public sealed class SimulatedDeckTransport : ISerialTransport
             TransportState.Playing or TransportState.Recording => deltaFrames,
             TransportState.FastForwarding => deltaFrames * FastWindSpeed,
             TransportState.Rewinding => -deltaFrames * FastWindSpeed,
+            TransportState.Jog or TransportState.Shuttle => deltaFrames * _variablePlayRate,
             _ => 0,
         };
 
         if (_tapePositionFrames < 0)
         {
             _tapePositionFrames = 0;
-            if (_transport == TransportState.Rewinding) _transport = TransportState.Stopped;
+            if (_transport is TransportState.Rewinding or TransportState.Jog or TransportState.Shuttle)
+            {
+                _transport = TransportState.Stopped;
+                _variablePlayRate = 0;
+            }
         }
         if (_tapePositionFrames > TapeLengthFrames)
         {
             _tapePositionFrames = TapeLengthFrames;
-            if (_transport is TransportState.Playing or TransportState.Recording or TransportState.FastForwarding)
+            if (_transport is TransportState.Playing or TransportState.Recording
+                or TransportState.FastForwarding or TransportState.Jog or TransportState.Shuttle)
             {
                 _transport = TransportState.Stopped;
+                _variablePlayRate = 0;
             }
         }
     }

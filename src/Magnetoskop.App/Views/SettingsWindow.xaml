@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:Magnetoskop.App.ViewModels"
         Title="Settings"
-        Width="500" Height="520"
-        MinWidth="440" MinHeight="440"
+        Width="500" Height="560"
+        MinWidth="440" MinHeight="480"
         WindowStartupLocation="CenterOwner"
         Background="#1E1E1E"
         ResizeMode="NoResize"
@@ -27,6 +27,20 @@
         </Style>
         <Style TargetType="ComboBox">
             <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Foreground" Value="#1A1A1A"/>
+            <Style.Resources>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#1A1A1A"/>
+                </Style>
+            </Style.Resources>
+        </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="#1A1A1A"/>
+            <Style.Resources>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#1A1A1A"/>
+                </Style>
+            </Style.Resources>
         </Style>
     </Window.Resources>
 
@@ -50,8 +64,13 @@
 
                 <CheckBox IsChecked="{Binding DisableTransportDuringRecording}"
                           Content="Disable transport buttons during recording"/>
-                <TextBlock Margin="24,0,0,18" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                <TextBlock Margin="24,0,0,12" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
                            Text="Prevents accidental Stop, Eject, or other transport commands while a capture is writing."/>
+
+                <CheckBox IsChecked="{Binding Ctl24HourWrap}"
+                          Content="CTL 24-hour wrap (below zero)"/>
+                <TextBlock Margin="24,0,0,18" Foreground="#999999" FontSize="11" TextWrapping="Wrap"
+                           Text="Off (default): CTL below zero shows as −00:00:00:01. On: wrap as 23:59:59:24 like many deck counters."/>
 
                 <TextBlock Text="APPLICATION" FontWeight="Bold" Margin="0,0,0,12"/>
 

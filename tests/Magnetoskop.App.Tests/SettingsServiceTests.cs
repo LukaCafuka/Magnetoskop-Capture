@@ -26,6 +26,7 @@ public class SettingsServiceTests : IDisposable
         Assert.False(settings.ShowLogPanel);
         Assert.True(settings.DisableTransportDuringRecording);
         Assert.False(settings.PreviewYadif2xEnabled);
+        Assert.False(settings.Ctl24HourWrap);
         Assert.NotNull(settings.Video);
         Assert.Equal(nameof(RecordingCodec.H264), settings.Video!.VideoCodec);
     }
@@ -38,6 +39,7 @@ public class SettingsServiceTests : IDisposable
         service.Current.OutputDirectory = @"C:\captures";
         service.Current.Video = VideoEncodeSettings.FromProfile(RecordingProfile.CreateFfv1Archival());
         service.Current.VideoDeviceId = "video-1";
+        service.Current.VideoDeviceName = "Blackmagic WDM Capture";
         service.Current.AudioDeviceId = "audio-2";
         service.Current.AudioManuallySelected = true;
         service.Current.VtrConnectionId = "COM3";
@@ -49,6 +51,7 @@ public class SettingsServiceTests : IDisposable
         service.Current.ShowLogPanel = true;
         service.Current.DisableTransportDuringRecording = false;
         service.Current.PreviewYadif2xEnabled = true;
+        service.Current.Ctl24HourWrap = true;
         service.Save();
 
         var reloaded = CreateService().Load();
@@ -59,6 +62,7 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal("mkv", reloaded.Video.Container);
         Assert.Equal(3, reloaded.Video.Ffv1Level);
         Assert.Equal("video-1", reloaded.VideoDeviceId);
+        Assert.Equal("Blackmagic WDM Capture", reloaded.VideoDeviceName);
         Assert.Equal("audio-2", reloaded.AudioDeviceId);
         Assert.True(reloaded.AudioManuallySelected);
         Assert.Equal("COM3", reloaded.VtrConnectionId);
@@ -70,6 +74,7 @@ public class SettingsServiceTests : IDisposable
         Assert.True(reloaded.ShowLogPanel);
         Assert.False(reloaded.DisableTransportDuringRecording);
         Assert.True(reloaded.PreviewYadif2xEnabled);
+        Assert.True(reloaded.Ctl24HourWrap);
 
         var profile = reloaded.Video.ToProfile();
         Assert.Equal(RecordingCodec.Ffv1, profile.VideoCodec);

@@ -47,7 +47,9 @@ What you should see:
   allow deck control during capture.
 - **TIME INFORMATION** shows CTL, LTC, VITC, and user bits. Values the deck cannot
   read in the current transport mode (e.g. LTC during fast wind) display as
-  `--:--:--:--`.
+  `--:--:--:--`. CTL below zero shows with a leading minus by default
+  (e.g. `-00:00:00:01`); enable **CTL 24-hour wrap** in **File → Settings…** to
+  show the deck-style wrap (`23:59:59:24`) instead.
 - If the deck rejects a command as unsupported, the app remembers it and shows it
   in the "Learned:" line of the status panel.
 
@@ -74,7 +76,13 @@ recording is in progress).
 ## 5. Transport control
 
 The bottom bar sends commands to the connected deck:
-**⏪ Rew · ▶ Play · ■ Stop · ⏩ FF · ⏏ Eject**
+**⏪ Rew · ▶ Play · ■ Stop · ⏩ FF · ⏏ Eject · Standby**
+
+Next to those controls, a **Jog / Shuttle** wheel searches at variable speed:
+
+- Choose **Jog** (fine positioning, up to ~1×) or **Shuttle** (visual search, up to ~50×).
+- Drag left for reverse, right for forward; the label shows the current rate (e.g. `+2.50×`).
+- Release the wheel to return to still and send **Stop**.
 
 Errors (no tape, local mode, unsupported command) are reported in the red error
 bar and the log panel.
@@ -90,7 +98,7 @@ bar and the log panel.
    60–90 GB/hour).
 3. Optional: enable **Auto-play deck on record** — the app then issues Play and
    waits for servo lock before recording starts.
-4. Press **● Record**. If preview is not running it starts automatically. Any
+4. Press **● Capture**. If preview is not running it starts automatically. Any
    preflight issues (missing ffmpeg, no tape, deck not playing, low disk space)
    are listed in a confirmation dialog first.
 5. Press **■ Stop rec** to finish. The file is finalized and a `.json` sidecar

@@ -41,6 +41,13 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly PreviewBobDeinterlacer _previewBob = new();
     private bool _suppressPreviewRestart;
     private bool _suppressVtrConnect;
+    /// <summary>False while the ctor applies persisted settings so property changers do not overwrite the file early.</summary>
+    private bool _settingsReady;
+    private DateTimeOffset _lastWheelSend = DateTimeOffset.MinValue;
+    private byte _lastWheelSpeed = 255;
+    private bool _lastWheelForward = true;
+    private VariableSpeedMode _lastWheelMode;
+    private bool _suppressWheelSend;
 
     public MainViewModel(
         VtrConnectionService vtr,
@@ -96,6 +103,7 @@ public sealed partial class MainViewModel : ObservableObject
         ShowLogPanel = saved.ShowLogPanel;
         DisableTransportDuringRecording = saved.DisableTransportDuringRecording;
         PreviewYadif2xEnabled = saved.PreviewYadif2xEnabled;
+        Ctl24HourWrap = saved.Ctl24HourWrap;
         // Keep runtime logger in sync with persisted preference (also set at host bootstrap).
         _debugLogger.SetEnabled(saved.DebugLoggingEnabled);
 
@@ -105,6 +113,9 @@ public sealed partial class MainViewModel : ObservableObject
         };
         _meterTimer.Tick += (_, _) => UpdateAudioMeters();
         _meterTimer.Start();
+
+        // Property changers (e.g. AudioMonitoringEnabled) may SaveSettings; allow that only after load.
+        _settingsReady = true;
     }
 
     // ---- Observable state ------------------------------------------------
@@ -152,6 +163,42 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>When true, live preview applies Yadif 2× (bob) deinterlace for watching.</summary>
     [ObservableProperty]
     private bool _previewYadif2xEnabled;
+
+    /// <summary>When true, CTL below zero uses 24h wrap; when false (default), signed with '-'.</summary>
+    [ObservableProperty]
+    private bool _ctl24HourWrap;
+
+    /// <summary>Jog vs Shuttle for the variable-speed wheel.</summary>
+    [ObservableProperty]
+    private VariableSpeedMode _jogShuttleMode = VariableSpeedMode.Shuttle;
+
+    /// <summary>Wheel deflection in [-1, +1]; 0 = still.</summary>
+    [ObservableProperty]
+    private double _wheelPosition;
+
+    [ObservableProperty]
+    private string _wheelSpeedLabel = "0.00×";
+
+    /// <summary>Bound to enable/disable the wheel while recording lock is on.</summary>
+    public bool CanUseTransportButtons => CanUseTransport();
+
+    public bool IsJogMode
+    {
+        get => JogShuttleMode == VariableSpeedMode.Jog;
+        set
+        {
+            if (value) JogShuttleMode = VariableSpeedMode.Jog;
+        }
+    }
+
+    public bool IsShuttleMode
+    {
+        get => JogShuttleMode == VariableSpeedMode.Shuttle;
+        set
+        {
+            if (value) JogShuttleMode = VariableSpeedMode.Shuttle;
+        }
+    }
 
     /// <summary>Command support learned from the deck's NAK responses.</summary>
     [ObservableProperty]
@@ -377,6 +424,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void SaveSettings()
     {
+        if (!_settingsReady) return;
+
         var s = _settings.Current;
         s.OutputDirectory = OutputDirectory;
         if (SelectedRecordingProfile is not null)
@@ -384,6 +433,7 @@ public sealed partial class MainViewModel : ObservableObject
             s.Video = VideoEncodeSettings.FromProfile(SelectedRecordingProfile);
         }
         s.VideoDeviceId = SelectedVideoDevice?.Id;
+        s.VideoDeviceName = SelectedVideoDevice?.Name;
         s.AudioDeviceId = SelectedAudioDevice?.Id;
         s.AudioManuallySelected = AudioManuallySelected;
         s.AudioMonitoringEnabled = AudioMonitoringEnabled;
@@ -395,6 +445,7 @@ public sealed partial class MainViewModel : ObservableObject
         s.ShowLogPanel = ShowLogPanel;
         s.DisableTransportDuringRecording = DisableTransportDuringRecording;
         s.PreviewYadif2xEnabled = PreviewYadif2xEnabled;
+        s.Ctl24HourWrap = Ctl24HourWrap;
         _settings.Save();
     }
 
@@ -407,6 +458,7 @@ public sealed partial class MainViewModel : ObservableObject
             ShowLogPanel,
             DisableTransportDuringRecording,
             PreviewYadif2xEnabled,
+            Ctl24HourWrap,
             VtrProfiles,
             SelectedVtrProfile?.Id);
         var window = new SettingsWindow(vm)
@@ -421,6 +473,7 @@ public sealed partial class MainViewModel : ObservableObject
         ShowLogPanel = vm.ShowLogPanel;
         DisableTransportDuringRecording = vm.DisableTransportDuringRecording;
         PreviewYadif2xEnabled = vm.PreviewYadif2xEnabled;
+        Ctl24HourWrap = vm.Ctl24HourWrap;
         _debugLogger.SetEnabled(vm.DebugLoggingEnabled);
         SelectedVtrProfile = vm.SelectedVtrProfile;
         SaveSettings();
@@ -493,25 +546,9 @@ public sealed partial class MainViewModel : ObservableObject
             AudioDevices.Clear();
             foreach (var d in audio) AudioDevices.Add(d);
 
-            // Prefer the devices remembered from the previous session, then defaults.
-            SelectedVideoDevice ??=
-                VideoDevices.FirstOrDefault(d => d.Id == _settings.Current.VideoDeviceId)
-                ?? VideoDevices.FirstOrDefault(d => d.IsDefault)
-                ?? VideoDevices.FirstOrDefault();
-            if (AudioManuallySelected)
-            {
-                SelectedAudioDevice ??= AudioDevices.FirstOrDefault(d => d.Id == _settings.Current.AudioDeviceId);
-                if (SelectedAudioDevice is null)
-                {
-                    // Saved device is gone; fall back to auto-select behavior.
-                    AudioManuallySelected = false;
-                    await AutoSelectAudioAsync();
-                }
-            }
-            else
-            {
-                await AutoSelectAudioAsync();
-            }
+            var saved = _settings.Current;
+            SelectedVideoDevice = ResolveVideoDevice(saved.VideoDeviceId, saved.VideoDeviceName);
+            await RestoreAudioDeviceAsync(saved.AudioDeviceId);
         }
         catch (Exception ex)
         {
@@ -521,10 +558,66 @@ public sealed partial class MainViewModel : ObservableObject
         {
             _suppressPreviewRestart = false;
         }
+
+        if (_settingsReady)
+        {
+            SaveSettings();
+        }
+    }
+
+    /// <summary>Prefer saved friendly name (stable), then id (DirectShow index), then default.</summary>
+    private CaptureDeviceInfo? ResolveVideoDevice(string? savedId, string? savedName)
+    {
+        if (!string.IsNullOrWhiteSpace(savedName))
+        {
+            var byName = VideoDevices.FirstOrDefault(d =>
+                string.Equals(d.Name, savedName, StringComparison.OrdinalIgnoreCase));
+            if (byName is not null) return byName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(savedId))
+        {
+            var byId = VideoDevices.FirstOrDefault(d => d.Id == savedId);
+            if (byId is not null) return byId;
+        }
+
+        return VideoDevices.FirstOrDefault(d => d.IsDefault) ?? VideoDevices.FirstOrDefault();
+    }
+
+    private async Task RestoreAudioDeviceAsync(string? savedId)
+    {
+        if (!string.IsNullOrWhiteSpace(savedId))
+        {
+            var byId = AudioDevices.FirstOrDefault(d => d.Id == savedId);
+            if (byId is not null)
+            {
+                SelectedAudioDevice = byId;
+                return;
+            }
+
+            // Saved endpoint gone — drop manual lock and fall through.
+            if (AudioManuallySelected)
+            {
+                AudioManuallySelected = false;
+            }
+        }
+
+        if (!AudioManuallySelected)
+        {
+            await AutoSelectAudioAsync();
+        }
+
+        SelectedAudioDevice ??= AudioDevices.FirstOrDefault(d => d.IsDefault)
+            ?? AudioDevices.FirstOrDefault();
     }
 
     partial void OnSelectedVideoDeviceChanged(CaptureDeviceInfo? value)
     {
+        if (_settingsReady && !_suppressPreviewRestart)
+        {
+            SaveSettings();
+        }
+
         if (_suppressPreviewRestart || IsRecording) return;
 
         if (value is not null && !AudioManuallySelected)
@@ -539,6 +632,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     partial void OnSelectedAudioDeviceChanged(CaptureDeviceInfo? value)
     {
+        if (_settingsReady && !_suppressPreviewRestart)
+        {
+            SaveSettings();
+        }
+
         if (_suppressPreviewRestart || IsRecording) return;
         _ = RestartPreviewAsync();
     }
@@ -553,6 +651,11 @@ public sealed partial class MainViewModel : ObservableObject
         finally
         {
             _suppressPreviewRestart = false;
+        }
+
+        if (_settingsReady)
+        {
+            SaveSettings();
         }
 
         if (!IsRecording)
@@ -734,6 +837,99 @@ public sealed partial class MainViewModel : ObservableObject
         RewindCommand.NotifyCanExecuteChanged();
         EjectCommand.NotifyCanExecuteChanged();
         ToggleStandbyCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanUseTransportButtons));
+    }
+
+    partial void OnJogShuttleModeChanged(VariableSpeedMode value)
+    {
+        OnPropertyChanged(nameof(IsJogMode));
+        OnPropertyChanged(nameof(IsShuttleMode));
+        UpdateWheelSpeedLabel();
+        if (!_suppressWheelSend && Math.Abs(WheelPosition) >= 0.02)
+        {
+            _ = SendWheelAsync(force: true);
+        }
+    }
+
+    partial void OnWheelPositionChanged(double value)
+    {
+        UpdateWheelSpeedLabel();
+        if (_suppressWheelSend) return;
+        _ = SendWheelAsync(force: false);
+    }
+
+    private void UpdateWheelSpeedLabel()
+    {
+        var (forward, speed) = VariableSpeedEncoding.FromWheel(WheelPosition, JogShuttleMode);
+        var rate = VariableSpeedEncoding.ToPlayRate(speed);
+        if (!forward && rate > 0) rate = -rate;
+        WheelSpeedLabel = $"{rate:+0.00;-0.00;0.00}×";
+    }
+
+    private async Task SendWheelAsync(bool force)
+    {
+        if (!CanUseTransport() || !_vtr.IsConnected) return;
+
+        var (forward, speed) = VariableSpeedEncoding.FromWheel(WheelPosition, JogShuttleMode);
+        var now = DateTimeOffset.UtcNow;
+        if (!force
+            && speed == _lastWheelSpeed
+            && forward == _lastWheelForward
+            && JogShuttleMode == _lastWheelMode)
+        {
+            return;
+        }
+
+        if (!force && (now - _lastWheelSend).TotalMilliseconds < 60)
+        {
+            return;
+        }
+
+        _lastWheelSend = now;
+        _lastWheelSpeed = speed;
+        _lastWheelForward = forward;
+        _lastWheelMode = JogShuttleMode;
+
+        try
+        {
+            await _vtr.SendVariableSpeedAsync(JogShuttleMode, forward, speed);
+            if (speed == VariableSpeedEncoding.Still)
+            {
+                AppendLog($"Transport: {JogShuttleMode} still");
+            }
+            else
+            {
+                var rate = VariableSpeedEncoding.ToPlayRate(speed);
+                AppendLog($"Transport: {JogShuttleMode} {(forward ? "+" : "-")}{rate:0.##}× (N={speed})");
+            }
+        }
+        catch (UnsupportedCommandException ex)
+        {
+            ReportError($"{JogShuttleMode} not supported by this device", ex);
+        }
+        catch (Exception ex)
+        {
+            ReportError($"{JogShuttleMode} command failed", ex);
+        }
+    }
+
+    /// <summary>Snap the wheel to center and Stop the deck (mouse release).</summary>
+    public async Task ReleaseJogShuttleWheelAsync()
+    {
+        _suppressWheelSend = true;
+        try
+        {
+            WheelPosition = 0;
+            UpdateWheelSpeedLabel();
+            _lastWheelSpeed = 255; // force next drag to send
+        }
+        finally
+        {
+            _suppressWheelSend = false;
+        }
+
+        if (!CanUseTransport()) return;
+        await SendTransportAsync(TransportCommand.Stop);
     }
 
     private async Task SendTransportAsync(TransportCommand command)
@@ -927,7 +1123,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         RunOnUi(() =>
         {
-            CtlText = time.Ctl?.ToString() ?? "--:--:--:--";
+            CtlText = Timecode.FormatCtlDisplay(time.Ctl, Ctl24HourWrap);
             LtcText = time.Ltc?.ToString() ?? "--:--:--:--";
             VitcText = time.Vitc?.ToString() ?? "--:--:--:--";
             UserBitsText = time.LtcUserBits?.ToString()

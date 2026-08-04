@@ -39,6 +39,13 @@ public enum TransportCommand
     Preroll,
 }
 
+/// <summary>Variable-speed transport modes (Sony 9-pin Jog / Shuttle).</summary>
+public enum VariableSpeedMode
+{
+    Jog,
+    Shuttle,
+}
+
 /// <summary>A snapshot of the recorder status.</summary>
 public sealed record VtrStatus
 {

@@ -110,6 +110,32 @@
             <Setter Property="Background" Value="#2A2A2A"/>
             <Setter Property="Padding" Value="8,4"/>
         </Style>
+        <!-- ComboBoxes use a light system background; override the window TextBlock
+             foreground so selected/dropdown text stays readable (black on white). -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="#1A1A1A"/>
+            <Style.Resources>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#1A1A1A"/>
+                </Style>
+            </Style.Resources>
+        </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="#1A1A1A"/>
+            <Style.Resources>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#1A1A1A"/>
+                </Style>
+            </Style.Resources>
+        </Style>
+        <Style TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="#1A1A1A"/>
+            <Setter Property="Padding" Value="8,2"/>
+            <Setter Property="MinWidth" Value="56"/>
+        </Style>
+        <Style TargetType="Slider">
+            <Setter Property="Foreground" Value="#66FF99"/>
+        </Style>
     </Window.Resources>
 
     <DockPanel>
@@ -166,13 +192,13 @@
                 </Grid>
             </Border>
 
-            <!-- Transport bar (VTR layout: REW · PLAY · FF, STOP under PLAY) -->
+            <!-- Transport bar (VTR layout: REW · PLAY · FF + Jog/Shuttle wheel) -->
             <Border Grid.Row="1"
                     Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Button Content="⏪ Rew" Command="{Binding RewindCommand}"
-                            VerticalAlignment="Top" MinWidth="80" Height="36"/>
-                    <StackPanel Margin="4,0" VerticalAlignment="Top">
+                            VerticalAlignment="Center" MinWidth="80" Height="36"/>
+                    <StackPanel Margin="4,0" VerticalAlignment="Center">
                         <Button Content="▶ Play" Command="{Binding PlayCommand}"
                                 FontWeight="Bold" MinWidth="80" Height="36" Margin="4,0,4,4"/>
                         <Button Content="■ Stop" Command="{Binding StopCommand}"
@@ -180,13 +206,45 @@
                                 MinWidth="80" Height="36" Margin="4,0"/>
                     </StackPanel>
                     <Button Content="⏩ FF" Command="{Binding FastForwardCommand}"
-                            VerticalAlignment="Top" MinWidth="80" Height="36"/>
+                            VerticalAlignment="Center" MinWidth="80" Height="36"/>
                     <Button Content="⏏ Eject" Command="{Binding EjectCommand}"
-                            VerticalAlignment="Top" MinWidth="80" Height="36" Margin="16,0,0,0"/>
+                            VerticalAlignment="Center" MinWidth="80" Height="36" Margin="16,0,0,0"/>
                     <Button Content="Standby" Command="{Binding ToggleStandbyCommand}"
                             Style="{StaticResource StandbyToggleButton}"
-                            VerticalAlignment="Top" MinWidth="90" Height="36" Margin="16,0,0,0"
+                            VerticalAlignment="Center" MinWidth="90" Height="36" Margin="16,0,0,0"
                             ToolTip="Toggle standby (yellow = on / threaded). Follows deck status, including auto standby-off."/>
+
+                    <!-- Jog / Shuttle wheel -->
+                    <Border Margin="24,0,0,0" Padding="10,6" Background="#1E1E1E" CornerRadius="4"
+                            VerticalAlignment="Center" MinWidth="220"
+                            IsEnabled="{Binding CanUseTransportButtons}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,4">
+                                <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center"
+                                           FontFamily="Consolas" FontSize="12" Foreground="#66FF99"
+                                           Text="{Binding WheelSpeedLabel}" MinWidth="56" TextAlignment="Right"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Content="Jog" Margin="0,0,8,0" Padding="4,2"
+                                                 GroupName="JogShuttleMode"
+                                                 IsChecked="{Binding IsJogMode, Mode=TwoWay}"
+                                                 Foreground="#DDDDDD"
+                                                 ToolTip="Fine positioning (up to ~1× play)"/>
+                                    <RadioButton Content="Shuttle" Padding="4,2"
+                                                 GroupName="JogShuttleMode"
+                                                 IsChecked="{Binding IsShuttleMode, Mode=TwoWay}"
+                                                 Foreground="#DDDDDD"
+                                                 ToolTip="Variable search (up to ~50× play)"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <Slider Minimum="-1" Maximum="1" TickFrequency="0.25"
+                                    IsSnapToTickEnabled="False"
+                                    Value="{Binding WheelPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsMoveToPointEnabled="True"
+                                    PreviewMouseLeftButtonUp="JogShuttleWheel_Released"
+                                    LostMouseCapture="JogShuttleWheel_Released"
+                                    ToolTip="Hold and drag: left = reverse, right = forward. Release returns to still and stops."/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 
@@ -346,7 +404,7 @@
                             <TextBlock Text="Auto-play deck on record" Foreground="#DDDDDD"/>
                         </CheckBox>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                            <Button Content="● Record" Foreground="Red" FontWeight="Bold"
+                            <Button Content="● Capture" Foreground="Red" FontWeight="Bold"
                                     Command="{Binding StartRecordingCommand}"/>
                             <Button Content="■ Stop rec" Command="{Binding StopRecordingCommand}"/>
                         </StackPanel>

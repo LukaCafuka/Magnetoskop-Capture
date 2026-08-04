@@ -86,6 +86,8 @@ public sealed class AppSettings
     public string? OutputDirectory { get; set; }
     public VideoEncodeSettings? Video { get; set; }
     public string? VideoDeviceId { get; set; }
+    /// <summary>Friendly name used to restore the video device when DirectShow indices shift.</summary>
+    public string? VideoDeviceName { get; set; }
     public string? AudioDeviceId { get; set; }
     public bool AudioManuallySelected { get; set; }
     /// <summary>When true, play the live capture input through the default output device.</summary>
@@ -106,6 +108,12 @@ public sealed class AppSettings
 
     /// <summary>When true, live preview applies Yadif 2× (bob) deinterlace for easier watching.</summary>
     public bool PreviewYadif2xEnabled { get; set; }
+
+    /// <summary>
+    /// When true, CTL below zero uses 24-hour wrap (e.g. 23:59:59:24).
+    /// When false (default), CTL below zero is shown with a leading minus (e.g. -00:00:00:01).
+    /// </summary>
+    public bool Ctl24HourWrap { get; set; }
 
     /// <summary>Obsolete preset id from earlier builds; ignored on load.</summary>
     public string? RecordingProfileId { get; set; }

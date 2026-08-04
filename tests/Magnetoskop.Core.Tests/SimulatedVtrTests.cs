@@ -90,7 +90,34 @@ public class SimulatedVtrTests : IAsyncLifetime
     public async Task UnimplementedCommand_ThrowsUnsupportedCommandException()
     {
         await Assert.ThrowsAsync<UnsupportedCommandException>(
-            () => _vtr.SendTransportCommandAsync(TransportCommand.JogForward));
+            () => _vtr.SendTransportCommandAsync(TransportCommand.CueUp));
+    }
+
+    [Fact]
+    public async Task ShuttleForward_SetsShuttleState_AndAdvancesCtl()
+    {
+        var first = await WaitForTimeAsync(t => t.Ctl is not null);
+        await _vtr.SendVariableSpeedAsync(VariableSpeedMode.Shuttle, forward: true, speed: 64);
+        var status = await WaitForStatusAsync(s => s.Transport == TransportState.Shuttle);
+        Assert.Equal(TransportState.Shuttle, status.Transport);
+
+        var later = await WaitForTimeAsync(t =>
+            t.Ctl is { } ctl && ctl.ToFrameCount(25) > first.Ctl!.Value.ToFrameCount(25));
+        Assert.True(later.Ctl!.Value.ToFrameCount(25) > first.Ctl!.Value.ToFrameCount(25));
+    }
+
+    [Fact]
+    public async Task JogReverse_SetsJogState()
+    {
+        // Move forward first so reverse has room before BOT.
+        await _vtr.SendTransportCommandAsync(TransportCommand.Play);
+        await Task.Delay(200);
+        await _vtr.SendTransportCommandAsync(TransportCommand.Stop);
+
+        await _vtr.SendVariableSpeedAsync(VariableSpeedMode.Jog, forward: false, speed: 48);
+        var status = await WaitForStatusAsync(s => s.Transport == TransportState.Jog);
+        Assert.Equal(TransportState.Jog, status.Transport);
+        Assert.True(status.TapeReverse);
     }
 
     [Fact]

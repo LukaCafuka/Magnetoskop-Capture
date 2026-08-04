@@ -68,6 +68,33 @@ public class BcdTests
     }
 
     [Fact]
+    public void EncodeTimecode_SetsNegativeSignOnHoursByte()
+    {
+        var data = Bcd.EncodeTimecode(new Timecode(0, 0, 0, 1, IsNegative: true));
+        Assert.Equal(0x40, data[3]); // sign bit, hours 00
+        Assert.Equal(0x01, data[0]);
+    }
+
+    [Fact]
+    public void DecodeTimecode_ReadsNegativeSignFromHoursByte()
+    {
+        // hours 0x40 = sign + 00 → -00:00:00:05
+        var tc = Bcd.DecodeTimecode(new byte[] { 0x05, 0x00, 0x00, 0x40 });
+        Assert.True(tc.IsNegative);
+        Assert.Equal(0, tc.Hours);
+        Assert.Equal(5, tc.Frames);
+        Assert.Equal("-00:00:00:05", tc.ToString());
+    }
+
+    [Fact]
+    public void DecodeTimecode_RoundTripsNegative()
+    {
+        var original = new Timecode(0, 1, 2, 3, IsNegative: true);
+        var decoded = Bcd.DecodeTimecode(Bcd.EncodeTimecode(original));
+        Assert.Equal(original, decoded);
+    }
+
+    [Fact]
     public void DecodeTimecode_RequiresFourBytes()
     {
         Assert.Throws<ArgumentException>(() => Bcd.DecodeTimecode(new byte[] { 0x00, 0x00 }));

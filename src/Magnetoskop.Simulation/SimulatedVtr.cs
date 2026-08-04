@@ -22,6 +22,7 @@ public sealed class SimulatedVtr : IVtrController
 
     private TransportState _transport = TransportState.Stopped;
     private double _tapePositionFrames = 0; // absolute tape position in frames
+    private double _variablePlayRate; // signed ×play when Jog/Shuttle
     private bool _tapeOut;
     private VtrStatus _status = new();
     private TimeInformation _time = new();
@@ -93,23 +94,28 @@ public sealed class SimulatedVtr : IVtrController
                 case TransportCommand.Play:
                     RequireTape();
                     _transport = TransportState.Playing;
+                    _variablePlayRate = 0;
                     break;
                 case TransportCommand.Stop:
                     if (_transport == TransportState.Ejecting)
                         break;
                     _transport = _tapeOut ? TransportState.Unknown : TransportState.Stopped;
+                    _variablePlayRate = 0;
                     break;
                 case TransportCommand.FastForward:
                     RequireTape();
                     _transport = TransportState.FastForwarding;
+                    _variablePlayRate = 0;
                     break;
                 case TransportCommand.Rewind:
                     RequireTape();
                     _transport = TransportState.Rewinding;
+                    _variablePlayRate = 0;
                     break;
                 case TransportCommand.Eject:
                     RequireTape();
                     _transport = TransportState.Ejecting;
+                    _variablePlayRate = 0;
                     break;
                 default:
                     throw new UnsupportedCommandException(
@@ -118,6 +124,40 @@ public sealed class SimulatedVtr : IVtrController
         }
 
         _logger.LogInformation("Simulated VTR transport command: {Command} -> {State}", command, _transport);
+    }
+
+    public async Task SendVariableSpeedAsync(
+        VariableSpeedMode mode,
+        bool forward,
+        byte speed,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsConnected)
+        {
+            throw new VtrCommunicationException("Not connected to the simulated VTR.");
+        }
+
+        await Task.Delay(8, cancellationToken);
+
+        lock (_gate)
+        {
+            RequireTape();
+            var rate = VariableSpeedEncoding.ToPlayRate(speed);
+            if (rate <= 0)
+            {
+                _transport = TransportState.Still;
+                _variablePlayRate = 0;
+            }
+            else
+            {
+                _transport = mode == VariableSpeedMode.Jog ? TransportState.Jog : TransportState.Shuttle;
+                _variablePlayRate = forward ? rate : -rate;
+            }
+        }
+
+        _logger.LogInformation(
+            "Simulated VTR {Mode} {Dir} speed={Speed} ({Rate:F3}x) -> {State}",
+            mode, forward ? "fwd" : "rev", speed, _variablePlayRate, _transport);
     }
 
     private void RequireTape()
@@ -164,6 +204,10 @@ public sealed class SimulatedVtr : IVtrController
             case TransportState.Rewinding:
                 _tapePositionFrames -= deltaFrames * FastWindSpeed;
                 break;
+            case TransportState.Jog:
+            case TransportState.Shuttle:
+                _tapePositionFrames += deltaFrames * _variablePlayRate;
+                break;
             case TransportState.Ejecting:
                 _tapeOut = true;
                 _transport = TransportState.Unknown;
@@ -173,15 +217,21 @@ public sealed class SimulatedVtr : IVtrController
         if (_tapePositionFrames < 0)
         {
             _tapePositionFrames = 0;
-            if (_transport == TransportState.Rewinding) _transport = TransportState.Stopped;
+            if (_transport is TransportState.Rewinding or TransportState.Jog or TransportState.Shuttle)
+            {
+                _transport = TransportState.Stopped;
+                _variablePlayRate = 0;
+            }
         }
 
         if (_tapePositionFrames > TapeLengthFrames)
         {
             _tapePositionFrames = TapeLengthFrames;
-            if (_transport is TransportState.Playing or TransportState.FastForwarding or TransportState.Recording)
+            if (_transport is TransportState.Playing or TransportState.FastForwarding
+                or TransportState.Recording or TransportState.Jog or TransportState.Shuttle)
             {
                 _transport = TransportState.Stopped;
+                _variablePlayRate = 0;
             }
         }
     }
@@ -191,11 +241,13 @@ public sealed class SimulatedVtr : IVtrController
         TransportState transport;
         double pos;
         bool tapeOut;
+        double variableRate;
         lock (_gate)
         {
             transport = _transport;
             pos = _tapePositionFrames;
             tapeOut = _tapeOut;
+            variableRate = _variablePlayRate;
         }
 
         var positionFrames = (long)pos;
@@ -204,7 +256,10 @@ public sealed class SimulatedVtr : IVtrController
 
         // LTC is unreadable in fast wind (like a real deck at high speed); VITC only near play speed.
         var isPlaySpeed = transport is TransportState.Playing or TransportState.Recording;
-        var isFastWind = transport is TransportState.FastForwarding or TransportState.Rewinding;
+        var isFastWind = transport is TransportState.FastForwarding or TransportState.Rewinding
+            or TransportState.Shuttle;
+        var isReverse = transport == TransportState.Rewinding
+            || ((transport is TransportState.Jog or TransportState.Shuttle) && variableRate < 0);
 
         var status = new VtrStatus
         {
@@ -214,7 +269,7 @@ public sealed class SimulatedVtr : IVtrController
             ServoLock = isPlaySpeed,
             NearEndOfTape = pos > TapeLengthFrames - 5L * 60 * FrameRate,
             EndOfTape = pos >= TapeLengthFrames,
-            TapeReverse = transport == TransportState.Rewinding,
+            TapeReverse = isReverse,
         };
 
         var time = new TimeInformation

@@ -61,6 +61,26 @@ public class ResponseParserTests
         Assert.Equal(new Timecode(10, 20, 30, 12), time.Timecode);
     }
 
+    [Fact]
+    public void Timer1_WrappedBelowZero_KeepsRawWrapInProtocol()
+    {
+        // Display layer applies signed formatting; protocol keeps deck wrap as-is.
+        var response = Classify(0x74, 0x00, 0x24, 0x59, 0x59, 0x23);
+        var time = Assert.IsType<Sony9PinResponse.TimeData>(response);
+        Assert.Equal(TimeDataKind.Timer1, time.Kind);
+        Assert.False(time.Timecode.IsNegative);
+        Assert.Equal("23:59:59:24", time.Timecode.ToString());
+    }
+
+    [Fact]
+    public void LtcTime_DoesNotReinterpretWrappedAsNegative()
+    {
+        var response = Classify(0x74, 0x04, 0x24, 0x59, 0x59, 0x23);
+        var time = Assert.IsType<Sony9PinResponse.TimeData>(response);
+        Assert.False(time.Timecode.IsNegative);
+        Assert.Equal("23:59:59:24", time.Timecode.ToString());
+    }
+
     [Theory]
     [InlineData(0x05, TimeDataKind.LtcUserBits)]
     [InlineData(0x07, TimeDataKind.VitcUserBits)]

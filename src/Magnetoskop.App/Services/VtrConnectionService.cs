@@ -146,6 +146,13 @@ public sealed class VtrConnectionService : IVtrController
     public Task SendTransportCommandAsync(TransportCommand command, CancellationToken cancellationToken = default)
         => _current.SendTransportCommandAsync(command, cancellationToken);
 
+    public Task SendVariableSpeedAsync(
+        VariableSpeedMode mode,
+        bool forward,
+        byte speed,
+        CancellationToken cancellationToken = default)
+        => _current.SendVariableSpeedAsync(mode, forward, speed, cancellationToken);
+
     public async ValueTask DisposeAsync()
     {
         Detach(_current);
