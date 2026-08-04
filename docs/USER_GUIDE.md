@@ -25,18 +25,21 @@ testing.
 ## 3. Connecting a recorder
 
 1. Set the deck's control switch to **REMOTE**.
-2. In **RECORDER CONNECTION**, pick the adapter's COM port — the app connects
+2. Open **View → Connections…**.
+3. Under **RECORDER**, pick the adapter's COM port — the app connects
    automatically (press ⟳ if the port was plugged in after the app started).
-3. Serial control defaults to the **Generic Sony 9-pin** protocol. To use a
-   deck-specific profile (poll rates / timeouts / command set), open
-   **File → Settings…** and choose the model under **VTR**.
-4. If you change the VTR model while already connected to a COM port, the app
+4. Serial control defaults to the **Generic Sony 9-pin** protocol. To use a
+   deck-specific profile (poll rates / timeouts / command set), choose the model
+   under **Device model** in the same window.
+5. If you change the VTR model while already connected to a COM port, the app
    reconnects with the new profile.
 
 What you should see:
 
-- **RECORDER STATUS** shows the device description. If the deck answers the
-  device-type request with a recognized code, an "Identified: …" line appears.
+- **RECORDER STATUS** on the main window shows the device description. If the
+  deck answers the device-type request with a recognized code, an "Identified: …"
+  line appears. Use **Connections…** there (or **View → Connections…**) to change
+  the port or model.
 - The transport state (Stopped/Playing/…) updates live, along with status flags
   (TAPE OUT, SERVO LOCK, REC INHIBIT, …).
 - Transport buttons: Rew / Play / Stop / FF / Eject. **Standby** toggles threaded
@@ -68,13 +71,12 @@ Preview starts automatically after the app enumerates capture devices. Changing
 the video or audio device restarts preview on the new source (not while a
 recording is in progress).
 
-1. In **CAPTURE DEVICES**, pick the video device if the default is wrong. Audio
-   is auto-selected by name match (capture cards usually expose both); picking
-   an audio device manually overrides auto-select.
-2. Live video appears on the left; the stereo level meters below the device
-   pickers should move with the audio. Enable **Monitor audio** to hear the
-   selected input on the default speakers/headphones. Press ⟳ to re-enumerate
-   devices if hardware was plugged in after launch.
+1. Open **View → Connections…**. Under **CAPTURE DEVICES**, pick the video device
+   if the default is wrong. Audio is auto-selected by name match (capture cards
+   usually expose both); picking an audio device manually overrides auto-select.
+2. Live video appears on the main window; stereo level meters and **Monitor audio**
+   are on the main window (and also in Connections). Press **Refresh** in Connections
+   to re-enumerate devices if hardware was plugged in after launch.
 3. For easier watching of interlaced sources, enable **Yadif 2× deinterlace
    preview** under **File → Settings…**. This bob-deinterlaces the live preview
    only (recording encode is unchanged).
@@ -150,11 +152,11 @@ Expected: `ffv1` + `pcm_s24le` (archival), `h264` + `aac` (MP4), or
 | Symptom | Check |
 |---|---|
 | "ffmpeg.exe not found" | Install FFmpeg and add to PATH, or copy `ffmpeg.exe` next to the app. |
-| COM port missing from the list | Adapter driver installed? Press ⟳ to re-enumerate. |
+| COM port missing from the list | Open **View → Connections…**. Adapter driver installed? Press ⟳ to re-enumerate. |
 | Connect times out | REMOTE switch, cable/pinout, correct COM port. See `docs/HARDWARE_TESTING.md`. |
 | Transport buttons error with "not supported" | The deck NAKed the command; expected for some decks (see the "Learned:" line). |
 | Timecode frozen at `--:--:--:--` | No tape, or the deck cannot read LTC/VITC in this transport mode. |
-| No preview | Another program may hold the capture device; press ⟳ to refresh devices. |
+| No preview | Another program may hold the capture device; open Connections and press **Refresh**. |
 | Recording faults immediately | Read the error bar / log; usually a codec missing from the ffmpeg build. |
 | Choppy preview while recording | Preview drops frames by design under load; the recording path has priority. |
 

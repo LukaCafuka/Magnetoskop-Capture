@@ -50,6 +50,7 @@ public sealed partial class MainViewModel : ObservableObject
     private VariableSpeedMode _lastWheelMode;
     private bool _suppressWheelSend;
     private WatchWindow? _watchWindow;
+    private ConnectionsWindow? _connectionsWindow;
     private TransportState _currentTransport = TransportState.Unknown;
     /// <summary>JKL shuttle step: 0 stopped, +n forward, −n reverse.</summary>
     private int _jklStep;
@@ -364,6 +365,20 @@ public sealed partial class MainViewModel : ObservableObject
         _ = ApplyVtrConnectionAsync();
     }
 
+    partial void OnSelectedVtrProfileChanged(VtrDeviceProfile? value)
+    {
+        if (!_settingsReady || value is null) return;
+        SaveSettings();
+
+        // Reconnect a live COM session so the new profile takes effect immediately.
+        if (SelectedVtrConnection is { } connection
+            && connection.Id != VtrConnectionOption.SimulatorId
+            && _vtr.IsConnected)
+        {
+            _ = ApplyVtrConnectionAsync();
+        }
+    }
+
     private async Task ApplyVtrConnectionAsync()
     {
         if (SelectedVtrConnection is null || SelectedVtrProfile is null) return;
@@ -491,18 +506,15 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task OpenSettingsAsync()
+    private void OpenSettings()
     {
-        var previousProfileId = SelectedVtrProfile?.Id;
         var vm = new SettingsViewModel(
             _debugLogger.Enabled,
             ShowLogPanel,
             DisableTransportDuringRecording,
             MediaKeysControlTransport,
             PreviewYadif2xEnabled,
-            Ctl24HourWrap,
-            VtrProfiles,
-            SelectedVtrProfile?.Id);
+            Ctl24HourWrap);
         var window = new SettingsWindow(vm)
         {
             Owner = Application.Current?.MainWindow,
@@ -518,33 +530,11 @@ public sealed partial class MainViewModel : ObservableObject
         PreviewYadif2xEnabled = vm.PreviewYadif2xEnabled;
         Ctl24HourWrap = vm.Ctl24HourWrap;
         _debugLogger.SetEnabled(vm.DebugLoggingEnabled);
-        SelectedVtrProfile = vm.SelectedVtrProfile;
         SaveSettings();
 
         AppendLog(vm.DebugLoggingEnabled
             ? $"Debug logging enabled → {_debugLogger.CurrentLogPath ?? DebugSessionFileLoggerProvider.LogDirectory}"
             : "Debug logging disabled");
-        AppendLog($"VTR profile: {SelectedVtrProfile.DisplayName}");
-
-        // Reconnect on a live COM session so the new profile takes effect immediately.
-        if (SelectedVtrProfile.Id != previousProfileId
-            && SelectedVtrConnection is { } connection
-            && connection.Id != VtrConnectionOption.SimulatorId
-            && _vtr.IsConnected)
-        {
-            try
-            {
-                await _vtr.SwitchAsync(connection, SelectedVtrProfile);
-                IsVtrConnected = _vtr.IsConnected;
-                DeviceDescription = _vtr.DeviceDescription;
-                AppendLog($"Reconnected with profile {SelectedVtrProfile.DisplayName}");
-                UpdateCompatibilityInfo();
-            }
-            catch (Exception ex)
-            {
-                ReportError("Failed to reconnect after VTR profile change", ex);
-            }
-        }
     }
 
     [RelayCommand]
@@ -597,6 +587,41 @@ public sealed partial class MainViewModel : ObservableObject
     private void CloseWatchWindow()
     {
         _watchWindow?.Close();
+    }
+
+    [RelayCommand]
+    private void OpenConnectionsWindow()
+    {
+        if (_connectionsWindow is { IsLoaded: true })
+        {
+            if (_connectionsWindow.WindowState == WindowState.Minimized)
+            {
+                _connectionsWindow.WindowState = WindowState.Normal;
+            }
+
+            _connectionsWindow.Activate();
+            return;
+        }
+
+        var window = new ConnectionsWindow(this)
+        {
+            Owner = Application.Current?.MainWindow,
+        };
+        _connectionsWindow = window;
+        window.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_connectionsWindow, window))
+            {
+                _connectionsWindow = null;
+            }
+        };
+        window.Show();
+    }
+
+    [RelayCommand]
+    private void CloseConnectionsWindow()
+    {
+        _connectionsWindow?.Close();
     }
 
     // ---- Device selection ----------------------------------------------------

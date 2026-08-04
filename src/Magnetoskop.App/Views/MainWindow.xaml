@@ -159,6 +159,8 @@
                           Command="{Binding OpenVideoSettingsCommand}"/>
             </MenuItem>
             <MenuItem Header="_View">
+                <MenuItem Header="Connections…"
+                          Command="{Binding OpenConnectionsWindowCommand}"/>
                 <MenuItem Header="Watch window…"
                           Command="{Binding OpenWatchWindowCommand}"/>
             </MenuItem>
@@ -459,28 +461,16 @@
                     </StackPanel>
                 </Border>
 
-                <!-- VTR connection -->
-                <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
-                    <StackPanel>
-                        <DockPanel Margin="0,0,0,8">
-                            <Button DockPanel.Dock="Right" Content="⟳" MinWidth="34"
-                                    ToolTip="Refresh COM ports"
-                                    Command="{Binding RefreshVtrConnectionsCommand}"/>
-                            <TextBlock Text="RECORDER CONNECTION" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </DockPanel>
-                        <TextBlock Text="Connection" Style="{StaticResource TimecodeLabel}"/>
-                        <ComboBox ItemsSource="{Binding VtrConnections}"
-                                  SelectedItem="{Binding SelectedVtrConnection}"
-                                  Margin="0,0,0,8"/>
-                        <TextBlock Foreground="#999999" FontSize="11" TextWrapping="Wrap"
-                                   Text="Connects automatically when selected. Deck model: File → Settings… (default Generic Sony 9-pin)"/>
-                    </StackPanel>
-                </Border>
-
                 <!-- Recorder status -->
                 <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
                     <StackPanel>
-                        <TextBlock Text="RECORDER STATUS" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <DockPanel Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right" Content="Connections…"
+                                    Command="{Binding OpenConnectionsWindowCommand}"
+                                    Padding="8,4" MinWidth="0" Margin="0"
+                                    ToolTip="Open Connections to choose COM port, VTR model, and capture devices"/>
+                            <TextBlock Text="RECORDER STATUS" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </DockPanel>
                         <TextBlock Text="{Binding DeviceDescription}" Margin="0,0,0,4"/>
                         <TextBlock Text="{Binding DetectedProfileText}" Foreground="#88BBFF"
                                    FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
@@ -493,24 +483,10 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Devices -->
+                <!-- Audio monitor / meters -->
                 <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
                     <StackPanel>
-                        <DockPanel Margin="0,0,0,8">
-                            <Button DockPanel.Dock="Right" Content="Refresh"
-                                    Command="{Binding RefreshDevicesCommand}"/>
-                            <TextBlock Text="CAPTURE DEVICES" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </DockPanel>
-                        <TextBlock Text="Video device" Style="{StaticResource TimecodeLabel}"/>
-                        <ComboBox ItemsSource="{Binding VideoDevices}"
-                                  SelectedItem="{Binding SelectedVideoDevice}"
-                                  DisplayMemberPath="Name" Margin="0,0,0,8"/>
-                        <TextBlock Text="Audio device (auto-selected unless changed)"
-                                   Style="{StaticResource TimecodeLabel}"/>
-                        <ComboBox ItemsSource="{Binding AudioDevices}"
-                                  SelectedItem="{Binding SelectedAudioDevice}"
-                                  DisplayMemberPath="Name" Margin="0,0,0,8"
-                                  SelectionChanged="AudioDevice_SelectionChanged"/>
+                        <TextBlock Text="AUDIO" FontWeight="Bold" Margin="0,0,0,8"/>
                         <CheckBox IsChecked="{Binding AudioMonitoringEnabled}"
                                   Foreground="#DDDDDD" Margin="0,0,0,8"
                                   Content="Monitor audio"

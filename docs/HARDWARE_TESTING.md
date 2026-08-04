@@ -35,7 +35,8 @@ Deck preparation:
 
 1. Set the deck's remote switch to **REMOTE** (9-pin).
 2. Insert the test cassette, rewind to head.
-3. In Magnetoskop Capture select the COM port and the deck's profile, press Connect.
+3. In Magnetoskop Capture open **View → Connections…**, select the COM port and
+   the deck's profile (connects automatically).
 
 Log collection: application logs are written to
 `%AppData%\MagnetoskopCapture\logs\magnetoskop_YYYYMMDD.log`. Protocol frames are

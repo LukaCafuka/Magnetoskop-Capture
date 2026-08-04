@@ -128,15 +128,6 @@ public partial class MainWindow : Window
             || focused is ComboBoxItem;
     }
 
-    private void AudioDevice_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        // Only user-driven changes flip the manual flag: check the combo box has focus.
-        if (sender is ComboBox { IsDropDownOpen: true } or ComboBox { IsKeyboardFocusWithin: true })
-        {
-            _viewModel.AudioManuallySelected = true;
-        }
-    }
-
     private void JogShuttleWheel_Released(object sender, MouseEventArgs e)
     {
         _ = _viewModel.ReleaseJogShuttleWheelAsync();
