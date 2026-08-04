@@ -164,7 +164,7 @@
                                              ToolTip="Variable search (up to ~50× play)"/>
                             </StackPanel>
                         </DockPanel>
-                        <Grid Height="22" ToolTip="Hold and drag: left = reverse, right = forward. Release returns to still and stops.">
+                        <Grid Height="22" ToolTip="Hold and drag: left = reverse, right = forward. Release returns to still and stops. Mouse wheel: up = rewind, down = forward (scroll back to center or press Stop).">
                             <Slider Minimum="-1" Maximum="1" TickFrequency="0.25"
                                     IsSnapToTickEnabled="False"
                                     IsHitTestVisible="False" Focusable="False"

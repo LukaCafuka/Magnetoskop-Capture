@@ -6,11 +6,16 @@ namespace Magnetoskop.App.Views;
 
 /// <summary>
 /// Jog/shuttle dial input that maps cursor X to [-1, +1] while LMB is held.
+/// Mouse wheel: scroll up = more reverse, scroll down = more forward (stays until
+/// scrolled back to center, Stop, or a drag-release).
 /// Avoids WPF <see cref="System.Windows.Controls.Slider"/> thumb-drag entirely —
 /// that control keeps a stale drag offset and does not follow the cursor reliably.
 /// </summary>
 internal static class JogShuttleDial
 {
+    /// <summary>Dial deflection change per mouse-wheel notch (~10 notches to ±max).</summary>
+    private const double WheelNotchStep = 0.1;
+
     public static void Attach(FrameworkElement surface, MainViewModel viewModel)
     {
         var dragging = false;
@@ -50,6 +55,27 @@ internal static class JogShuttleDial
             if (!dragging) return;
             dragging = false;
             _ = viewModel.ReleaseJogShuttleWheelAsync();
+        };
+
+        surface.PreviewMouseWheel += (_, e) =>
+        {
+            if (dragging) return;
+            if (e.Delta == 0) return;
+
+            // Scroll up (Delta > 0) → more rewind (−); scroll down → more forward (+).
+            var notches = e.Delta / (double)Mouse.MouseWheelDeltaForOneLine;
+            var next = Math.Clamp(viewModel.WheelPosition - notches * WheelNotchStep, -1.0, 1.0);
+            if (Math.Abs(next) < 0.02)
+            {
+                // Back to center → same clean stop as releasing a drag.
+                _ = viewModel.ReleaseJogShuttleWheelAsync();
+            }
+            else
+            {
+                viewModel.WheelPosition = next;
+            }
+
+            e.Handled = true;
         };
     }
 
