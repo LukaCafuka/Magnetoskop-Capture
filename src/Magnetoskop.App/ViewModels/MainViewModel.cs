@@ -59,6 +59,9 @@ public sealed partial class MainViewModel : ObservableObject
     private TransportState _currentTransport = TransportState.Unknown;
     /// <summary>JKL shuttle step: 0 stopped, +n forward, −n reverse.</summary>
     private int _jklStep;
+    /// <summary>Linear peak hold (0…1) before dBFS mapping for the UI meters.</summary>
+    private double _linearMeterLeft;
+    private double _linearMeterRight;
 
     public MainViewModel(
         VtrConnectionService vtr,
@@ -1469,18 +1472,32 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (!_audioCapture.IsCapturing)
         {
+            _linearMeterLeft = 0;
+            _linearMeterRight = 0;
             AudioLevelLeft = 0;
             AudioLevelRight = 0;
             return;
         }
 
-        // PeakLevels consumes held peaks since the last tick; release softens the fall.
+        // PeakLevels consumes held peaks since the last tick; release softens the fall on
+        // linear amplitude, then map to −60…0 dBFS for the ProgressBar (matches tick legend).
         const double release = 0.75;
         var peaks = _audioCapture.PeakLevels;
         var left = peaks.Count > 0 ? peaks[0] : 0;
         var right = peaks.Count > 1 ? peaks[1] : left;
-        AudioLevelLeft = Math.Max(left, AudioLevelLeft * release);
-        AudioLevelRight = Math.Max(right, AudioLevelRight * release);
+        _linearMeterLeft = Math.Max(left, _linearMeterLeft * release);
+        _linearMeterRight = Math.Max(right, _linearMeterRight * release);
+        AudioLevelLeft = LinearPeakToMeterDb(_linearMeterLeft);
+        AudioLevelRight = LinearPeakToMeterDb(_linearMeterRight);
+    }
+
+    /// <summary>Maps linear peak 0…1 to meter fill 0…1 for a −60…0 dBFS scale.</summary>
+    private static double LinearPeakToMeterDb(double peak)
+    {
+        const double floorDb = -60.0;
+        if (peak <= 0) return 0;
+        var db = 20.0 * Math.Log10(peak);
+        return Math.Clamp((db - floorDb) / -floorDb, 0.0, 1.0);
     }
 
     // ---- Event handlers ---------------------------------------------------------
