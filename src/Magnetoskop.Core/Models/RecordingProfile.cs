@@ -15,11 +15,14 @@ public enum RecordingAudioCodec
     PcmS16Le,
     PcmS24Le,
     Aac,
+    Flac,
+    Mp3,
+    Vorbis,
 }
 
 /// <summary>
-/// Recording encode settings: video codec + container + advanced options, plus the
-/// audio codec chosen until a dedicated Audio settings window exists.
+/// Recording encode settings: video codec + container + advanced options, plus
+/// user-selected audio codec and tuning (Audio settings window).
 /// Consumed by the FFmpeg-based recording service.
 /// </summary>
 public sealed record RecordingProfile
@@ -55,8 +58,18 @@ public sealed record RecordingProfile
     /// <summary>Write moov atom at the start for MP4/MOV progressive download.</summary>
     public bool Mp4FastStart { get; init; } = true;
 
+    /// <summary>AAC / MP3 bitrate in kbps (ignored for other audio codecs).</summary>
+    public int AudioBitrateKbps { get; init; } = 192;
+    /// <summary>Vorbis <c>-q:a</c> quality 0–10 (ignored for other audio codecs).</summary>
+    public int AudioQuality { get; init; } = 5;
+    /// <summary>FLAC compression level 0–12 (ignored for other audio codecs).</summary>
+    public int FlacCompressionLevel { get; init; } = 5;
+
     /// <summary>Human-readable summary for the UI (e.g. "H.264 / MP4 (CRF 18)").</summary>
     public string DisplayName => BuildDisplayName();
+
+    /// <summary>Short label for the audio codec (e.g. "AAC", "PCM 24").</summary>
+    public string AudioCodecDisplayName => FormatAudioCodec(AudioCodec);
 
     public static RecordingProfile CreateDefault() => CreateH264Access();
 
@@ -71,6 +84,7 @@ public sealed record RecordingProfile
         VideoProfile = "high",
         GopSize = 250,
         Mp4FastStart = true,
+        AudioBitrateKbps = 192,
     };
 
     public static RecordingProfile CreateH265Access() => new()
@@ -84,6 +98,7 @@ public sealed record RecordingProfile
         VideoProfile = "main",
         GopSize = 250,
         Mp4FastStart = true,
+        AudioBitrateKbps = 192,
     };
 
     public static RecordingProfile CreateFfv1Archival() => new()
@@ -128,11 +143,36 @@ public sealed record RecordingProfile
         };
     }
 
-    /// <summary>Picks a sensible audio codec for the video codec / container pair.</summary>
+    /// <summary>
+    /// Whether <paramref name="audio"/> can be muxed into <paramref name="container"/>.
+    /// PCM 16 and 24 share the same container rules.
+    /// </summary>
+    public static bool IsAudioCompatible(RecordingAudioCodec audio, string container)
+    {
+        var c = container.ToLowerInvariant();
+        return audio switch
+        {
+            RecordingAudioCodec.Aac => c is "mkv" or "mp4" or "mov",
+            RecordingAudioCodec.Flac => c is "mkv",
+            RecordingAudioCodec.PcmS16Le or RecordingAudioCodec.PcmS24Le => c is "avi" or "mkv" or "mov",
+            RecordingAudioCodec.Mp3 => c is "avi" or "mkv" or "mp4" or "mov",
+            RecordingAudioCodec.Vorbis => c is "mkv",
+            _ => false,
+        };
+    }
+
+    /// <summary>True when either PCM bit depth is compatible with the container.</summary>
+    public static bool IsPcmCompatible(string container)
+        => IsAudioCompatible(RecordingAudioCodec.PcmS16Le, container);
+
+    /// <summary>
+    /// Fallback audio when the current choice cannot mux into the container,
+    /// preferring archival PCM for FFV1/ProRes and AAC for delivery containers.
+    /// </summary>
     public static RecordingAudioCodec DefaultAudioCodec(RecordingCodec video, string container)
     {
         var c = container.ToLowerInvariant();
-        return video switch
+        var preferred = video switch
         {
             RecordingCodec.Ffv1 => RecordingAudioCodec.PcmS24Le,
             RecordingCodec.ProRes => RecordingAudioCodec.PcmS16Le,
@@ -140,7 +180,34 @@ public sealed record RecordingProfile
                 => RecordingAudioCodec.Aac,
             _ => RecordingAudioCodec.PcmS16Le,
         };
+
+        if (IsAudioCompatible(preferred, c))
+            return preferred;
+
+        return PreferredAudioCodec(c);
     }
+
+    /// <summary>First mux-legal audio codec for a container (used when coercing).</summary>
+    public static RecordingAudioCodec PreferredAudioCodec(string container)
+    {
+        var c = container.ToLowerInvariant();
+        return c switch
+        {
+            "mp4" => RecordingAudioCodec.Aac,
+            "mov" => RecordingAudioCodec.PcmS16Le,
+            "avi" => RecordingAudioCodec.PcmS16Le,
+            "mkv" => RecordingAudioCodec.PcmS16Le,
+            _ => RecordingAudioCodec.Aac,
+        };
+    }
+
+    /// <summary>
+    /// Keeps <paramref name="audio"/> when still mux-legal; otherwise returns a default
+    /// for the video/container pair.
+    /// </summary>
+    public static RecordingAudioCodec CoerceAudioCodec(
+        RecordingAudioCodec audio, RecordingCodec video, string container)
+        => IsAudioCompatible(audio, container) ? audio : DefaultAudioCodec(video, container);
 
     public static int DefaultCrf(RecordingCodec codec) => codec switch
     {
@@ -152,6 +219,17 @@ public sealed record RecordingProfile
     {
         RecordingCodec.Ffv1 => 1,
         _ => 250,
+    };
+
+    public static string FormatAudioCodec(RecordingAudioCodec audio) => audio switch
+    {
+        RecordingAudioCodec.Aac => "AAC",
+        RecordingAudioCodec.Flac => "FLAC",
+        RecordingAudioCodec.Mp3 => "MP3",
+        RecordingAudioCodec.Vorbis => "Vorbis",
+        RecordingAudioCodec.PcmS16Le => "PCM 16",
+        RecordingAudioCodec.PcmS24Le => "PCM 24",
+        _ => audio.ToString(),
     };
 
     private string BuildDisplayName()

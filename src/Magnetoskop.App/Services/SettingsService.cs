@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Magnetoskop.App.Services;
 
-/// <summary>Persisted video encode options (maps to <see cref="RecordingProfile"/>).</summary>
+/// <summary>Persisted encode options (maps to <see cref="RecordingProfile"/>).</summary>
 public sealed class VideoEncodeSettings
 {
     public string Container { get; set; } = "mp4";
@@ -24,6 +24,11 @@ public sealed class VideoEncodeSettings
     public bool AllowProcessing { get; set; }
     public bool Mp4FastStart { get; set; } = true;
 
+    public string? AudioCodec { get; set; }
+    public int AudioBitrateKbps { get; set; } = 192;
+    public int AudioQuality { get; set; } = 5;
+    public int FlacCompressionLevel { get; set; } = 5;
+
     public static VideoEncodeSettings FromProfile(RecordingProfile profile) => new()
     {
         Container = profile.Container,
@@ -40,6 +45,10 @@ public sealed class VideoEncodeSettings
         PixelFormat = profile.PixelFormat,
         AllowProcessing = profile.AllowProcessing,
         Mp4FastStart = profile.Mp4FastStart,
+        AudioCodec = profile.AudioCodec.ToString(),
+        AudioBitrateKbps = profile.AudioBitrateKbps,
+        AudioQuality = profile.AudioQuality,
+        FlacCompressionLevel = profile.FlacCompressionLevel,
     };
 
     public RecordingProfile ToProfile()
@@ -58,11 +67,13 @@ public sealed class VideoEncodeSettings
             container = RecordingProfile.PreferredContainer(codec);
         }
 
+        var audio = ResolveAudioCodec(AudioCodec, codec, container);
+
         return new RecordingProfile
         {
             Id = $"custom-{codec.ToString().ToLowerInvariant()}-{container}",
             VideoCodec = codec,
-            AudioCodec = RecordingProfile.DefaultAudioCodec(codec, container),
+            AudioCodec = audio,
             Container = container,
             Crf = Crf,
             Preset = string.IsNullOrWhiteSpace(Preset) ? "medium" : Preset,
@@ -76,7 +87,21 @@ public sealed class VideoEncodeSettings
             PixelFormat = PixelFormat ?? "",
             AllowProcessing = AllowProcessing,
             Mp4FastStart = Mp4FastStart,
+            AudioBitrateKbps = AudioBitrateKbps is >= 64 and <= 512 ? AudioBitrateKbps : 192,
+            AudioQuality = Math.Clamp(AudioQuality, 0, 10),
+            FlacCompressionLevel = Math.Clamp(FlacCompressionLevel, 0, 12),
         };
+    }
+
+    private static RecordingAudioCodec ResolveAudioCodec(
+        string? stored, RecordingCodec video, string container)
+    {
+        if (Enum.TryParse<RecordingAudioCodec>(stored, ignoreCase: true, out var audio))
+        {
+            return RecordingProfile.CoerceAudioCodec(audio, video, container);
+        }
+
+        return RecordingProfile.DefaultAudioCodec(video, container);
     }
 }
 

@@ -153,7 +153,32 @@ public static class FfmpegArgumentsBuilder
                     args.AddRange(new[] { "-c:a", "pcm_s24le" });
                     break;
                 case RecordingAudioCodec.Aac:
-                    args.AddRange(new[] { "-c:a", "aac", "-b:a", "192k" });
+                    args.AddRange(new[]
+                    {
+                        "-c:a", "aac",
+                        "-b:a", $"{ClampBitrate(profile.AudioBitrateKbps)}k",
+                    });
+                    break;
+                case RecordingAudioCodec.Mp3:
+                    args.AddRange(new[]
+                    {
+                        "-c:a", "libmp3lame",
+                        "-b:a", $"{ClampBitrate(profile.AudioBitrateKbps)}k",
+                    });
+                    break;
+                case RecordingAudioCodec.Flac:
+                    args.AddRange(new[]
+                    {
+                        "-c:a", "flac",
+                        "-compression_level", Math.Clamp(profile.FlacCompressionLevel, 0, 12).ToString(),
+                    });
+                    break;
+                case RecordingAudioCodec.Vorbis:
+                    args.AddRange(new[]
+                    {
+                        "-c:a", "libvorbis",
+                        "-q:a", Math.Clamp(profile.AudioQuality, 0, 10).ToString(),
+                    });
                     break;
                 default:
                     throw new NotSupportedException($"Audio codec {profile.AudioCodec} is not supported.");
@@ -201,6 +226,8 @@ public static class FfmpegArgumentsBuilder
     /// <summary>Output frame rate after optional yadif 2× (doubled when deinterlacing).</summary>
     public static double OutputFrameRate(VideoFormat format, RecordingProfile profile)
         => WillDeinterlace(format, profile) ? format.FrameRate * 2.0 : format.FrameRate;
+
+    private static int ClampBitrate(int kbps) => Math.Clamp(kbps is >= 64 and <= 512 ? kbps : 192, 64, 512);
 
     private static string OutputPixFmt(RecordingProfile profile, string codecDefault)
         => string.IsNullOrWhiteSpace(profile.PixelFormat) ? codecDefault : profile.PixelFormat;

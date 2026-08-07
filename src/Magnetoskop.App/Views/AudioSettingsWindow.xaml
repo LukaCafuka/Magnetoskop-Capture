@@ -1,0 +1,111 @@
+<Window x:Class="Magnetoskop.App.Views.AudioSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:Magnetoskop.App.ViewModels"
+        Title="Audio settings"
+        Width="480" Height="520"
+        MinWidth="420" MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        ResizeMode="CanResizeWithGrip"
+        d:DataContext="{d:DesignInstance Type=vm:AudioSettingsViewModel}"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="Padding" Value="0,0,0,2"/>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Padding" Value="4,2"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="16,6"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Margin" Value="6,0,0,0"/>
+        </Style>
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,8,0,8"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel Margin="14">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="OK" IsDefault="True" Command="{Binding OkCommand}"/>
+            <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}"/>
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Style="{StaticResource SectionHeader}" Text="OUTPUT"/>
+                <TextBlock Text="{Binding ContextSummary}" Foreground="#AAAAAA"
+                           TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                <Label Content="Codec"/>
+                <ComboBox ItemsSource="{Binding AvailableCodecs}"
+                          SelectedItem="{Binding SelectedCodec}"
+                          DisplayMemberPath="DisplayName">
+                    <ComboBox.ItemContainerStyle>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
+                        </Style>
+                    </ComboBox.ItemContainerStyle>
+                </ComboBox>
+                <TextBlock Text="{Binding CompatibilityNote}" Foreground="#FFCC66"
+                           TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                <!-- AAC / MP3 bitrate -->
+                <StackPanel Visibility="{Binding ShowBitrateOptions, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="ADVANCED — BITRATE"/>
+                    <Label Content="Bitrate (kbps)"/>
+                    <ComboBox ItemsSource="{Binding BitrateOptionsList}"
+                              SelectedItem="{Binding SelectedBitrateKbps}"/>
+                </StackPanel>
+
+                <!-- FLAC -->
+                <StackPanel Visibility="{Binding ShowFlacOptions, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="ADVANCED — FLAC"/>
+                    <Label Content="Compression level (0 = fastest, 12 = smallest)"/>
+                    <DockPanel Margin="0,0,0,10">
+                        <TextBox DockPanel.Dock="Right" Width="48"
+                                 Text="{Binding FlacCompressionLevel, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Slider Minimum="0" Maximum="12" TickFrequency="1" IsSnapToTickEnabled="True"
+                                Value="{Binding FlacCompressionLevel}"/>
+                    </DockPanel>
+                </StackPanel>
+
+                <!-- PCM -->
+                <StackPanel Visibility="{Binding ShowPcmOptions, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="ADVANCED — PCM"/>
+                    <Label Content="Bit depth"/>
+                    <ComboBox ItemsSource="{Binding PcmBitDepthOptions}"
+                              SelectedItem="{Binding SelectedPcmBitDepth}"
+                              DisplayMemberPath="DisplayName"/>
+                </StackPanel>
+
+                <!-- Vorbis -->
+                <StackPanel Visibility="{Binding ShowVorbisOptions, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="ADVANCED — VORBIS"/>
+                    <Label Content="Quality (0 = lowest, 10 = highest)"/>
+                    <DockPanel Margin="0,0,0,10">
+                        <TextBox DockPanel.Dock="Right" Width="48"
+                                 Text="{Binding AudioQuality, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Slider Minimum="0" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True"
+                                Value="{Binding AudioQuality}"/>
+                    </DockPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

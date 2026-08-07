@@ -133,6 +133,7 @@ public class FfmpegArgumentsBuilderTests
         Assert.True(ContainsPair(args, "-g", profile.GopSize.ToString()));
         Assert.True(ContainsPair(args, "-profile:v", "high"));
         Assert.True(ContainsPair(args, "-c:a", "aac"));
+        Assert.True(ContainsPair(args, "-b:a", "192k"));
         Assert.True(ContainsPair(args, "-movflags", "+faststart"));
     }
 
@@ -277,6 +278,58 @@ public class FfmpegArgumentsBuilderTests
         Assert.Throws<ArgumentException>(() =>
             FfmpegArgumentsBuilder.Build(
                 RecordingProfile.CreateFfv1Archival(), Pal, Pcm48k, null, "out.mkv"));
+    }
+
+    // ---- Audio codecs ------------------------------------------------------------
+
+    [Fact]
+    public void Aac_UsesConfiguredBitrate()
+    {
+        var profile = RecordingProfile.CreateH264Access() with { AudioBitrateKbps = 256 };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mp4");
+        Assert.True(ContainsPair(args, "-c:a", "aac"));
+        Assert.True(ContainsPair(args, "-b:a", "256k"));
+    }
+
+    [Fact]
+    public void Mp3_UsesLibmp3lameAndBitrate()
+    {
+        var profile = RecordingProfile.CreateH264Access() with
+        {
+            Container = "mkv",
+            AudioCodec = RecordingAudioCodec.Mp3,
+            AudioBitrateKbps = 320,
+            Mp4FastStart = false,
+        };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mkv");
+        Assert.True(ContainsPair(args, "-c:a", "libmp3lame"));
+        Assert.True(ContainsPair(args, "-b:a", "320k"));
+    }
+
+    [Fact]
+    public void Flac_UsesCompressionLevel()
+    {
+        var profile = RecordingProfile.CreateFfv1Archival() with
+        {
+            AudioCodec = RecordingAudioCodec.Flac,
+            FlacCompressionLevel = 8,
+        };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mkv");
+        Assert.True(ContainsPair(args, "-c:a", "flac"));
+        Assert.True(ContainsPair(args, "-compression_level", "8"));
+    }
+
+    [Fact]
+    public void Vorbis_UsesQuality()
+    {
+        var profile = RecordingProfile.CreateFfv1Archival() with
+        {
+            AudioCodec = RecordingAudioCodec.Vorbis,
+            AudioQuality = 7,
+        };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mkv");
+        Assert.True(ContainsPair(args, "-c:a", "libvorbis"));
+        Assert.True(ContainsPair(args, "-q:a", "7"));
     }
 
     // ---- Helpers -----------------------------------------------------------------

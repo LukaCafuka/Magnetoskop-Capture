@@ -13,6 +13,8 @@ public sealed record NamedOption(string Id, string DisplayName)
 /// <summary>Editable draft of video encode settings for the Video settings window.</summary>
 public sealed partial class VideoSettingsViewModel : ObservableObject
 {
+    private readonly RecordingProfile _source;
+
     public static IReadOnlyList<NamedOption> AllContainers { get; } = new[]
     {
         new NamedOption("avi", "AVI"),
@@ -88,6 +90,7 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
 
     public VideoSettingsViewModel(RecordingProfile source)
     {
+        _source = source;
         AvailableContainers = new ObservableCollection<NamedOption>(AllContainers);
         AvailableCodecs = new ObservableCollection<NamedOption>(AllCodecs);
 
@@ -135,16 +138,16 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
     private string _tune = "none";
 
     [ObservableProperty]
-    private NamedOption _selectedVideoProfile = H264Profiles[^1];
+    private NamedOption? _selectedVideoProfile = H264Profiles[^1];
 
     [ObservableProperty]
     private int _gopSize = 250;
 
     [ObservableProperty]
-    private NamedOption _selectedProResProfile = ProResProfiles[3];
+    private NamedOption? _selectedProResProfile = ProResProfiles[3];
 
     [ObservableProperty]
-    private NamedOption _selectedFfv1Level = Ffv1Levels[1];
+    private NamedOption? _selectedFfv1Level = Ffv1Levels[1];
 
     [ObservableProperty]
     private int _ffv1Slices = 24;
@@ -153,7 +156,7 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
     private bool _ffv1SliceCrc = true;
 
     [ObservableProperty]
-    private NamedOption _selectedPixelFormat = PixelFormats[0];
+    private NamedOption? _selectedPixelFormat = PixelFormats[0];
 
     [ObservableProperty]
     private bool _preserveInterlacing = true;
@@ -193,11 +196,16 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
     partial void OnSelectedCodecChanged(NamedOption value)
     {
         if (_suppressCompatibility) return;
+        if (value is null) return;
         ApplyCodecDefaults(ParseCodec(value.Id));
         EnsureCompatible(preferAdjustingCodec: true);
         RefreshCodecPanels();
         OnPropertyChanged(nameof(CurrentVideoProfiles));
-        SelectedVideoProfile = ResolveVideoProfileOption(ParseCodec(value.Id), SelectedVideoProfile.Id);
+        // WPF may clear SelectedVideoProfile when the AVC/HEVC panel collapses;
+        // restore a valid option so OK / ToProfile never sees null.
+        SelectedVideoProfile = ResolveVideoProfileOption(
+            ParseCodec(value.Id), SelectedVideoProfile?.Id ?? "");
+        EnsureNamedOptionSelections();
     }
 
     private void ApplyCodecDefaults(RecordingCodec codec)
@@ -215,6 +223,10 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
         if (codec is RecordingCodec.ProRes)
         {
             SelectedProResProfile = ProResProfiles.First(p => p.Id == "3");
+        }
+        if (codec is RecordingCodec.Ffv1)
+        {
+            SelectedFfv1Level = Ffv1Levels.First(l => l.Id == "3");
         }
     }
 
@@ -300,6 +312,8 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
 
     public RecordingProfile ToProfile()
     {
+        EnsureNamedOptionSelections();
+
         var codec = ParseCodec(SelectedCodec.Id);
         var container = SelectedContainer.Id;
         if (!RecordingProfile.IsCompatible(codec, container))
@@ -307,25 +321,44 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
             container = RecordingProfile.PreferredContainer(codec);
         }
 
+        var audio = RecordingProfile.CoerceAudioCodec(_source.AudioCodec, codec, container);
+
         return new RecordingProfile
         {
             Id = $"custom-{codec.ToString().ToLowerInvariant()}-{container}",
             VideoCodec = codec,
-            AudioCodec = RecordingProfile.DefaultAudioCodec(codec, container),
+            AudioCodec = audio,
             Container = container,
             Crf = Math.Clamp(Crf, 0, 51),
             Preset = Preset,
             Tune = Tune == "none" ? "" : Tune,
-            VideoProfile = SelectedVideoProfile.Id,
+            VideoProfile = SelectedVideoProfile?.Id ?? "",
             GopSize = Math.Max(1, GopSize),
-            ProResProfile = int.TryParse(SelectedProResProfile.Id, out var pr) ? pr : 3,
-            Ffv1Level = int.TryParse(SelectedFfv1Level.Id, out var level) ? level : 3,
+            ProResProfile = int.TryParse(SelectedProResProfile?.Id, out var pr) ? pr : 3,
+            Ffv1Level = int.TryParse(SelectedFfv1Level?.Id, out var level) ? level : 3,
             Ffv1Slices = Math.Max(1, Ffv1Slices),
             Ffv1SliceCrc = Ffv1SliceCrc,
-            PixelFormat = SelectedPixelFormat.Id,
+            PixelFormat = SelectedPixelFormat?.Id ?? "",
             AllowProcessing = !PreserveInterlacing,
             Mp4FastStart = Mp4FastStart,
+            AudioBitrateKbps = _source.AudioBitrateKbps,
+            AudioQuality = _source.AudioQuality,
+            FlacCompressionLevel = _source.FlacCompressionLevel,
         };
+    }
+
+    /// <summary>
+    /// Collapsing codec-specific panels can leave ComboBox SelectedItem null via WPF binding.
+    /// Restore defaults so ToProfile never dereferences null NamedOptions.
+    /// </summary>
+    private void EnsureNamedOptionSelections()
+    {
+        SelectedVideoProfile ??= ResolveVideoProfileOption(ParseCodec(SelectedCodec.Id), "");
+        SelectedProResProfile ??= ProResProfiles.First(p => p.Id == "3");
+        SelectedFfv1Level ??= Ffv1Levels.First(l => l.Id == "3");
+        SelectedPixelFormat ??= PixelFormats[0];
+        if (string.IsNullOrWhiteSpace(Preset)) Preset = "medium";
+        if (string.IsNullOrWhiteSpace(Tune)) Tune = "none";
     }
 
     private static RecordingCodec ParseCodec(string id)

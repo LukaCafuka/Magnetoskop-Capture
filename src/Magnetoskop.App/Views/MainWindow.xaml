@@ -166,7 +166,8 @@
                           Command="{Binding OpenWatchWindowCommand}"/>
             </MenuItem>
             <MenuItem Header="_Audio">
-                <MenuItem Header="Coming soon" IsEnabled="False"/>
+                <MenuItem Header="Audio settings…"
+                          Command="{Binding OpenAudioSettingsCommand}"/>
             </MenuItem>
         </Menu>
 

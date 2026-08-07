@@ -104,6 +104,37 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal(50, restored.GopSize);
         Assert.Equal("yuv420p", restored.PixelFormat);
         Assert.Equal(RecordingAudioCodec.Aac, restored.AudioCodec);
+        Assert.Equal(192, restored.AudioBitrateKbps);
+    }
+
+    [Fact]
+    public void VideoEncodeSettings_RoundTripsAudioCodecAndTuning()
+    {
+        var original = RecordingProfile.CreateFfv1Archival() with
+        {
+            AudioCodec = RecordingAudioCodec.Flac,
+            FlacCompressionLevel = 8,
+            AudioBitrateKbps = 256,
+            AudioQuality = 6,
+        };
+
+        var restored = VideoEncodeSettings.FromProfile(original).ToProfile();
+
+        Assert.Equal(RecordingAudioCodec.Flac, restored.AudioCodec);
+        Assert.Equal(8, restored.FlacCompressionLevel);
+        Assert.Equal(256, restored.AudioBitrateKbps);
+        Assert.Equal(6, restored.AudioQuality);
+    }
+
+    [Fact]
+    public void VideoEncodeSettings_CoercesIllegalAudioForContainer()
+    {
+        var settings = VideoEncodeSettings.FromProfile(RecordingProfile.CreateH264Access());
+        settings.AudioCodec = nameof(RecordingAudioCodec.Flac); // not legal in mp4
+        settings.Container = "mp4";
+
+        var profile = settings.ToProfile();
+        Assert.Equal(RecordingAudioCodec.Aac, profile.AudioCodec);
     }
 
     [Fact]

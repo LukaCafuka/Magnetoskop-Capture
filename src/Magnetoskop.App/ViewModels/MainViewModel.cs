@@ -563,6 +563,23 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void OpenAudioSettings()
+    {
+        var source = SelectedRecordingProfile ?? RecordingProfile.CreateDefault();
+        var vm = new AudioSettingsViewModel(source);
+        var window = new AudioSettingsWindow(vm)
+        {
+            Owner = Application.Current?.MainWindow,
+        };
+        if (window.ShowDialog() == true)
+        {
+            SelectedRecordingProfile = vm.ToProfile();
+            SaveSettings();
+            AppendLog($"Audio settings: {SelectedRecordingProfile.AudioCodecDisplayName}");
+        }
+    }
+
+    [RelayCommand]
     private void OpenWatchWindow()
     {
         if (_watchWindow is { IsLoaded: true })
@@ -1574,7 +1591,7 @@ public sealed partial class MainViewModel : ObservableObject
     private void RefreshStatusBarCodec()
     {
         StatusBarCodecText = SelectedRecordingProfile is { } profile
-            ? $"{profile.VideoCodec} / {profile.AudioCodec} ({profile.Container})"
+            ? $"{profile.VideoCodec} / {profile.AudioCodecDisplayName} ({profile.Container})"
             : "—";
     }
 
