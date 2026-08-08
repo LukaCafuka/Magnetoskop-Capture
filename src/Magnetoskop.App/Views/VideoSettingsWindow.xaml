@@ -138,6 +138,19 @@
                               SelectedItem="{Binding SelectedPixelFormat}"
                               DisplayMemberPath="DisplayName"/>
                 </StackPanel>
+
+                <!-- DNxHD / DNxHR -->
+                <StackPanel Visibility="{Binding ShowDnxHdOptions, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="ADVANCED — DNxHD"/>
+                    <Label Content="DNxHR profile"/>
+                    <ComboBox ItemsSource="{Binding DnxHdProfiles}"
+                              SelectedItem="{Binding SelectedDnxHdProfile}"
+                              DisplayMemberPath="DisplayName"/>
+                    <Label Content="Pixel format"/>
+                    <ComboBox ItemsSource="{Binding PixelFormats}"
+                              SelectedItem="{Binding SelectedPixelFormat}"
+                              DisplayMemberPath="DisplayName"/>
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
     </DockPanel>

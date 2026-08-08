@@ -384,7 +384,17 @@
                         <TextBlock Text="TIME INFORMATION" FontWeight="Bold" Margin="0,0,0,8"/>
                         <UniformGrid Columns="2">
                             <StackPanel Margin="0,0,10,8">
-                                <TextBlock Style="{StaticResource TimecodeLabel}" Text="CTL"/>
+                                <DockPanel Margin="0,0,0,0">
+                                    <Button DockPanel.Dock="Right"
+                                            Content="Reset"
+                                            Padding="6,0" MinWidth="44" Height="18"
+                                            FontSize="11"
+                                            VerticalAlignment="Center"
+                                            Command="{Binding ResetCtlCommand}"
+                                            ToolTip="Reset CTL counter to 00:00:00:00 (Timer-1 Reset). Does not move the tape."/>
+                                    <TextBlock Style="{StaticResource TimecodeLabel}" Text="CTL"
+                                               VerticalAlignment="Center"/>
+                                </DockPanel>
                                 <Grid>
                                     <TextBlock Text="{Binding CtlText}"
                                                Cursor="Hand"
@@ -504,6 +514,19 @@
                                   Foreground="#DDDDDD" Margin="0,0,0,8"
                                   Content="Monitor audio"
                                   ToolTip="Play the selected audio input through the default speakers/headphones"/>
+                        <DockPanel Margin="0,0,0,8">
+                            <TextBlock DockPanel.Dock="Left" Text="Volume"
+                                       VerticalAlignment="Center" Margin="0,0,8,0"
+                                       Foreground="#AAAAAA"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding MonitorVolumeLabel}"
+                                       VerticalAlignment="Center" MinWidth="40" TextAlignment="Right"
+                                       FontFamily="Consolas" Foreground="#66FF99" Margin="8,0,0,0"/>
+                            <Slider Minimum="0" Maximum="200" TickFrequency="10"
+                                    IsSnapToTickEnabled="False"
+                                    Value="{Binding MonitorVolumePercent, UpdateSourceTrigger=PropertyChanged}"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Monitor playback volume (0–200%). Does not affect recording levels."/>
+                        </DockPanel>
                         <TextBlock Text="Audio levels" Style="{StaticResource TimecodeLabel}"/>
                         <views:AudioMetersControl Margin="0,2,0,0"/>
                     </StackPanel>
@@ -518,9 +541,21 @@
                                  IsReadOnly="True" Margin="0,0,0,8"
                                  ToolTip="Configure via Video → Video settings…"/>
                         <TextBlock Text="Output folder" Style="{StaticResource TimecodeLabel}"/>
-                        <TextBox Text="{Binding OutputDirectoryDisplay, Mode=OneWay}"
-                                 IsReadOnly="True" Margin="0,0,0,8"
-                                 ToolTip="Set via File → Choose save location…"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding OutputDirectoryDisplay, Mode=OneWay}"
+                                     IsReadOnly="True" Margin="0,0,6,0"
+                                     VerticalContentAlignment="Center"
+                                     ToolTip="Folder where captured files are written"/>
+                            <Button Grid.Column="1" Content="Browse…"
+                                    Command="{Binding BrowseOutputDirectoryCommand}"
+                                    Margin="0" MinWidth="72"
+                                    ToolTip="Choose recording output folder"/>
+                        </Grid>
                         <CheckBox IsChecked="{Binding AutoPlayOnRecord}"
                                   Foreground="#DDDDDD" Margin="0,0,0,8">
                             <TextBlock Text="Auto-play deck on record" Foreground="#DDDDDD"/>

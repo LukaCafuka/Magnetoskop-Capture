@@ -45,9 +45,9 @@ public sealed record DeckPersonality
 
 /// <summary>
 /// The five thesis target decks as simulated wire-level personalities.
-/// PVW-2600P is the only deck whose device-type code is documented; the others use
-/// placeholder codes (high byte 0x7F) so the controller exercises its
-/// unknown-device fallback, exactly as it would until hardware provides real codes.
+/// PVW-2600P (<c>21 40</c>) and DVW-M2000P (<c>B1 04</c>) have confirmed device-type
+/// codes; BVU/UVW still use placeholder high byte <c>0x7F</c> so the controller
+/// exercises its unknown-device fallback until hardware provides real codes.
 /// </summary>
 public static class DeckPersonalities
 {
@@ -65,8 +65,8 @@ public static class DeckPersonalities
     {
         Id = "sony-dvw-m2000p",
         DisplayName = "Sony DVW-M2000P (simulated)",
-        DeviceTypeByte1 = 0x7F, // placeholder — real code unknown until hardware
-        DeviceTypeByte2 = 0x01,
+        DeviceTypeByte1 = 0xB1, // confirmed on hardware: B1 04
+        DeviceTypeByte2 = 0x04,
         StatusByteCount = 10,
         ResponseLatency = TimeSpan.FromMilliseconds(3),
     };

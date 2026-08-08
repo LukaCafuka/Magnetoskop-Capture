@@ -42,8 +42,14 @@ public static class Sony9PinCommands
     public static CommandBlock ShuttleReverse(byte speed) => new(0x21, 0x23, speed);
 
     /// <summary>24 31 Cue Up With Data. Time is BCD frames/seconds/minutes/hours.</summary>
-    public static CommandBlock CueUpWithData(Core.Models.Timecode timecode)
-        => new(0x24, 0x31, Bcd.EncodeTimecode(timecode));
+    public static CommandBlock CueUpWithData(Core.Models.Timecode timecode, int framesPerSecond = 25)
+        => new(0x24, 0x31, Bcd.EncodeTimecode(timecode, framesPerSecond));
+
+    /// <summary>
+    /// 40 08 Timer-1 Reset — zeroes the CTL (Timer-1) counter at the current tape position
+    /// without seeking.
+    /// </summary>
+    public static CommandBlock Timer1Reset() => new(0x40, 0x08);
 
     /// <summary>
     /// 41 36 Timer Mode Select. DATA-1 = 00 TIME CODE, 01 TIMER-1, 02 TIMER-2.

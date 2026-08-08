@@ -22,6 +22,7 @@ public class SettingsServiceTests : IDisposable
         Assert.Null(settings.OutputDirectory);
         Assert.False(settings.AutoPlayOnRecord);
         Assert.False(settings.AudioMonitoringEnabled);
+        Assert.Equal(100, settings.MonitorVolumePercent);
         Assert.False(settings.DebugLoggingEnabled);
         Assert.False(settings.ShowLogPanel);
         Assert.True(settings.DisableTransportDuringRecording);
@@ -47,6 +48,7 @@ public class SettingsServiceTests : IDisposable
         service.Current.FfmpegPath = @"C:\tools\ffmpeg.exe";
         service.Current.AutoPlayOnRecord = true;
         service.Current.AudioMonitoringEnabled = true;
+        service.Current.MonitorVolumePercent = 150;
         service.Current.DebugLoggingEnabled = true;
         service.Current.ShowLogPanel = true;
         service.Current.DisableTransportDuringRecording = false;
@@ -70,6 +72,7 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal(@"C:\tools\ffmpeg.exe", reloaded.FfmpegPath);
         Assert.True(reloaded.AutoPlayOnRecord);
         Assert.True(reloaded.AudioMonitoringEnabled);
+        Assert.Equal(150, reloaded.MonitorVolumePercent);
         Assert.True(reloaded.DebugLoggingEnabled);
         Assert.True(reloaded.ShowLogPanel);
         Assert.False(reloaded.DisableTransportDuringRecording);
@@ -105,6 +108,18 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal("yuv420p", restored.PixelFormat);
         Assert.Equal(RecordingAudioCodec.Aac, restored.AudioCodec);
         Assert.Equal(192, restored.AudioBitrateKbps);
+    }
+
+    [Fact]
+    public void VideoEncodeSettings_RoundTripsDnxHdProfile()
+    {
+        var original = RecordingProfile.CreateDnxHdHq() with { DnxHdProfile = "dnxhr_hqx" };
+        var restored = VideoEncodeSettings.FromProfile(original).ToProfile();
+
+        Assert.Equal(RecordingCodec.DnxHd, restored.VideoCodec);
+        Assert.Equal("dnxhr_hqx", restored.DnxHdProfile);
+        Assert.Equal("mov", restored.Container);
+        Assert.Equal(RecordingAudioCodec.PcmS16Le, restored.AudioCodec);
     }
 
     [Fact]

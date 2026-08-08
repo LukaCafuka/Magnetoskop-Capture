@@ -221,6 +221,36 @@ public class FfmpegArgumentsBuilderTests
     }
 
     [Fact]
+    public void DnxHd_UsesDnxhdWithHrHqAndYuv422p()
+    {
+        var profile = RecordingProfile.CreateDnxHdHq();
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mov");
+
+        Assert.True(ContainsPair(args, "-c:v", "dnxhd"));
+        Assert.True(ContainsPair(args, "-profile:v", "dnxhr_hq"));
+        Assert.True(ContainsPair(args, "-pix_fmt", "yuv422p"));
+        Assert.True(ContainsPair(args, "-c:a", "pcm_s16le"));
+    }
+
+    [Fact]
+    public void DnxHd_Hqx_DefaultsTo10Bit422()
+    {
+        var profile = RecordingProfile.CreateDnxHdHq() with { DnxHdProfile = "dnxhr_hqx" };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mov");
+
+        Assert.True(ContainsPair(args, "-profile:v", "dnxhr_hqx"));
+        Assert.True(ContainsPair(args, "-pix_fmt", "yuv422p10le"));
+    }
+
+    [Fact]
+    public void DnxHd_UnknownProfile_FallsBackToHq()
+    {
+        var profile = RecordingProfile.CreateDnxHdHq() with { DnxHdProfile = "not-a-profile" };
+        var args = Build(profile, audio: Pcm48k, pipe: @"\\.\pipe\a", output: "out.mov");
+        Assert.True(ContainsPair(args, "-profile:v", "dnxhr_hq"));
+    }
+
+    [Fact]
     public void PixelFormatOverride_IsHonored()
     {
         var profile = RecordingProfile.CreateH264Access() with { PixelFormat = "yuv422p" };

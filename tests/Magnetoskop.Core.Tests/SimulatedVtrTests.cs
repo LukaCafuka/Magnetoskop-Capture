@@ -76,6 +76,24 @@ public class SimulatedVtrTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Timer1Reset_ZeroesCtlWithoutSeekingLtc()
+    {
+        await _vtr.SendTransportCommandAsync(TransportCommand.Play);
+        var before = await WaitForTimeAsync(t =>
+            t.Ctl is { } ctl && ctl.ToFrameCount(25) >= 10 && t.Ltc is not null);
+        var ltcBefore = before.Ltc!.Value.ToFrameCount(25);
+
+        await _vtr.SendTransportCommandAsync(TransportCommand.Stop);
+        await _vtr.SendTransportCommandAsync(TransportCommand.Timer1Reset);
+
+        var after = await WaitForTimeAsync(t =>
+            t.Ctl is { } ctl && ctl.ToFrameCount(25) == 0);
+        Assert.Equal(0, after.Ctl!.Value.ToFrameCount(25));
+        // Tape did not seek — LTC stays at the same absolute position.
+        Assert.Equal(ltcBefore, after.Ltc!.Value.ToFrameCount(25));
+    }
+
+    [Fact]
     public async Task Play_AdvancesTimecode()
     {
         await _vtr.SendTransportCommandAsync(TransportCommand.Play);
@@ -148,6 +166,22 @@ public class SimulatedVtrTests : IAsyncLifetime
             t.Ltc is { } ltc && ltc.Hours == 1 && ltc.Minutes == 10);
         Assert.Equal(new Timecode(1, 10, 0, 0), time.Ltc);
         Assert.Equal(new Timecode(0, 10, 0, 0), time.Ctl);
+    }
+
+    [Fact]
+    public async Task CueUp_Timer1_Negative_SeeksBelowCtlOrigin()
+    {
+        // Park past BOT, zero CTL there, then cue 10 frames before the origin.
+        await _vtr.CueUpAsync(new Timecode(0, 0, 1, 0), CueUpTimerMode.Timer1);
+        await WaitForTimeAsync(t => t.Ctl is { } c && c.ToFrameCount(25) == 25);
+        await _vtr.SendTransportCommandAsync(TransportCommand.Timer1Reset);
+        await WaitForTimeAsync(t => t.Ctl is { } c && c.ToFrameCount(25) == 0);
+
+        await _vtr.CueUpAsync(new Timecode(0, 0, 0, 10, IsNegative: true), CueUpTimerMode.Timer1);
+
+        var after = await WaitForTimeAsync(t =>
+            t.Ctl is { } ctl && ctl.IsNegative && ctl.ToFrameCount(25) == -10);
+        Assert.Equal(-10, after.Ctl!.Value.ToFrameCount(25));
     }
 
     [Fact]

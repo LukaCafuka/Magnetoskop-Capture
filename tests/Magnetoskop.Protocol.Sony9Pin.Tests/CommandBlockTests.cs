@@ -55,6 +55,14 @@ public class CommandBlockTests
     }
 
     [Fact]
+    public void Timer1Reset_SerializesWithCorrectChecksum()
+    {
+        // 40 08 48
+        var bytes = Sony9PinCommands.Timer1Reset().ToBytes();
+        Assert.Equal(new byte[] { 0x40, 0x08, 0x48 }, bytes);
+    }
+
+    [Fact]
     public void DeviceTypeRequest_Serializes()
     {
         var bytes = Sony9PinCommands.DeviceTypeRequest().ToBytes();

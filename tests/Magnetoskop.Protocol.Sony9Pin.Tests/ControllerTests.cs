@@ -140,6 +140,23 @@ public class ControllerTests
     }
 
     [Fact]
+    public async Task CueUp_NegativeCtl_Sends24HourWrapNotSignBit()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+
+        // Same target as the failing session log: -00:00:14:23
+        await controller.CueUpAsync(
+            new Timecode(0, 0, 14, 23, IsNegative: true), CueUpTimerMode.Timer1);
+
+        var cue = Assert.Single(transport.ReceivedCommands, c => c.Cmd1 == 0x24 && c.Cmd2 == 0x31);
+        Assert.Equal(4, cue.Data.Count);
+        Assert.Equal(0x23, cue.Data[3]); // wrapped hours, not 0x40 sign
+        Assert.NotEqual(0x40, cue.Data[3] & 0xC0);
+    }
+
+    [Fact]
     public async Task Pause_SendsShuttleZero()
     {
         var transport = new FakeSerialTransport { Responder = DefaultResponder };
@@ -178,6 +195,111 @@ public class ControllerTests
 
         var commands = transport.ReceivedCommands.ToArray();
         Assert.Contains(commands, c => c.Cmd1 == 0x20 && c.Cmd2 == 0x24);
+    }
+
+    [Fact]
+    public async Task FrameStepForward_WhenNakUndefined_FallsBackToCueUpCtlPlusOne()
+    {
+        var nak = new CommandBlock(0x11, 0x12, (byte)NakError.UndefinedCommand).ToBytes();
+        var transport = new FakeSerialTransport
+        {
+            Responder = cmd => cmd is { Cmd1: 0x20, Cmd2: 0x14 or 0x24 }
+                ? nak
+                : DefaultResponder(cmd),
+        };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+        await WaitForCtlAsync(controller, expectedFrames: 5);
+
+        var before = transport.ReceivedCommands.Count;
+        await controller.SendTransportCommandAsync(TransportCommand.FrameStepForward);
+
+        var after = transport.ReceivedCommands.Skip(before).ToArray();
+        Assert.Contains(after, c => c.Cmd1 == 0x20 && c.Cmd2 == 0x14); // tried native first
+        Assert.Contains(after, c =>
+            c.Cmd1 == 0x41 && c.Cmd2 == 0x36
+            && c.Data.Count == 1 && c.Data[0] == 0x01); // Timer-1
+        var cue = Assert.Single(after, c => c.Cmd1 == 0x24 && c.Cmd2 == 0x31);
+        Assert.Equal(new byte[] { 0x06, 0x00, 0x00, 0x00 }, cue.Data.ToArray()); // 00:00:00:06
+        Assert.Equal(false, controller.Capabilities.IsSupported(TransportCommand.FrameStepForward));
+    }
+
+    [Fact]
+    public async Task FrameStepReverse_WhenNakUndefined_FallsBackToCueUpCtlMinusOne()
+    {
+        var nak = new CommandBlock(0x11, 0x12, (byte)NakError.UndefinedCommand).ToBytes();
+        var transport = new FakeSerialTransport
+        {
+            Responder = cmd => cmd is { Cmd1: 0x20, Cmd2: 0x14 or 0x24 }
+                ? nak
+                : DefaultResponder(cmd),
+        };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+        await WaitForCtlAsync(controller, expectedFrames: 5);
+
+        var before = transport.ReceivedCommands.Count;
+        await controller.SendTransportCommandAsync(TransportCommand.FrameStepReverse);
+
+        var after = transport.ReceivedCommands.Skip(before).ToArray();
+        Assert.Contains(after, c => c.Cmd1 == 0x20 && c.Cmd2 == 0x24);
+        var cue = Assert.Single(after, c => c.Cmd1 == 0x24 && c.Cmd2 == 0x31);
+        Assert.Equal(new byte[] { 0x04, 0x00, 0x00, 0x00 }, cue.Data.ToArray()); // 00:00:00:04
+    }
+
+    [Fact]
+    public async Task FrameStepForward_WhenAlreadyUnsupported_SkipsNativeAndCues()
+    {
+        var nak = new CommandBlock(0x11, 0x12, (byte)NakError.UndefinedCommand).ToBytes();
+        var transport = new FakeSerialTransport
+        {
+            Responder = cmd => cmd is { Cmd1: 0x20, Cmd2: 0x14 or 0x24 }
+                ? nak
+                : DefaultResponder(cmd),
+        };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+        await WaitForCtlAsync(controller, expectedFrames: 5);
+
+        await controller.SendTransportCommandAsync(TransportCommand.FrameStepForward);
+        Assert.Equal(false, controller.Capabilities.IsSupported(TransportCommand.FrameStepForward));
+
+        var before = transport.ReceivedCommands.Count;
+        await controller.SendTransportCommandAsync(TransportCommand.FrameStepForward);
+
+        var after = transport.ReceivedCommands.Skip(before).ToArray();
+        Assert.DoesNotContain(after, c => c.Cmd1 == 0x20 && c.Cmd2 == 0x14);
+        Assert.Contains(after, c => c.Cmd1 == 0x24 && c.Cmd2 == 0x31);
+    }
+
+    private static async Task WaitForCtlAsync(Sony9PinController controller, int expectedFrames, int timeoutMs = 2000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (controller.CurrentTime.Ctl is { } ctl && ctl.Frames == expectedFrames
+                && ctl.Hours == 0 && ctl.Minutes == 0 && ctl.Seconds == 0)
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        Assert.Fail($"Timed out waiting for CTL 00:00:00:{expectedFrames:00}.");
+    }
+
+    [Fact]
+    public async Task Timer1Reset_Sends4008()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+        await controller.ConnectAsync();
+
+        await controller.SendTransportCommandAsync(TransportCommand.Timer1Reset);
+
+        var commands = transport.ReceivedCommands.ToArray();
+        Assert.Contains(commands, c => c.Cmd1 == 0x40 && c.Cmd2 == 0x08);
     }
 
     [Fact]

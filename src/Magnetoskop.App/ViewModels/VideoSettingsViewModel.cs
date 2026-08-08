@@ -29,6 +29,7 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
         new NamedOption(nameof(RecordingCodec.H265), "H.265"),
         new NamedOption(nameof(RecordingCodec.Ffv1), "FFV1"),
         new NamedOption(nameof(RecordingCodec.ProRes), "ProRes HQ"),
+        new NamedOption(nameof(RecordingCodec.DnxHd), "DNxHD"),
     };
 
     public static IReadOnlyList<string> Presets { get; } = new[]
@@ -71,6 +72,15 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
         new NamedOption("4", "4444"),
     };
 
+    public static IReadOnlyList<NamedOption> DnxHdProfiles { get; } = new[]
+    {
+        new NamedOption("dnxhr_lb", "DNxHR LB"),
+        new NamedOption("dnxhr_sq", "DNxHR SQ"),
+        new NamedOption("dnxhr_hq", "DNxHR HQ"),
+        new NamedOption("dnxhr_hqx", "DNxHR HQX"),
+        new NamedOption("dnxhr_444", "DNxHR 444"),
+    };
+
     public static IReadOnlyList<NamedOption> PixelFormats { get; } = new[]
     {
         new NamedOption("", "Codec default"),
@@ -105,6 +115,8 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
         GopSize = source.GopSize;
         SelectedProResProfile = ProResProfiles.FirstOrDefault(p => p.Id == source.ProResProfile.ToString())
             ?? ProResProfiles.First(p => p.Id == "3");
+        SelectedDnxHdProfile = DnxHdProfiles.FirstOrDefault(p => p.Id == source.DnxHdProfile)
+            ?? DnxHdProfiles.First(p => p.Id == "dnxhr_hq");
         SelectedFfv1Level = Ffv1Levels.FirstOrDefault(l => l.Id == source.Ffv1Level.ToString())
             ?? Ffv1Levels.First(l => l.Id == "3");
         Ffv1Slices = source.Ffv1Slices;
@@ -147,6 +159,9 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
     private NamedOption? _selectedProResProfile = ProResProfiles[3];
 
     [ObservableProperty]
+    private NamedOption? _selectedDnxHdProfile = DnxHdProfiles[2];
+
+    [ObservableProperty]
     private NamedOption? _selectedFfv1Level = Ffv1Levels[1];
 
     [ObservableProperty]
@@ -175,6 +190,9 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _showProResOptions;
+
+    [ObservableProperty]
+    private bool _showDnxHdOptions;
 
     [ObservableProperty]
     private bool _showFastStartOption;
@@ -224,6 +242,10 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
         {
             SelectedProResProfile = ProResProfiles.First(p => p.Id == "3");
         }
+        if (codec is RecordingCodec.DnxHd)
+        {
+            SelectedDnxHdProfile = DnxHdProfiles.First(p => p.Id == "dnxhr_hq");
+        }
         if (codec is RecordingCodec.Ffv1)
         {
             SelectedFfv1Level = Ffv1Levels.First(l => l.Id == "3");
@@ -265,11 +287,11 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
             {
                 fallback = nameof(RecordingCodec.H264);
             }
-            if (container == "mp4" && codec is RecordingCodec.Ffv1 or RecordingCodec.ProRes)
+            if (container == "mp4" && codec is RecordingCodec.Ffv1 or RecordingCodec.ProRes or RecordingCodec.DnxHd)
             {
                 fallback = nameof(RecordingCodec.H264);
             }
-            if (container == "avi" && codec is RecordingCodec.ProRes)
+            if (container == "avi" && codec is RecordingCodec.ProRes or RecordingCodec.DnxHd)
             {
                 fallback = nameof(RecordingCodec.H264);
             }
@@ -289,6 +311,7 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
         ShowAvcHevcOptions = codec is RecordingCodec.H264 or RecordingCodec.H265;
         ShowFfv1Options = codec is RecordingCodec.Ffv1;
         ShowProResOptions = codec is RecordingCodec.ProRes;
+        ShowDnxHdOptions = codec is RecordingCodec.DnxHd;
     }
 
     private void RefreshFastStartVisibility()
@@ -335,6 +358,7 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
             VideoProfile = SelectedVideoProfile?.Id ?? "",
             GopSize = Math.Max(1, GopSize),
             ProResProfile = int.TryParse(SelectedProResProfile?.Id, out var pr) ? pr : 3,
+            DnxHdProfile = SelectedDnxHdProfile?.Id ?? "dnxhr_hq",
             Ffv1Level = int.TryParse(SelectedFfv1Level?.Id, out var level) ? level : 3,
             Ffv1Slices = Math.Max(1, Ffv1Slices),
             Ffv1SliceCrc = Ffv1SliceCrc,
@@ -355,6 +379,7 @@ public sealed partial class VideoSettingsViewModel : ObservableObject
     {
         SelectedVideoProfile ??= ResolveVideoProfileOption(ParseCodec(SelectedCodec.Id), "");
         SelectedProResProfile ??= ProResProfiles.First(p => p.Id == "3");
+        SelectedDnxHdProfile ??= DnxHdProfiles.First(p => p.Id == "dnxhr_hq");
         SelectedFfv1Level ??= Ffv1Levels.First(l => l.Id == "3");
         SelectedPixelFormat ??= PixelFormats[0];
         if (string.IsNullOrWhiteSpace(Preset)) Preset = "medium";

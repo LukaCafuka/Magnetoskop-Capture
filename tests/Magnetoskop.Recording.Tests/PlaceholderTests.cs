@@ -11,6 +11,8 @@ public class RecordingProfileTests
         Assert.Equal(RecordingCodec.H265, RecordingProfile.CreateH265Access().VideoCodec);
         Assert.Equal(RecordingCodec.Ffv1, RecordingProfile.CreateFfv1Archival().VideoCodec);
         Assert.Equal(RecordingCodec.ProRes, RecordingProfile.CreateProResHq().VideoCodec);
+        Assert.Equal(RecordingCodec.DnxHd, RecordingProfile.CreateDnxHdHq().VideoCodec);
+        Assert.Equal("dnxhr_hq", RecordingProfile.CreateDnxHdHq().DnxHdProfile);
     }
 
     [Fact]
@@ -27,7 +29,20 @@ public class RecordingProfileTests
     {
         Assert.False(RecordingProfile.IsCompatible(RecordingCodec.Ffv1, "mp4"));
         Assert.False(RecordingProfile.IsCompatible(RecordingCodec.ProRes, "avi"));
+        Assert.False(RecordingProfile.IsCompatible(RecordingCodec.DnxHd, "mp4"));
+        Assert.False(RecordingProfile.IsCompatible(RecordingCodec.DnxHd, "avi"));
+        Assert.True(RecordingProfile.IsCompatible(RecordingCodec.DnxHd, "mov"));
+        Assert.True(RecordingProfile.IsCompatible(RecordingCodec.DnxHd, "mkv"));
         Assert.True(RecordingProfile.IsCompatible(RecordingCodec.H265, "mkv"));
+        Assert.Equal("mov", RecordingProfile.PreferredContainer(RecordingCodec.DnxHd));
+    }
+
+    [Fact]
+    public void DisplayName_DnxHd_IncludesProfileLabel()
+    {
+        var name = RecordingProfile.CreateDnxHdHq().DisplayName;
+        Assert.Contains("DNxHR HQ", name);
+        Assert.Contains("MOV", name);
     }
 
     [Theory]

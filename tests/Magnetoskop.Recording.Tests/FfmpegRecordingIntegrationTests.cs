@@ -81,6 +81,13 @@ public class FfmpegRecordingIntegrationTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task DnxHdMov_RecordsAndFinalizes()
+    {
+        Skip.If(FfmpegPath is null, "ffmpeg.exe not found on this machine");
+        await RecordAsync(RecordingProfile.CreateDnxHdHq());
+    }
+
+    [SkippableFact]
     public async Task StartTwice_Throws()
     {
         Skip.If(FfmpegPath is null, "ffmpeg.exe not found on this machine");

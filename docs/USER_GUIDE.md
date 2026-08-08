@@ -58,7 +58,10 @@ What you should see:
   `HH:MM:SS:FF` (e.g. `00:01:00:00` for one minute) or short `MM:SS:FF`.
   **Esc** or clicking away cancels. Note: `1:00:00:00` is **one hour**, not one minute.
 - Click **CTL** the same way to cue on TIMER-1 / CTL (Timer Mode Select `01`).
-  Signed CTL (`−00:00:00:01`) is allowed when 24h wrap display is off.
+  Signed CTL (`−00:00:00:01`) is allowed when 24h wrap display is off; the
+  cue is sent as a 24-hour wrap on the wire (decks ignore a hours “sign bit”).
+- **Reset** next to CTL sends Timer-1 Reset (`40 08`), zeroing the CTL counter at the
+  current tape position without seeking.
 - If the deck rejects a command as unsupported, the app remembers it and shows it
   in the "Learned:" line of the status panel.
 
@@ -91,9 +94,11 @@ The bottom bar sends commands to the connected deck:
 **Pause** is still (Shuttle 0): it freezes playback without issuing **Stop**.
 
 **◀ Frame / Frame ▶** are Sony **FRAME STEP** (`20 24` / `20 14`): move one frame
-backward or forward, then still. (There is no separate field-step command in 9-pin;
-finer field jogging uses the Jog wheel.) Keyboard **`,`** = reverse, **`.`** = forward
-when the app has focus and you are not typing in a text field.
+backward or forward, then still. If the deck NAKs FRAME STEP as undefined, the app
+falls back to **Cue Up** on TIMER-1 / CTL ± 1 frame (same Still result). (There is no
+separate field-step command in 9-pin; finer field jogging uses the Jog wheel.)
+Keyboard **`,`** = reverse, **`.`** = forward when the app has focus and you are not
+typing in a text field.
 
 Keyboard **media keys** (Play/Pause, Stop, Next track = FF, Previous track = Rew)
 also drive transport while the app has focus; turn this off under **File → Settings…**
@@ -119,8 +124,11 @@ bar and the log panel.
      Interlacing and field order are preserved untouched.
    - **H.264 + AAC (MP4, access copy)** — small viewing copy.
    - **ProRes HQ + PCM (MOV)** — for post-production workflows.
-2. Choose the output folder (check free space: FFV1 SD material is roughly
-   60–90 GB/hour).
+   - **DNxHR HQ + PCM (MOV)** — Avid-friendly DNxHD/HR encode (LB/SQ/HQ/HQX/444
+     selectable in Video settings).
+2. Choose the output folder with **Browse…** in the RECORDING panel (or
+   **File → Choose save location…**). Check free space: FFV1 SD material is roughly
+   60–90 GB/hour.
 3. Optional: enable **Auto-play deck on record** — the app then issues Play and
    waits for servo lock before recording starts.
 4. Press **● Capture**. If preview is not running it starts automatically. Any

@@ -48,7 +48,7 @@ See `build/publish.ps1 -?` for options (version override, skipping the zip).
 | `src/Magnetoskop.Protocol.Sony9Pin` | Sony 9-pin framing, commands, parsing, controller |
 | `src/Magnetoskop.Capture.Video` | DirectShow enumeration + OpenCvSharp capture |
 | `src/Magnetoskop.Capture.Audio` | NAudio WASAPI capture + level metering |
-| `src/Magnetoskop.Recording` | FFmpeg external-process recorder (FFV1/H.264/ProRes) |
+| `src/Magnetoskop.Recording` | FFmpeg external-process recorder (FFV1/H.264/ProRes/DNxHD) |
 | `src/Magnetoskop.Simulation` | Simulated VTR, capture sources, and wire-level decks |
 | `src/Magnetoskop.App` | WPF UI, MVVM view models, DI composition root |
 | `tests/*` | xUnit suites: core, protocol, recording, app workflow, deck compatibility |
@@ -67,6 +67,7 @@ See `build/publish.ps1 -?` for options (version override, skipping the zip).
 | FFV1 + PCM | FFV1 level 3, intra-only, slice CRCs, yuv422p | PCM s24le | MKV | Archival master (interlacing preserved) |
 | H.264 + AAC | libx264 CRF 18, yuv420p | AAC 192k | MP4 | Access copy |
 | ProRes HQ + PCM | prores_ks HQ, yuv422p10le | PCM s16le | MOV | Post-production |
+| DNxHR HQ + PCM | dnxhd dnxhr_hq, yuv422p | PCM s16le | MOV | Post-production (Avid) |
 
 Logs are written to `%AppData%\MagnetoskopCapture\logs\`; user settings to
 `%AppData%\MagnetoskopCapture\settings.json`. Every recording gets a `.json`

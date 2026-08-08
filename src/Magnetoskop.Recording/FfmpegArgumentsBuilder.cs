@@ -67,7 +67,7 @@ public static class FfmpegArgumentsBuilder
         });
 
         // Scan handling: preserve field structure, or yadif 2× deinterlace when processing is allowed.
-        // setfield is required so HEVC/FFV1/ProRes actually carry scan metadata (field_order alone is not enough).
+        // setfield is required so HEVC/FFV1/ProRes/DNxHD actually carry scan metadata (field_order alone is not enough).
         var (videoFilter, fieldOrder) = BuildVideoFilter(videoFormat, profile.AllowProcessing);
         args.AddRange(new[] { "-vf", videoFilter });
 
@@ -126,6 +126,18 @@ public static class FfmpegArgumentsBuilder
                     "-pix_fmt", OutputPixFmt(profile, "yuv422p10le"),
                 });
                 break;
+
+            case RecordingCodec.DnxHd:
+            {
+                var dnxProfile = ResolveDnxHdProfile(profile.DnxHdProfile);
+                args.AddRange(new[]
+                {
+                    "-c:v", "dnxhd",
+                    "-profile:v", dnxProfile,
+                    "-pix_fmt", OutputPixFmt(profile, DefaultDnxHdPixFmt(dnxProfile)),
+                });
+                break;
+            }
 
             default:
                 throw new NotSupportedException($"Video codec {profile.VideoCodec} is not supported.");
@@ -231,6 +243,25 @@ public static class FfmpegArgumentsBuilder
 
     private static string OutputPixFmt(RecordingProfile profile, string codecDefault)
         => string.IsNullOrWhiteSpace(profile.PixelFormat) ? codecDefault : profile.PixelFormat;
+
+    /// <summary>Normalizes FFmpeg <c>dnxhd</c> <c>-profile:v</c>; empty/unknown → <c>dnxhr_hq</c>.</summary>
+    internal static string ResolveDnxHdProfile(string? profile)
+    {
+        var p = profile?.ToLowerInvariant();
+        return p switch
+        {
+            "dnxhr_lb" or "dnxhr_sq" or "dnxhr_hq" or "dnxhr_hqx" or "dnxhr_444" => p,
+            _ => "dnxhr_hq",
+        };
+    }
+
+    /// <summary>Default pixel format for a DNxHR profile when the user did not override.</summary>
+    internal static string DefaultDnxHdPixFmt(string dnxProfile) => dnxProfile.ToLowerInvariant() switch
+    {
+        "dnxhr_hqx" => "yuv422p10le",
+        "dnxhr_444" => "yuv444p10le",
+        _ => "yuv422p",
+    };
 
     /// <summary>
     /// libx265 Main / Main10 are 4:2:0 only. For 4:2:2 / 4:4:4, omit <c>-profile:v</c>:

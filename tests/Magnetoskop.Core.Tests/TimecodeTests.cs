@@ -97,6 +97,24 @@ public class TimecodeTests
     }
 
     [Fact]
+    public void TryParse_AcceptsUnicodeMinus()
+    {
+        Assert.True(Timecode.TryParse("\u221200:00:00:01", out var tc, allowNegative: true));
+        Assert.True(tc.IsNegative);
+        Assert.Equal(1, tc.Frames);
+    }
+
+    [Fact]
+    public void To24HourCtlWrap_ConvertsSignedToDeckWire()
+    {
+        var signed = new Timecode(0, 0, 0, 1, IsNegative: true);
+        var wrap = Timecode.To24HourCtlWrap(signed, 25);
+        Assert.False(wrap.IsNegative);
+        Assert.Equal("23:59:59:24", wrap.ToString());
+        Assert.Equal(signed, Timecode.InterpretAsSignedCtl(wrap, 25));
+    }
+
+    [Fact]
     public void InterpretAsSignedCtl_ConvertsWrappedNearMidnight()
     {
         // -1 frame @ 25 fps wraps to 23:59:59:24 on a 24h CTL counter.

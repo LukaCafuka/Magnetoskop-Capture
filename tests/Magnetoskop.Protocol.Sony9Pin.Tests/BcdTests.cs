@@ -68,30 +68,37 @@ public class BcdTests
     }
 
     [Fact]
-    public void EncodeTimecode_SetsNegativeSignOnHoursByte()
+    public void EncodeTimecode_NegativeCtl_Uses24HourWrapNotSignBit()
     {
-        var data = Bcd.EncodeTimecode(new Timecode(0, 0, 0, 1, IsNegative: true));
-        Assert.Equal(0x40, data[3]); // sign bit, hours 00
-        Assert.Equal(0x01, data[0]);
+        // -00:00:00:01 @ 25 fps → 23:59:59:24 on the wire (hours must not be 0x40).
+        var data = Bcd.EncodeTimecode(new Timecode(0, 0, 0, 1, IsNegative: true), framesPerSecond: 25);
+        Assert.Equal(new byte[] { 0x24, 0x59, 0x59, 0x23 }, data);
     }
 
     [Fact]
-    public void DecodeTimecode_ReadsNegativeSignFromHoursByte()
+    public void EncodeTimecode_NegativeCtl_FourteenSeconds_Wraps()
     {
-        // hours 0x40 = sign + 00 → -00:00:00:05
+        // Matches the failed cue from the debug log: -00:00:14:23 must not send hours 0x40.
+        var data = Bcd.EncodeTimecode(new Timecode(0, 0, 14, 23, IsNegative: true), framesPerSecond: 25);
+        Assert.NotEqual(0x40, data[3] & 0xC0); // no hours sign / high bits
+        Assert.Equal(0x23, data[3]); // hours in the 23:xx wrap range
+        var decoded = Bcd.DecodeTimecode(data);
+        var signed = Timecode.InterpretAsSignedCtl(decoded, 25);
+        Assert.True(signed.IsNegative);
+        Assert.Equal(0, signed.Hours);
+        Assert.Equal(0, signed.Minutes);
+        Assert.Equal(14, signed.Seconds);
+        Assert.Equal(23, signed.Frames);
+    }
+
+    [Fact]
+    public void DecodeTimecode_MasksHoursHighBitsWithoutTreatingAsSign()
+    {
+        // Legacy hours 0x40 is masked to hours 00; sign is not inferred (wrap is used instead).
         var tc = Bcd.DecodeTimecode(new byte[] { 0x05, 0x00, 0x00, 0x40 });
-        Assert.True(tc.IsNegative);
+        Assert.False(tc.IsNegative);
         Assert.Equal(0, tc.Hours);
         Assert.Equal(5, tc.Frames);
-        Assert.Equal("-00:00:00:05", tc.ToString());
-    }
-
-    [Fact]
-    public void DecodeTimecode_RoundTripsNegative()
-    {
-        var original = new Timecode(0, 1, 2, 3, IsNegative: true);
-        var decoded = Bcd.DecodeTimecode(Bcd.EncodeTimecode(original));
-        Assert.Equal(original, decoded);
     }
 
     [Fact]

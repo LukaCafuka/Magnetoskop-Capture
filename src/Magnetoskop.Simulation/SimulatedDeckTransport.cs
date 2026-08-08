@@ -32,6 +32,7 @@ public sealed class SimulatedDeckTransport : ISerialTransport
     private TransportState _transport = TransportState.Stopped;
     private double _tapePositionFrames = InitialPositionFrames;
     private double _variablePlayRate;
+    private long _ctlOriginFrames;
     private bool _tapeOut;
     private long _lastAdvanceTicks = Environment.TickCount64;
     private int _commandsSeen;
@@ -209,11 +210,27 @@ public sealed class SimulatedDeckTransport : ISerialTransport
             (0x20, 0x31) when data.Length >= 4 => HandleCueUp(data),
             (0x20, _) when data.Length > 0 => HandleVariableSpeed(cmd2, data[0]),
             (0x20, _) => HandleTransport(cmd2),
+            (0x40, 0x08) => HandleTimer1Reset(),
             (0x40, 0x36) when data.Length >= 1 => HandleTimerModeSelect(data[0]),
             (0x60, 0x20) => HandleStatusSense(data),
             (0x60, 0x0C) => HandleTimeSense(data),
             _ => Nak(0x01), // undefined command
         };
+    }
+
+    private byte[] HandleTimer1Reset()
+    {
+        if (!_personality.AcceptsTransportCommand(TransportCommand.Timer1Reset))
+        {
+            return Nak(0x01);
+        }
+
+        if (!_tapeOut)
+        {
+            _ctlOriginFrames = (long)_tapePositionFrames;
+        }
+
+        return Ack();
     }
 
     private byte[] HandleTimerModeSelect(byte mode)
@@ -239,7 +256,9 @@ public sealed class SimulatedDeckTransport : ISerialTransport
             long pos;
             if (_timerMode == CueUpTimerMode.Timer1)
             {
-                pos = tc.ToFrameCount(FrameRate);
+                // Deck wire uses 24h wrap for below-zero CTL; interpret before seeking.
+                var signed = Timecode.InterpretAsSignedCtl(tc, FrameRate);
+                pos = _ctlOriginFrames + signed.ToFrameCount(FrameRate);
             }
             else
             {
@@ -257,15 +276,13 @@ public sealed class SimulatedDeckTransport : ISerialTransport
     private static Timecode DecodeBcdTimecode(ReadOnlySpan<byte> data)
     {
         static int FromBcd(byte b) => (b >> 4 & 0x0F) * 10 + (b & 0x0F);
-        var negative = (data[3] & 0x40) != 0 || (data[3] & 0x80) != 0;
         return new Timecode(
             Hours: FromBcd((byte)(data[3] & 0x3F)),
             Minutes: FromBcd(data[2]),
             Seconds: FromBcd(data[1]),
             Frames: FromBcd((byte)(data[0] & 0x3F)),
             DropFrame: (data[0] & 0x40) != 0,
-            ColorFrame: (data[0] & 0x80) != 0,
-            IsNegative: negative);
+            ColorFrame: (data[0] & 0x80) != 0);
     }
 
     private byte[] HandleDeviceTypeRequest()
@@ -428,7 +445,7 @@ public sealed class SimulatedDeckTransport : ISerialTransport
         // Timer-1 (CTL).
         if ((mask & 0x04) != 0)
         {
-            return Frame(0x74, 0x00, EncodeBcdTimecode(positionFrames));
+            return Frame(0x74, 0x00, EncodeBcdTimecode(positionFrames - _ctlOriginFrames));
         }
 
         // LTC user bits.
@@ -464,7 +481,14 @@ public sealed class SimulatedDeckTransport : ISerialTransport
 
     private static byte[] EncodeBcdTimecode(long totalFrames)
     {
-        if (totalFrames < 0) totalFrames = 0;
+        // Below-zero CTL is reported as 24h wrap (same as real decks).
+        var dayFrames = 24L * 3600 * FrameRate;
+        if (totalFrames < 0)
+        {
+            totalFrames = dayFrames + totalFrames % dayFrames;
+            if (totalFrames == dayFrames) totalFrames = 0;
+        }
+
         var frames = (int)(totalFrames % FrameRate);
         var totalSeconds = totalFrames / FrameRate;
         var seconds = (int)(totalSeconds % 60);

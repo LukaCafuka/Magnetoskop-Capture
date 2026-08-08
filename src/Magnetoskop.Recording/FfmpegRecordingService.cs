@@ -9,7 +9,7 @@ namespace Magnetoskop.Recording;
 /// <summary>
 /// Synchronized A/V recording through an external FFmpeg process.
 /// Raw video frames stream to FFmpeg's stdin; PCM audio streams over a Windows
-/// named pipe. FFmpeg performs all encoding and muxing (FFV1/H.264/ProRes),
+/// named pipe. FFmpeg performs all encoding and muxing (FFV1/H.264/ProRes/DNxHD),
 /// which OpenCV's VideoWriter cannot cover.
 /// </summary>
 public sealed class FfmpegRecordingService : IRecordingService

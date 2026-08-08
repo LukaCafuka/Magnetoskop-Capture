@@ -17,6 +17,7 @@ public sealed class VideoEncodeSettings
     public string VideoProfile { get; set; } = "high";
     public int GopSize { get; set; } = 250;
     public int ProResProfile { get; set; } = 3;
+    public string DnxHdProfile { get; set; } = "dnxhr_hq";
     public int Ffv1Level { get; set; } = 3;
     public int Ffv1Slices { get; set; } = 24;
     public bool Ffv1SliceCrc { get; set; } = true;
@@ -39,6 +40,7 @@ public sealed class VideoEncodeSettings
         VideoProfile = profile.VideoProfile,
         GopSize = profile.GopSize,
         ProResProfile = profile.ProResProfile,
+        DnxHdProfile = profile.DnxHdProfile,
         Ffv1Level = profile.Ffv1Level,
         Ffv1Slices = profile.Ffv1Slices,
         Ffv1SliceCrc = profile.Ffv1SliceCrc,
@@ -81,6 +83,7 @@ public sealed class VideoEncodeSettings
             VideoProfile = VideoProfile ?? "",
             GopSize = GopSize > 0 ? GopSize : RecordingProfile.DefaultGop(codec),
             ProResProfile = ProResProfile,
+            DnxHdProfile = string.IsNullOrWhiteSpace(DnxHdProfile) ? "dnxhr_hq" : DnxHdProfile,
             Ffv1Level = Ffv1Level is 1 or 3 ? Ffv1Level : 3,
             Ffv1Slices = Ffv1Slices > 0 ? Ffv1Slices : 24,
             Ffv1SliceCrc = Ffv1SliceCrc,
@@ -117,6 +120,9 @@ public sealed class AppSettings
     public bool AudioManuallySelected { get; set; }
     /// <summary>When true, play the live capture input through the default output device.</summary>
     public bool AudioMonitoringEnabled { get; set; }
+
+    /// <summary>Monitor playback volume in percent (0–200). Does not affect recording.</summary>
+    public int MonitorVolumePercent { get; set; } = 100;
     public string? VtrConnectionId { get; set; }
     public string? VtrProfileId { get; set; }
     public string? FfmpegPath { get; set; }

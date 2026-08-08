@@ -7,6 +7,7 @@ public enum RecordingCodec
     H265,
     Ffv1,
     ProRes,
+    DnxHd,
 }
 
 /// <summary>Audio codecs available for recording.</summary>
@@ -45,6 +46,8 @@ public sealed record RecordingProfile
     public int GopSize { get; init; } = 250;
     /// <summary>ProRes profile index for prores_ks: 0=Proxy 1=LT 2=Standard 3=HQ 4=4444.</summary>
     public int ProResProfile { get; init; } = 3;
+    /// <summary>FFmpeg <c>dnxhd</c> <c>-profile:v</c> (e.g. dnxhr_hq, dnxhr_hqx).</summary>
+    public string DnxHdProfile { get; init; } = "dnxhr_hq";
     /// <summary>FFV1 level (1 or 3).</summary>
     public int Ffv1Level { get; init; } = 3;
     /// <summary>FFV1 slice count.</summary>
@@ -123,11 +126,21 @@ public sealed record RecordingProfile
         Mp4FastStart = false,
     };
 
+    public static RecordingProfile CreateDnxHdHq() => new()
+    {
+        Id = "dnxhd-hq",
+        VideoCodec = RecordingCodec.DnxHd,
+        AudioCodec = RecordingAudioCodec.PcmS16Le,
+        Container = "mov",
+        DnxHdProfile = "dnxhr_hq",
+        Mp4FastStart = false,
+    };
+
     /// <summary>Preferred container for a codec when the current one is incompatible.</summary>
     public static string PreferredContainer(RecordingCodec codec) => codec switch
     {
         RecordingCodec.Ffv1 => "mkv",
-        RecordingCodec.ProRes => "mov",
+        RecordingCodec.ProRes or RecordingCodec.DnxHd => "mov",
         _ => "mp4",
     };
 
@@ -137,7 +150,7 @@ public sealed record RecordingProfile
         return codec switch
         {
             RecordingCodec.Ffv1 => c is "mkv" or "avi",
-            RecordingCodec.ProRes => c is "mov" or "mkv",
+            RecordingCodec.ProRes or RecordingCodec.DnxHd => c is "mov" or "mkv",
             RecordingCodec.H264 or RecordingCodec.H265 => c is "mp4" or "mkv" or "mov" or "avi",
             _ => false,
         };
@@ -175,7 +188,7 @@ public sealed record RecordingProfile
         var preferred = video switch
         {
             RecordingCodec.Ffv1 => RecordingAudioCodec.PcmS24Le,
-            RecordingCodec.ProRes => RecordingAudioCodec.PcmS16Le,
+            RecordingCodec.ProRes or RecordingCodec.DnxHd => RecordingAudioCodec.PcmS16Le,
             RecordingCodec.H264 or RecordingCodec.H265 when c is "mp4" or "mov"
                 => RecordingAudioCodec.Aac,
             _ => RecordingAudioCodec.PcmS16Le,
@@ -248,6 +261,7 @@ public sealed record RecordingProfile
                 4 => "ProRes 4444",
                 _ => "ProRes",
             },
+            RecordingCodec.DnxHd => FormatDnxHdProfile(DnxHdProfile),
             _ => VideoCodec.ToString(),
         };
         var container = Container.ToUpperInvariant();
@@ -259,4 +273,15 @@ public sealed record RecordingProfile
         };
         return detail is null ? $"{codec} / {container}" : $"{codec} / {container} ({detail})";
     }
+
+    /// <summary>Human-readable label for an FFmpeg DNxHD/HR <c>-profile:v</c> value.</summary>
+    public static string FormatDnxHdProfile(string? profile) => profile?.ToLowerInvariant() switch
+    {
+        "dnxhr_lb" => "DNxHR LB",
+        "dnxhr_sq" => "DNxHR SQ",
+        "dnxhr_hq" => "DNxHR HQ",
+        "dnxhr_hqx" => "DNxHR HQX",
+        "dnxhr_444" => "DNxHR 444",
+        _ => "DNxHR HQ",
+    };
 }

@@ -103,6 +103,20 @@
                               Content="Monitor audio"
                               ToolTip="Play the selected audio input through the default speakers/headphones"/>
 
+                    <DockPanel Margin="0,0,0,8">
+                        <TextBlock DockPanel.Dock="Left" Text="Volume"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"
+                                   Foreground="#AAAAAA"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding MonitorVolumeLabel}"
+                                   VerticalAlignment="Center" MinWidth="40" TextAlignment="Right"
+                                   FontFamily="Consolas" Foreground="#66FF99" Margin="8,0,0,0"/>
+                        <Slider Minimum="0" Maximum="200" TickFrequency="10"
+                                IsSnapToTickEnabled="False"
+                                Value="{Binding MonitorVolumePercent, UpdateSourceTrigger=PropertyChanged}"
+                                VerticalAlignment="Center"
+                                ToolTip="Monitor playback volume (0–200%). Does not affect recording levels."/>
+                    </DockPanel>
+
                     <TextBlock Text="Audio levels" Style="{StaticResource FieldLabel}"/>
                     <views:AudioMetersControl Margin="0,2,0,0"/>
                 </StackPanel>

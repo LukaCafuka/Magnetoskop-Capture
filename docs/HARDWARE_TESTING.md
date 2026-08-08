@@ -12,7 +12,7 @@ Target machines:
 | # | Model | Format | Notes |
 |---|---|---|---|
 | 1 | Sony PVW-2600P | Betacam SP | Device type documented: `2X 40` |
-| 2 | Sony DVW-M2000P | Digital Betacam | Device type unknown |
+| 2 | Sony DVW-M2000P | Digital Betacam | Device type `B1 04` |
 | 3 | Sony BVU-950P | U-matic SP | Device type unknown; VITC reader is an installed option |
 | 4 | Sony UVW-1800P | Betacam SP | Device type unknown |
 | 5 | JVC BR-S622E | S-VHS | Sony-compatible RS-422 subset; coverage unknown |

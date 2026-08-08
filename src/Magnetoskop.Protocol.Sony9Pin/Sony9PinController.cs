@@ -129,6 +129,12 @@ public sealed class Sony9PinController : IVtrController
             throw new VtrCommunicationException("Not connected to the recorder.");
         }
 
+        if (command is TransportCommand.FrameStepForward or TransportCommand.FrameStepReverse)
+        {
+            await SendFrameStepAsync(command, cancellationToken);
+            return;
+        }
+
         if (!_profile.IsCommandSupported(command))
         {
             throw new UnsupportedCommandException(
@@ -143,6 +149,53 @@ public sealed class Sony9PinController : IVtrController
 
         var block = MapCommand(command);
         await ExchangeTransportAsync(command, block, cancellationToken);
+    }
+
+    /// <summary>
+    /// Native FRAME STEP (<c>20 14</c> / <c>20 24</c>) when the deck supports it;
+    /// otherwise Cue Up TIMER-1 to current CTL ± 1 frame (Still).
+    /// </summary>
+    private async Task SendFrameStepAsync(TransportCommand command, CancellationToken cancellationToken)
+    {
+        var delta = command == TransportCommand.FrameStepForward ? 1 : -1;
+
+        var tryNative = _profile.IsCommandSupported(command)
+            && Capabilities.IsSupported(command) != false;
+
+        if (tryNative)
+        {
+            try
+            {
+                var block = MapCommand(command);
+                await ExchangeTransportAsync(command, block, cancellationToken);
+                return;
+            }
+            catch (UnsupportedCommandException)
+            {
+                // NAK undefined — fall through to Cue Up ±1.
+            }
+        }
+
+        await FrameStepViaCueUpAsync(delta, cancellationToken);
+    }
+
+    private async Task FrameStepViaCueUpAsync(int deltaFrames, CancellationToken cancellationToken)
+    {
+        if (_time.Ctl is not { } rawCtl)
+        {
+            throw new VtrCommunicationException(
+                "CTL unavailable for frame step fallback (Cue Up ±1).");
+        }
+
+        var fps = _profile.FrameRate > 0 ? _profile.FrameRate : 25;
+        var ctl = Timecode.InterpretAsSignedCtl(rawCtl, fps);
+        var target = Timecode.FromFrameCount(ctl.ToFrameCount(fps) + deltaFrames, fps);
+
+        _logger.LogInformation(
+            "Frame Step unsupported; Cue Up CTL±1 → {Target} (delta {Delta}, from {Ctl})",
+            target, deltaFrames, ctl);
+
+        await CueUpAsync(target, CueUpTimerMode.Timer1, cancellationToken);
     }
 
     public async Task SendVariableSpeedAsync(
@@ -217,7 +270,8 @@ public sealed class Sony9PinController : IVtrController
             _logger.LogWarning(ex, "Timer Mode Select before Cue Up failed; proceeding with Cue Up");
         }
 
-        var block = Sony9PinCommands.CueUpWithData(timecode);
+        var fps = _profile.FrameRate > 0 ? _profile.FrameRate : 25;
+        var block = Sony9PinCommands.CueUpWithData(timecode, fps);
         _logger.LogInformation("Cue Up {Timecode} ({Mode}) → {Block}", timecode, timerMode, block);
         await ExchangeTransportAsync(command, block, cancellationToken);
     }
@@ -255,6 +309,7 @@ public sealed class Sony9PinController : IVtrController
         TransportCommand.Pause => Sony9PinCommands.Pause(),
         TransportCommand.FrameStepForward => Sony9PinCommands.FrameStepForward(),
         TransportCommand.FrameStepReverse => Sony9PinCommands.FrameStepReverse(),
+        TransportCommand.Timer1Reset => Sony9PinCommands.Timer1Reset(),
         TransportCommand.Record => Sony9PinCommands.Record(),
         TransportCommand.StandbyOn => Sony9PinCommands.StandbyOn(),
         TransportCommand.StandbyOff => Sony9PinCommands.StandbyOff(),

@@ -22,12 +22,12 @@ public static class KnownDeviceProfiles
         FrameRate = 25,
     };
 
-    /// <summary>Sony DVW-M2000P. Device type code not in the reference — verify on hardware.</summary>
+    /// <summary>Sony DVW-M2000P. Device type confirmed on hardware: <c>B1 04</c>.</summary>
     public static VtrDeviceProfile DvwM2000P { get; } = new()
     {
         Id = "sony-dvw-m2000p",
         DisplayName = "Sony DVW-M2000P",
-        DeviceTypeCode = null, // verify on hardware
+        DeviceTypeCode = "B1 04",
         FrameRate = 25,
     };
 

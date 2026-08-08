@@ -58,7 +58,8 @@ public readonly record struct Timecode(
 
         text = text.Trim();
         var negative = false;
-        if (text.StartsWith('-'))
+        // ASCII '-', Unicode minus (U+2212), and en-dash are accepted as CTL sign.
+        if (text.Length > 0 && text[0] is '-' or '\u2212' or '\u2013')
         {
             if (!allowNegative) return false;
             negative = true;
@@ -146,5 +147,31 @@ public readonly record struct Timecode(
 
         var abs = FromFrameCount(dayFrames - frames, framesPerSecond);
         return abs with { IsNegative = true, DropFrame = tc.DropFrame, ColorFrame = tc.ColorFrame };
+    }
+
+    /// <summary>
+    /// Encodes a signed CTL value the way Sony decks expect on the wire: 24-hour wrap
+    /// (e.g. <c>-00:00:00:01</c> @ 25 fps → <c>23:59:59:24</c>). Positive values are unchanged.
+    /// A hours "sign bit" is <em>not</em> used — real decks ignore it and cue to the positive magnitude.
+    /// </summary>
+    public static Timecode To24HourCtlWrap(Timecode tc, int framesPerSecond = 25)
+    {
+        if (!tc.IsNegative || framesPerSecond <= 0)
+            return tc with { IsNegative = false };
+
+        var dayFrames = 24L * 3600 * framesPerSecond;
+        var magnitude = -tc.ToFrameCount(framesPerSecond);
+        if (magnitude <= 0)
+            return Zero;
+
+        magnitude %= dayFrames;
+        if (magnitude == 0)
+            return Zero;
+
+        return FromFrameCount(dayFrames - magnitude, framesPerSecond) with
+        {
+            DropFrame = tc.DropFrame,
+            ColorFrame = tc.ColorFrame,
+        };
     }
 }

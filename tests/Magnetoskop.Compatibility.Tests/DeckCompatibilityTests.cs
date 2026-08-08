@@ -92,8 +92,20 @@ public class DeckCompatibilityTests
         Assert.Contains("21 40", controller.DeviceDescription);
     }
 
+    [Fact]
+    public async Task DvwM2000P_DeviceTypeIsRecognized()
+    {
+        var (controller, _) = CreateRig(DeckPersonalities.DvwM2000P);
+        await using var _1 = controller;
+
+        await controller.ConnectAsync();
+
+        Assert.NotNull(controller.DetectedProfile);
+        Assert.Equal("sony-dvw-m2000p", controller.DetectedProfile!.Id);
+        Assert.Contains("B1 04", controller.DeviceDescription);
+    }
+
     [Theory]
-    [InlineData("sony-dvw-m2000p")]
     [InlineData("sony-bvu-950p")]
     [InlineData("sony-uvw-1800p")]
     public async Task UnknownDeviceTypeCodes_FallBackToGenericProfile(string id)

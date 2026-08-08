@@ -23,6 +23,14 @@ public class KnownDeviceProfilesTests
     }
 
     [Fact]
+    public void FromDeviceTypeCode_MatchesDvwM2000P()
+    {
+        Assert.Equal("sony-dvw-m2000p", KnownDeviceProfiles.FromDeviceTypeCode(0xB1, 0x04).Id);
+        // Variant nibble in the first byte is ignored (same family).
+        Assert.Equal("sony-dvw-m2000p", KnownDeviceProfiles.FromDeviceTypeCode(0xB0, 0x04).Id);
+    }
+
+    [Fact]
     public void FromDeviceTypeCode_FallsBackToGeneric()
     {
         Assert.Equal("generic-sony9pin", KnownDeviceProfiles.FromDeviceTypeCode(0x3F, 0xFF).Id);

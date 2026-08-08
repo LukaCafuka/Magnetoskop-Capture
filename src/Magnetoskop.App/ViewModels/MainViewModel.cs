@@ -113,6 +113,10 @@ public sealed partial class MainViewModel : ObservableObject
             ?? VtrDeviceProfile.Generic;
         AudioManuallySelected = saved.AudioManuallySelected;
         AudioMonitoringEnabled = saved.AudioMonitoringEnabled;
+        MonitorVolumePercent = Math.Clamp(saved.MonitorVolumePercent is >= 0 and <= 200
+            ? saved.MonitorVolumePercent
+            : 100, 0, 200);
+        _audioMonitor.Volume = MonitorVolumePercent / 100f;
         AutoPlayOnRecord = saved.AutoPlayOnRecord;
         ShowLogPanel = saved.ShowLogPanel;
         DisableTransportDuringRecording = saved.DisableTransportDuringRecording;
@@ -255,6 +259,13 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>When true, play the live capture input through the default output device.</summary>
     [ObservableProperty]
     private bool _audioMonitoringEnabled;
+
+    /// <summary>Monitor playback volume 0–200%. Does not affect recording or level meters.</summary>
+    [ObservableProperty]
+    private int _monitorVolumePercent = 100;
+
+    /// <summary>Formatted monitor volume for the slider readout.</summary>
+    public string MonitorVolumeLabel => $"{MonitorVolumePercent}%";
 
     [ObservableProperty]
     private string _outputDirectory = "";
@@ -500,6 +511,7 @@ public sealed partial class MainViewModel : ObservableObject
         s.AudioDeviceId = SelectedAudioDevice?.Id;
         s.AudioManuallySelected = AudioManuallySelected;
         s.AudioMonitoringEnabled = AudioMonitoringEnabled;
+        s.MonitorVolumePercent = Math.Clamp(MonitorVolumePercent, 0, 200);
         s.VtrConnectionId = SelectedVtrConnection?.Id;
         s.VtrProfileId = SelectedVtrProfile?.Id;
         s.FfmpegPath = Recording.FfmpegLocator.ConfiguredPath;
@@ -870,6 +882,20 @@ public sealed partial class MainViewModel : ObservableObject
         SaveSettings();
     }
 
+    partial void OnMonitorVolumePercentChanged(int value)
+    {
+        var clamped = Math.Clamp(value, 0, 200);
+        if (clamped != value)
+        {
+            MonitorVolumePercent = clamped;
+            return;
+        }
+
+        _audioMonitor.Volume = clamped / 100f;
+        OnPropertyChanged(nameof(MonitorVolumeLabel));
+        SaveSettings();
+    }
+
     private async Task PreviewLoopAsync(ChannelReader<VideoFrame> reader, CancellationToken ct)
     {
         await foreach (var frame in reader.ReadAllAsync(ct))
@@ -955,6 +981,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     [RelayCommand(CanExecute = nameof(CanUseTransport))]
     private Task FrameStepReverseAsync() => SendTransportAsync(TransportCommand.FrameStepReverse);
+
+    [RelayCommand(CanExecute = nameof(CanUseTransport))]
+    private Task ResetCtlAsync() => SendTransportAsync(TransportCommand.Timer1Reset);
 
     [RelayCommand(CanExecute = nameof(CanUseTransport))]
     private Task FastForwardAsync() => SendTransportAsync(TransportCommand.FastForward);
@@ -1448,7 +1477,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void DismissError() => LastError = "";
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanBrowseOutputDirectory))]
     private void BrowseOutputDirectory()
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog();
@@ -1459,8 +1488,11 @@ public sealed partial class MainViewModel : ObservableObject
         if (dialog.ShowDialog() == true)
         {
             OutputDirectory = dialog.FolderName;
+            SaveSettings();
         }
     }
+
+    private bool CanBrowseOutputDirectory() => !IsRecording;
 
     partial void OnOutputDirectoryChanged(string value)
     {
@@ -1479,6 +1511,7 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnIsRecordingChanged(bool value)
     {
         StartRecordingCommand.NotifyCanExecuteChanged();
+        BrowseOutputDirectoryCommand.NotifyCanExecuteChanged();
         NotifyTransportCanExecuteChanged();
     }
 

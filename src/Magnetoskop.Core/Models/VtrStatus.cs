@@ -31,6 +31,8 @@ public enum TransportCommand
     FrameStepForward,
     /// <summary>Sony FRAME STEP reverse (<c>20 24</c>) — one frame back, then still.</summary>
     FrameStepReverse,
+    /// <summary>Sony Timer-1 Reset (<c>40 08</c>) — zeroes the CTL counter at the current tape position.</summary>
+    Timer1Reset,
     // Reserved for later phases:
     Record,
     StandbyOn,

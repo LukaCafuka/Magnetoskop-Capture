@@ -220,6 +220,7 @@ public sealed partial class AudioSettingsViewModel : ObservableObject
         RecordingCodec.H265 => "H.265",
         RecordingCodec.Ffv1 => "FFV1",
         RecordingCodec.ProRes => "ProRes",
+        RecordingCodec.DnxHd => "DNxHD",
         _ => codec.ToString(),
     };
 }

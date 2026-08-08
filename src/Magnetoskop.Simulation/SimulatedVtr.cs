@@ -23,6 +23,7 @@ public sealed class SimulatedVtr : IVtrController
     private TransportState _transport = TransportState.Stopped;
     private double _tapePositionFrames = 0; // absolute tape position in frames
     private double _variablePlayRate; // signed ×play when Jog/Shuttle
+    private long _ctlOriginFrames; // Timer-1 Reset origin; CTL = position − origin
     private bool _tapeOut;
     private VtrStatus _status = new();
     private TimeInformation _time = new();
@@ -119,6 +120,10 @@ public sealed class SimulatedVtr : IVtrController
                     _transport = TransportState.Still;
                     _variablePlayRate = 0;
                     break;
+                case TransportCommand.Timer1Reset:
+                    RequireTape();
+                    _ctlOriginFrames = (long)_tapePositionFrames;
+                    break;
                 case TransportCommand.FastForward:
                     RequireTape();
                     _transport = TransportState.FastForwarding;
@@ -140,7 +145,9 @@ public sealed class SimulatedVtr : IVtrController
             }
         }
 
-        if (command is TransportCommand.FrameStepForward or TransportCommand.FrameStepReverse)
+        if (command is TransportCommand.FrameStepForward
+            or TransportCommand.FrameStepReverse
+            or TransportCommand.Timer1Reset)
         {
             PublishSnapshots();
         }
@@ -200,7 +207,7 @@ public sealed class SimulatedVtr : IVtrController
             long pos;
             if (timerMode == CueUpTimerMode.Timer1)
             {
-                pos = timecode.ToFrameCount(FrameRate);
+                pos = _ctlOriginFrames + timecode.ToFrameCount(FrameRate);
             }
             else
             {
@@ -303,16 +310,18 @@ public sealed class SimulatedVtr : IVtrController
         double pos;
         bool tapeOut;
         double variableRate;
+        long ctlOrigin;
         lock (_gate)
         {
             transport = _transport;
             pos = _tapePositionFrames;
             tapeOut = _tapeOut;
             variableRate = _variablePlayRate;
+            ctlOrigin = _ctlOriginFrames;
         }
 
         var positionFrames = (long)pos;
-        var ctl = Timecode.FromFrameCount(positionFrames, FrameRate);
+        var ctl = Timecode.FromFrameCount(positionFrames - ctlOrigin, FrameRate);
         var tc = Timecode.FromFrameCount(positionFrames + TimecodeOffsetFrames, FrameRate);
 
         // LTC is unreadable in fast wind (like a real deck at high speed); VITC only near play speed.

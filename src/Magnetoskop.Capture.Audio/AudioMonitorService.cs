@@ -21,6 +21,7 @@ public sealed class AudioMonitorService : IAsyncDisposable
     private WasapiOut? _output;
     private BufferedWaveProvider? _buffer;
     private bool _wantEnabled;
+    private float _volume = 1f;
 
     /// <summary>Max buffered audio before we discard to keep latency low.</summary>
     private static readonly TimeSpan MaxBuffered = TimeSpan.FromMilliseconds(200);
@@ -29,6 +30,23 @@ public sealed class AudioMonitorService : IAsyncDisposable
     {
         _audio = audio;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Linear monitor gain 0–2 (0%–200%). Applied in software so boost above 100% works.
+    /// Does not affect recording. Updates take effect on the next pumped chunk.
+    /// </summary>
+    public float Volume
+    {
+        get
+        {
+            lock (_gate) return _volume;
+        }
+        set
+        {
+            var clamped = Math.Clamp(value, 0f, 2f);
+            lock (_gate) _volume = clamped;
+        }
     }
 
     /// <summary>
@@ -81,7 +99,8 @@ public sealed class AudioMonitorService : IAsyncDisposable
 
             var cts = new CancellationTokenSource();
             var reader = _audio.Subscribe(capacity: 8);
-            var pump = Task.Run(() => PumpAsync(reader, buffer, cts.Token), CancellationToken.None);
+            var bits = format.BitsPerSample;
+            var pump = Task.Run(() => PumpAsync(reader, buffer, bits, cts.Token), CancellationToken.None);
 
             lock (_gate)
             {
@@ -105,6 +124,7 @@ public sealed class AudioMonitorService : IAsyncDisposable
     private async Task PumpAsync(
         ChannelReader<AudioBuffer> reader,
         BufferedWaveProvider buffer,
+        int bitsPerSample,
         CancellationToken ct)
     {
         try
@@ -116,7 +136,21 @@ public sealed class AudioMonitorService : IAsyncDisposable
                     buffer.ClearBuffer();
                 }
 
-                buffer.AddSamples(chunk.Data, 0, chunk.Length);
+                float gain;
+                lock (_gate) gain = _volume;
+
+                if (Math.Abs(gain - 1f) >= 0.0001f)
+                {
+                    // Capture buffers may be shared with recording/meters — copy before gain.
+                    var copy = new byte[chunk.Length];
+                    Buffer.BlockCopy(chunk.Data, 0, copy, 0, chunk.Length);
+                    PcmGain.Apply(copy, chunk.Length, bitsPerSample, gain);
+                    buffer.AddSamples(copy, 0, chunk.Length);
+                }
+                else
+                {
+                    buffer.AddSamples(chunk.Data, 0, chunk.Length);
+                }
             }
         }
         catch (OperationCanceledException)
