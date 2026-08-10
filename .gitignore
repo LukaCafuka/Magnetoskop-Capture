@@ -13,6 +13,7 @@ bld/
 artifacts/
 publish/
 out/
+*.zip
 
 ## Visual Studio / VS Code / Rider
 .vs/
