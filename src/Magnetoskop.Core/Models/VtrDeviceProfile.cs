@@ -32,6 +32,12 @@ public sealed record VtrDeviceProfile
     /// <summary>Nominal frame rate of the deck's video standard (25 for PAL models).</summary>
     public int FrameRate { get; init; } = 25;
 
+    /// <summary>
+    /// Maximum shuttle search speed as a multiple of play (wheel full deflection / JKL top step).
+    /// Default ~50× matches the DVR-2000 reference; Digital Betacam DVW-M2000P is 42×.
+    /// </summary>
+    public double MaxShuttleRate { get; init; } = 50.0;
+
     public bool SupportsVitc { get; init; } = true;
     public bool SupportsLtc { get; init; } = true;
 

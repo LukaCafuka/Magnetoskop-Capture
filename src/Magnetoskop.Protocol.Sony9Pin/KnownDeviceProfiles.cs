@@ -22,13 +22,15 @@ public static class KnownDeviceProfiles
         FrameRate = 25,
     };
 
-    /// <summary>Sony DVW-M2000P. Device type confirmed on hardware: <c>B1 04</c>.</summary>
+    /// <summary>Sony DVW-M2000P. Device type confirmed on hardware: <c>B1 04</c>.
+    /// Shuttle search tops out at 42× play on this Digital Betacam deck.</summary>
     public static VtrDeviceProfile DvwM2000P { get; } = new()
     {
         Id = "sony-dvw-m2000p",
         DisplayName = "Sony DVW-M2000P",
         DeviceTypeCode = "B1 04",
         FrameRate = 25,
+        MaxShuttleRate = 42,
     };
 
     /// <summary>Sony BVU-950P. Device type code not in the reference — verify on hardware.

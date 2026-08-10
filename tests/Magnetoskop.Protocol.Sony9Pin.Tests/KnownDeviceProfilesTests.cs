@@ -31,6 +31,14 @@ public class KnownDeviceProfilesTests
     }
 
     [Fact]
+    public void DvwM2000P_MaxShuttleRateIs42()
+    {
+        Assert.Equal(42, KnownDeviceProfiles.DvwM2000P.MaxShuttleRate);
+        Assert.Equal(50, KnownDeviceProfiles.Generic.MaxShuttleRate);
+        Assert.Equal(50, KnownDeviceProfiles.Pvw2600P.MaxShuttleRate);
+    }
+
+    [Fact]
     public void FromDeviceTypeCode_FallsBackToGeneric()
     {
         Assert.Equal("generic-sony9pin", KnownDeviceProfiles.FromDeviceTypeCode(0x3F, 0xFF).Id);

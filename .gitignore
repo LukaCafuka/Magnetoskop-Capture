@@ -83,6 +83,9 @@ secrets.json
 .env
 .env.*
 
+## Local reference material (not part of the product tree)
+context_source/
+
 ## Misc
 *.cache
 *.log

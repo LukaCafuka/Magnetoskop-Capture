@@ -14,6 +14,7 @@ public readonly record struct JklAction(JklActionKind Kind, bool Forward, double
 /// <summary>
 /// DaVinci Resolve-style J/K/L step table.
 /// Signed step: 0 = stopped, +n = forward ladder, −n = reverse ladder.
+/// The top ladder rung is clamped to the deck's maximum shuttle rate.
 /// </summary>
 public static class JklShuttleSteps
 {
@@ -31,8 +32,11 @@ public static class JklShuttleSteps
     public static int ApplyJ(int step)
         => step >= 0 ? -1 : Math.Max(step - 1, -ReverseRates.Length);
 
-    public static JklAction ToAction(int step)
+    public static JklAction ToAction(
+        int step, double maxShuttleRate = VariableSpeedEncoding.DefaultMaxShuttleRate)
     {
+        var cap = Math.Clamp(maxShuttleRate, 1.0, VariableSpeedEncoding.DefaultMaxShuttleRate);
+
         if (step == 0)
         {
             return new JklAction(JklActionKind.Stop, Forward: true, PlayRate: 0);
@@ -41,7 +45,7 @@ public static class JklShuttleSteps
         if (step > 0)
         {
             var idx = Math.Clamp(step, 1, ForwardRates.Length) - 1;
-            var rate = ForwardRates[idx];
+            var rate = Math.Min(ForwardRates[idx], cap);
             // 1× forward uses Play for normal servo lock.
             if (idx == 0)
             {
@@ -52,6 +56,7 @@ public static class JklShuttleSteps
         }
 
         var revIdx = Math.Clamp(-step, 1, ReverseRates.Length) - 1;
-        return new JklAction(JklActionKind.Shuttle, Forward: false, PlayRate: ReverseRates[revIdx]);
+        return new JklAction(
+            JklActionKind.Shuttle, Forward: false, PlayRate: Math.Min(ReverseRates[revIdx], cap));
     }
 }

@@ -3,6 +3,7 @@ using Magnetoskop.Core.Abstractions;
 using Magnetoskop.Core.Models;
 using Microsoft.Extensions.Logging;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace Magnetoskop.Capture.Audio;
 
@@ -20,11 +21,22 @@ public sealed class AudioMonitorService : IAsyncDisposable
     private Task? _pumpTask;
     private WasapiOut? _output;
     private BufferedWaveProvider? _buffer;
+    private VolumeSampleProvider? _volumeProvider;
+    private AudioFormat? _runningFormat;
     private bool _wantEnabled;
     private float _volume = 1f;
 
-    /// <summary>Max buffered audio before we discard to keep latency low.</summary>
-    private static readonly TimeSpan MaxBuffered = TimeSpan.FromMilliseconds(200);
+    /// <summary>
+    /// If the playback queue grows past this, discard it so A/V stay roughly in sync.
+    /// Kept low: a 200–500 ms queue is what made monitoring feel suddenly delayed.
+    /// </summary>
+    private static readonly TimeSpan MaxBuffered = TimeSpan.FromMilliseconds(60);
+
+    /// <summary>Hard cap on the NAudio buffer (overflow drops new samples).</summary>
+    private static readonly TimeSpan BufferCapacity = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>WASAPI shared-mode engine period hint (ms).</summary>
+    private const int WasapiLatencyMs = 30;
 
     public AudioMonitorService(IAudioCaptureService audio, ILogger<AudioMonitorService> logger)
     {
@@ -33,8 +45,8 @@ public sealed class AudioMonitorService : IAsyncDisposable
     }
 
     /// <summary>
-    /// Linear monitor gain 0–2 (0%–200%). Applied in software so boost above 100% works.
-    /// Does not affect recording. Updates take effect on the next pumped chunk.
+    /// Linear monitor gain 0–2 (0%–200%). Applied via <see cref="VolumeSampleProvider"/>
+    /// so boost above 100% does not allocate on the capture pump. Does not affect recording.
     /// </summary>
     public float Volume
     {
@@ -45,7 +57,12 @@ public sealed class AudioMonitorService : IAsyncDisposable
         set
         {
             var clamped = Math.Clamp(value, 0f, 2f);
-            lock (_gate) _volume = clamped;
+            lock (_gate)
+            {
+                _volume = clamped;
+                if (_volumeProvider is not null)
+                    _volumeProvider.Volume = clamped;
+            }
         }
     }
 
@@ -82,6 +99,20 @@ public sealed class AudioMonitorService : IAsyncDisposable
 
     private void StartPlayback_NoThrow(AudioFormat format)
     {
+        lock (_gate)
+        {
+            // Avoid tear-down/restart when already monitoring this format (checkbox/bindings
+            // can fire SyncAsync repeatedly and each restart refilled a large buffer).
+            if (_output is not null
+                && _runningFormat is { } running
+                && running.SampleRate == format.SampleRate
+                && running.Channels == format.Channels
+                && running.BitsPerSample == format.BitsPerSample)
+            {
+                return;
+            }
+        }
+
         StopPlayback_NoThrow();
 
         try
@@ -90,29 +121,39 @@ public sealed class AudioMonitorService : IAsyncDisposable
             var buffer = new BufferedWaveProvider(waveFormat)
             {
                 DiscardOnBufferOverflow = true,
-                BufferDuration = TimeSpan.FromMilliseconds(500),
+                BufferDuration = BufferCapacity,
             };
 
-            var output = new WasapiOut(NAudio.CoreAudioApi.AudioClientShareMode.Shared, 50);
-            output.Init(buffer);
+            float volume;
+            lock (_gate) volume = _volume;
+
+            // Gain in the pull path — no per-chunk byte[] copies on the pump.
+            var volumeProvider = new VolumeSampleProvider(buffer.ToSampleProvider())
+            {
+                Volume = volume,
+            };
+
+            var output = new WasapiOut(NAudio.CoreAudioApi.AudioClientShareMode.Shared, WasapiLatencyMs);
+            output.Init(volumeProvider);
             output.Play();
 
             var cts = new CancellationTokenSource();
-            var reader = _audio.Subscribe(capacity: 8);
-            var bits = format.BitsPerSample;
-            var pump = Task.Run(() => PumpAsync(reader, buffer, bits, cts.Token), CancellationToken.None);
+            var reader = _audio.Subscribe(capacity: 4);
+            var pump = Task.Run(() => PumpAsync(reader, buffer, cts.Token), CancellationToken.None);
 
             lock (_gate)
             {
                 _buffer = buffer;
+                _volumeProvider = volumeProvider;
                 _output = output;
                 _cts = cts;
                 _pumpTask = pump;
+                _runningFormat = format;
             }
 
             _logger.LogInformation(
-                "Audio monitoring started ({Rate} Hz, {Ch} ch)",
-                format.SampleRate, format.Channels);
+                "Audio monitoring started ({Rate} Hz, {Ch} ch, latency target ≤{Ms} ms)",
+                format.SampleRate, format.Channels, MaxBuffered.TotalMilliseconds);
         }
         catch (Exception ex)
         {
@@ -124,32 +165,26 @@ public sealed class AudioMonitorService : IAsyncDisposable
     private async Task PumpAsync(
         ChannelReader<AudioBuffer> reader,
         BufferedWaveProvider buffer,
-        int bitsPerSample,
         CancellationToken ct)
     {
         try
         {
             await foreach (var chunk in reader.ReadAllAsync(ct))
             {
+                // Drop backlog before enqueue so we never sit on a growing delay.
                 if (buffer.BufferedDuration > MaxBuffered)
                 {
                     buffer.ClearBuffer();
+                    _logger.LogDebug(
+                        "Audio monitor cleared playback queue (was >{Ms} ms)",
+                        MaxBuffered.TotalMilliseconds);
                 }
 
-                float gain;
-                lock (_gate) gain = _volume;
+                buffer.AddSamples(chunk.Data, 0, chunk.Length);
 
-                if (Math.Abs(gain - 1f) >= 0.0001f)
+                if (buffer.BufferedDuration > MaxBuffered)
                 {
-                    // Capture buffers may be shared with recording/meters — copy before gain.
-                    var copy = new byte[chunk.Length];
-                    Buffer.BlockCopy(chunk.Data, 0, copy, 0, chunk.Length);
-                    PcmGain.Apply(copy, chunk.Length, bitsPerSample, gain);
-                    buffer.AddSamples(copy, 0, chunk.Length);
-                }
-                else
-                {
-                    buffer.AddSamples(chunk.Data, 0, chunk.Length);
+                    buffer.ClearBuffer();
                 }
             }
         }
@@ -178,6 +213,8 @@ public sealed class AudioMonitorService : IAsyncDisposable
             _pumpTask = null;
             _output = null;
             _buffer = null;
+            _volumeProvider = null;
+            _runningFormat = null;
         }
 
         try { cts?.Cancel(); } catch (Exception) { /* ignore */ }

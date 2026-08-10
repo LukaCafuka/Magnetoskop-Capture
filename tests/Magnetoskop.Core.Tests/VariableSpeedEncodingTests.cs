@@ -55,6 +55,24 @@ public class VariableSpeedEncodingTests
         var (forward, speed) = VariableSpeedEncoding.FromWheel(1.0, VariableSpeedMode.Shuttle);
         Assert.True(forward);
         Assert.True(speed >= 110);
+        Assert.InRange(VariableSpeedEncoding.ToPlayRate(speed), 48.0, 50.0);
+    }
+
+    [Fact]
+    public void FromWheel_FullRight_RespectsDeckMaxShuttleRate()
+    {
+        var (forward, speed) = VariableSpeedEncoding.FromWheel(
+            1.0, VariableSpeedMode.Shuttle, maxShuttleRate: 42);
+        Assert.True(forward);
+        Assert.InRange(VariableSpeedEncoding.ToPlayRate(speed), 41.0, 42.5);
+    }
+
+    [Fact]
+    public void FromPlayRate_ClampsToDeckMaxShuttleRate()
+    {
+        var speed = VariableSpeedEncoding.FromPlayRate(
+            50.0, VariableSpeedMode.Shuttle, maxShuttleRate: 42);
+        Assert.InRange(VariableSpeedEncoding.ToPlayRate(speed), 41.0, 42.5);
     }
 
     [Fact]

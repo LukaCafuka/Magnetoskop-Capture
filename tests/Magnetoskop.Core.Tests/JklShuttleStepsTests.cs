@@ -50,4 +50,16 @@ public class JklShuttleStepsTests
         Assert.False(slowRev.Forward);
         Assert.Equal(0.25, slowRev.PlayRate);
     }
+
+    [Fact]
+    public void ToAction_TopStep_ClampsToDeckMaxShuttleRate()
+    {
+        var top = JklShuttleSteps.ToAction(JklShuttleSteps.ForwardRates.Length, maxShuttleRate: 42);
+        Assert.Equal(JklActionKind.Shuttle, top.Kind);
+        Assert.Equal(42.0, top.PlayRate);
+
+        var topRev = JklShuttleSteps.ToAction(
+            -JklShuttleSteps.ReverseRates.Length, maxShuttleRate: 42);
+        Assert.Equal(42.0, topRev.PlayRate);
+    }
 }

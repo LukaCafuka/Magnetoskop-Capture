@@ -386,6 +386,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     partial void OnSelectedVtrProfileChanged(VtrDeviceProfile? value)
     {
+        UpdateWheelSpeedLabel();
+
         if (!_settingsReady || value is null) return;
         SaveSettings();
 
@@ -397,6 +399,11 @@ public sealed partial class MainViewModel : ObservableObject
             _ = ApplyVtrConnectionAsync();
         }
     }
+
+    /// <summary>Deck-specific shuttle ceiling (DVW-M2000P = 42×; others default 50×).</summary>
+    private double CurrentMaxShuttleRate
+        => SelectedVtrProfile?.MaxShuttleRate
+           ?? VariableSpeedEncoding.DefaultMaxShuttleRate;
 
     private async Task ApplyVtrConnectionAsync()
     {
@@ -1127,7 +1134,7 @@ public sealed partial class MainViewModel : ObservableObject
             _ => JklShuttleSteps.ApplyJ(_jklStep),
         };
 
-        var action = JklShuttleSteps.ToAction(_jklStep);
+        var action = JklShuttleSteps.ToAction(_jklStep, CurrentMaxShuttleRate);
         switch (action.Kind)
         {
             case JklActionKind.Stop:
@@ -1163,7 +1170,8 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (!CanUseTransport()) return;
 
-        var speed = VariableSpeedEncoding.FromPlayRate(playRate, VariableSpeedMode.Shuttle);
+        var speed = VariableSpeedEncoding.FromPlayRate(
+            playRate, VariableSpeedMode.Shuttle, CurrentMaxShuttleRate);
         try
         {
             await _vtr.SendVariableSpeedAsync(VariableSpeedMode.Shuttle, forward, speed);
@@ -1226,7 +1234,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void UpdateWheelSpeedLabel()
     {
-        var (forward, speed) = VariableSpeedEncoding.FromWheel(WheelPosition, JogShuttleMode);
+        var (forward, speed) = VariableSpeedEncoding.FromWheel(
+            WheelPosition, JogShuttleMode, CurrentMaxShuttleRate);
         var rate = VariableSpeedEncoding.ToPlayRate(speed);
         if (!forward && rate > 0) rate = -rate;
         WheelSpeedLabel = $"{rate:+0.00;-0.00;0.00}×";
@@ -1253,7 +1262,8 @@ public sealed partial class MainViewModel : ObservableObject
                 _wheelSendPending = false;
                 if (_suppressWheelSend) break;
 
-                var (forward, speed) = VariableSpeedEncoding.FromWheel(WheelPosition, JogShuttleMode);
+                var (forward, speed) = VariableSpeedEncoding.FromWheel(
+                    WheelPosition, JogShuttleMode, CurrentMaxShuttleRate);
                 if (!force
                     && speed == _lastWheelSpeed
                     && forward == _lastWheelForward
@@ -1274,7 +1284,8 @@ public sealed partial class MainViewModel : ObservableObject
 
                 if (_suppressWheelSend) break;
 
-                (forward, speed) = VariableSpeedEncoding.FromWheel(WheelPosition, JogShuttleMode);
+                (forward, speed) = VariableSpeedEncoding.FromWheel(
+                    WheelPosition, JogShuttleMode, CurrentMaxShuttleRate);
                 if (!force
                     && speed == _lastWheelSpeed
                     && forward == _lastWheelForward

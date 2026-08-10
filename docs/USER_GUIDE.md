@@ -110,7 +110,8 @@ typing in text fields. **Ctrl+S** toggles Standby.
 
 Next to those controls, a **Jog / Shuttle** wheel searches at variable speed:
 
-- Choose **Jog** (fine positioning, up to ~1×) or **Shuttle** (visual search, up to ~50×).
+- Choose **Jog** (fine positioning, up to ~1×) or **Shuttle** (visual search; max rate
+  depends on the selected VTR — **42×** on DVW-M2000P, ~**50×** on other profiles).
 - Drag left for reverse, right for forward; the label shows the current rate (e.g. `+2.50×`).
 - Release the wheel to return to still and send **Stop**.
 
