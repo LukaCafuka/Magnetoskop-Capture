@@ -28,6 +28,9 @@ public class SettingsServiceTests : IDisposable
         Assert.True(settings.DisableTransportDuringRecording);
         Assert.False(settings.PreviewYadif2xEnabled);
         Assert.False(settings.Ctl24HourWrap);
+        Assert.Empty(settings.VideoInputConfigurations);
+        Assert.Empty(settings.VideoFormatAcknowledgments);
+        Assert.Empty(settings.AvCalibrations);
         Assert.NotNull(settings.Video);
         Assert.Equal(nameof(RecordingCodec.H264), settings.Video!.VideoCodec);
     }
@@ -41,7 +44,25 @@ public class SettingsServiceTests : IDisposable
         service.Current.Video = VideoEncodeSettings.FromProfile(RecordingProfile.CreateFfv1Archival());
         service.Current.VideoDeviceId = "video-1";
         service.Current.VideoDeviceName = "Blackmagic WDM Capture";
+        service.Current.VideoInputConfigurations["video-1"] = new VideoInputConfiguration
+        {
+            Standard = VideoInputStandard.Pal,
+            ScanMode = VideoScanMode.Bff,
+        };
+        service.Current.VideoFormatAcknowledgments["video-1"] = new VideoFormatAcknowledgmentSettings
+        {
+            Fingerprint = "v1|requested-pal-bff|actual-720x576-25",
+            AcknowledgedAt = new DateTimeOffset(2026, 8, 15, 11, 30, 0, TimeSpan.Zero),
+        };
         service.Current.AudioDeviceId = "audio-2";
+        service.Current.AvCalibrations.Add(new AvCalibrationSettings
+        {
+            VideoDeviceId = "video-1",
+            AudioDeviceId = "audio-2",
+            AudioOffset100ns = -125_000,
+            IsCalibrated = true,
+            MeasuredAt = new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.Zero),
+        });
         service.Current.AudioManuallySelected = true;
         service.Current.VtrConnectionId = "COM3";
         service.Current.VtrProfileId = "pvw-2600p";
@@ -65,7 +86,19 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal(3, reloaded.Video.Ffv1Level);
         Assert.Equal("video-1", reloaded.VideoDeviceId);
         Assert.Equal("Blackmagic WDM Capture", reloaded.VideoDeviceName);
+        Assert.Equal(VideoInputStandard.Pal, reloaded.VideoInputConfigurations["video-1"].Standard);
+        Assert.Equal(VideoScanMode.Bff, reloaded.VideoInputConfigurations["video-1"].ScanMode);
+        var formatAcknowledgment = reloaded.VideoFormatAcknowledgments["video-1"];
+        Assert.Equal("v1|requested-pal-bff|actual-720x576-25", formatAcknowledgment.Fingerprint);
+        Assert.Equal(
+            new DateTimeOffset(2026, 8, 15, 11, 30, 0, TimeSpan.Zero),
+            formatAcknowledgment.AcknowledgedAt);
         Assert.Equal("audio-2", reloaded.AudioDeviceId);
+        var calibration = Assert.Single(reloaded.AvCalibrations);
+        Assert.Equal("video-1", calibration.VideoDeviceId);
+        Assert.Equal("audio-2", calibration.AudioDeviceId);
+        Assert.Equal(-125_000, calibration.AudioOffset100ns);
+        Assert.True(calibration.IsCalibrated);
         Assert.True(reloaded.AudioManuallySelected);
         Assert.Equal("COM3", reloaded.VtrConnectionId);
         Assert.Equal("pvw-2600p", reloaded.VtrProfileId);

@@ -27,6 +27,7 @@ public sealed class SimulatedVtr : IVtrController
     private bool _tapeOut;
     private VtrStatus _status = new();
     private TimeInformation _time = new();
+    private VtrLinkHealth _linkHealth = new();
 
     // The simulated tape starts with LTC/VITC at 01:00:00:00 at tape position 0.
     private const long TimecodeOffsetFrames = 1L * 60 * 60 * FrameRate;
@@ -45,14 +46,25 @@ public sealed class SimulatedVtr : IVtrController
 
     public TimeInformation CurrentTime => _time;
 
+    public VtrLinkHealth LinkHealth => _linkHealth;
+
     public event EventHandler<VtrStatus>? StatusChanged;
     public event EventHandler<TimeInformation>? TimeChanged;
+    public event EventHandler<VtrLinkHealth>? LinkHealthChanged;
 
     public Task ConnectAsync(CancellationToken cancellationToken = default)
     {
         if (IsConnected) return Task.CompletedTask;
 
         IsConnected = true;
+        var connectedAt = DateTimeOffset.UtcNow;
+        _linkHealth = new VtrLinkHealth
+        {
+            State = VtrLinkState.Online,
+            LastResponseAt = connectedAt,
+            UpdatedAt = connectedAt,
+        };
+        LinkHealthChanged?.Invoke(this, _linkHealth);
         _pollCts = new CancellationTokenSource();
         _pollTask = Task.Run(() => RunAsync(_pollCts.Token), CancellationToken.None);
         _logger.LogInformation("Simulated VTR connected");
@@ -75,6 +87,23 @@ public sealed class SimulatedVtr : IVtrController
         _pollCts?.Dispose();
         _pollCts = null;
         _pollTask = null;
+        var disconnectedAt = DateTimeOffset.UtcNow;
+        _status = _status with
+        {
+            IsConnected = false,
+            Timestamp = disconnectedAt,
+            Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+        };
+        _time = new TimeInformation { Timestamp = disconnectedAt };
+        _linkHealth = new VtrLinkHealth
+        {
+            State = VtrLinkState.Disconnected,
+            LastResponseAt = _linkHealth.LastResponseAt,
+            UpdatedAt = disconnectedAt,
+        };
+        StatusChanged?.Invoke(this, _status);
+        TimeChanged?.Invoke(this, _time);
+        LinkHealthChanged?.Invoke(this, _linkHealth);
         _logger.LogInformation("Simulated VTR disconnected");
     }
 
@@ -306,6 +335,8 @@ public sealed class SimulatedVtr : IVtrController
 
     private void PublishSnapshots()
     {
+        var receivedAt = DateTimeOffset.UtcNow;
+        var receivedTimestamp100ns = CaptureMonotonicClock.GetTimestamp100ns();
         TransportState transport;
         double pos;
         bool tapeOut;
@@ -340,6 +371,8 @@ public sealed class SimulatedVtr : IVtrController
             NearEndOfTape = pos > TapeLengthFrames - 5L * 60 * FrameRate,
             EndOfTape = pos >= TapeLengthFrames,
             TapeReverse = isReverse,
+            Timestamp = receivedAt,
+            Timestamp100ns = receivedTimestamp100ns,
         };
 
         var time = new TimeInformation
@@ -349,15 +382,38 @@ public sealed class SimulatedVtr : IVtrController
             Vitc = tapeOut ? null : (isPlaySpeed ? tc : null),
             LtcUserBits = tapeOut ? null : new UserBits(0x20, 0x26, 0x01, 0x01),
             VitcUserBits = tapeOut ? null : new UserBits(0x20, 0x26, 0x01, 0x01),
+            CtlReceivedAt = receivedAt,
+            LtcReceivedAt = tapeOut || isFastWind ? null : receivedAt,
+            VitcReceivedAt = tapeOut || !isPlaySpeed ? null : receivedAt,
+            LtcUserBitsReceivedAt = tapeOut ? null : receivedAt,
+            VitcUserBitsReceivedAt = tapeOut ? null : receivedAt,
+            CtlReceivedTimestamp100ns = receivedTimestamp100ns,
+            LtcReceivedTimestamp100ns = tapeOut || isFastWind ? null : receivedTimestamp100ns,
+            VitcReceivedTimestamp100ns = tapeOut || !isPlaySpeed ? null : receivedTimestamp100ns,
+            LtcUserBitsReceivedTimestamp100ns = tapeOut ? null : receivedTimestamp100ns,
+            VitcUserBitsReceivedTimestamp100ns = tapeOut ? null : receivedTimestamp100ns,
+            CtlSource = TimecodeSource.Ctl,
+            LtcSource = TimecodeSource.Ltc,
+            VitcSource = TimecodeSource.Vitc,
+            LtcUserBitsSource = TimecodeSource.Ltc,
+            VitcUserBitsSource = TimecodeSource.Vitc,
             PrimarySource = tapeOut
                 ? TimecodeSource.Ctl
                 : isPlaySpeed ? TimecodeSource.Ltc
                 : isFastWind ? TimecodeSource.CorrectedLtc
                 : TimecodeSource.Ctl,
+            Timestamp = receivedAt,
         };
 
         _status = status;
         _time = time;
+        _linkHealth = _linkHealth with
+        {
+            State = VtrLinkState.Online,
+            LastResponseAt = receivedAt,
+            UpdatedAt = receivedAt,
+            Error = null,
+        };
         StatusChanged?.Invoke(this, status);
         TimeChanged?.Invoke(this, time);
     }

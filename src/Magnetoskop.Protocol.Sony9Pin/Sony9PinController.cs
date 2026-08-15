@@ -26,6 +26,9 @@ public sealed class Sony9PinController : IVtrController
 
     private VtrStatus _status = new();
     private TimeInformation _time = new();
+    private VtrLinkHealth _linkHealth = new();
+    private DateTimeOffset _connectedAt;
+    private DateTimeOffset? _lastResponseAt;
     private string _deviceDescription;
 
     /// <summary>Command support learned from the deck's NAK responses at runtime.</summary>
@@ -33,6 +36,10 @@ public sealed class Sony9PinController : IVtrController
 
     /// <summary>Profile matched from the Device Type response, when recognized.</summary>
     public VtrDeviceProfile? DetectedProfile { get; private set; }
+
+    /// <summary>Polling silence thresholds. Defaults are shared with time observations.</summary>
+    public TimeSpan LinkStaleAfter { get; set; } = TimeInformation.DefaultStaleAfter;
+    public TimeSpan LinkLostAfter { get; set; } = TimeInformation.DefaultLostAfter;
 
     public Sony9PinController(
         ISerialTransport transport,
@@ -61,14 +68,24 @@ public sealed class Sony9PinController : IVtrController
 
     public TimeInformation CurrentTime => _time;
 
+    public VtrLinkHealth LinkHealth => _linkHealth;
+
     public event EventHandler<VtrStatus>? StatusChanged;
     public event EventHandler<TimeInformation>? TimeChanged;
+    public event EventHandler<VtrLinkHealth>? LinkHealthChanged;
 
     public async Task ConnectAsync(CancellationToken cancellationToken = default)
     {
         if (IsConnected) return;
 
         await _transport.OpenAsync(_serialSettings, cancellationToken);
+        _connectedAt = DateTimeOffset.UtcNow;
+        _lastResponseAt = null;
+        Publish(new VtrLinkHealth
+        {
+            State = VtrLinkState.Connecting,
+            UpdatedAt = _connectedAt,
+        });
 
         // Identify the deck. A NAK/timeout here is not fatal — some decks may not
         // implement Device Type Request — but a healthy response refines the description.
@@ -76,6 +93,7 @@ public sealed class Sony9PinController : IVtrController
         {
             var response = await _transceiver.ExchangeAsync(
                 Sony9PinCommands.DeviceTypeRequest(), cancellationToken);
+            RecordResponse(DateTimeOffset.UtcNow);
             if (response is Sony9PinResponse.DeviceType dt)
             {
                 DetectedProfile = KnownDeviceProfiles.FromDeviceTypeCode(dt.Byte1, dt.Byte2);
@@ -118,7 +136,20 @@ public sealed class Sony9PinController : IVtrController
         _pollTask = null;
 
         await _transport.CloseAsync(cancellationToken);
-        Publish(_status with { IsConnected = false });
+        var disconnectedAt = DateTimeOffset.UtcNow;
+        Publish(_status with
+        {
+            IsConnected = false,
+            Timestamp = disconnectedAt,
+            Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+        });
+        Publish(new TimeInformation { Timestamp = disconnectedAt });
+        Publish(new VtrLinkHealth
+        {
+            State = VtrLinkState.Disconnected,
+            LastResponseAt = _lastResponseAt,
+            UpdatedAt = disconnectedAt,
+        });
         _logger.LogInformation("Disconnected from {Device}", _deviceDescription);
     }
 
@@ -332,11 +363,17 @@ public sealed class Sony9PinController : IVtrController
 
     private async Task PollLoopAsync(CancellationToken ct)
     {
-        var statusDue = DateTimeOffset.MinValue;
-        var timeDue = DateTimeOffset.MinValue;
-        var userBitsDue = DateTimeOffset.MinValue;
+        var startedAt = DateTimeOffset.UtcNow;
+        var statusDue = startedAt;
+        var timeDue = startedAt;
+        var detailInterval = TimeSpan.FromMilliseconds(
+            Math.Max(250, _profile.TimecodePollInterval.TotalMilliseconds * 3));
         var userBitsInterval = TimeSpan.FromMilliseconds(
             Math.Max(500, _profile.TimecodePollInterval.TotalMilliseconds * 5));
+        var ltcDue = _profile.SupportsLtc ? startedAt + detailInterval / 4 : DateTimeOffset.MaxValue;
+        var vitcDue = _profile.SupportsVitc ? startedAt + detailInterval * 3 / 4 : DateTimeOffset.MaxValue;
+        var ltcUserBitsDue = _profile.SupportsLtc ? startedAt + userBitsInterval / 4 : DateTimeOffset.MaxValue;
+        var vitcUserBitsDue = _profile.SupportsVitc ? startedAt + userBitsInterval * 3 / 4 : DateTimeOffset.MaxValue;
 
         while (!ct.IsCancellationRequested)
         {
@@ -357,10 +394,31 @@ public sealed class Sony9PinController : IVtrController
                 }
 
                 now = DateTimeOffset.UtcNow;
-                if (now >= userBitsDue)
+                if (now >= ltcDue)
                 {
-                    userBitsDue = now + userBitsInterval;
-                    await PollUserBitsAsync(ct);
+                    ltcDue = now + detailInterval;
+                    await PollOptionalTimeAsync(TimeSenseRequest.LtcTime, "LTC", ct);
+                }
+
+                now = DateTimeOffset.UtcNow;
+                if (now >= vitcDue)
+                {
+                    vitcDue = now + detailInterval;
+                    await PollOptionalTimeAsync(TimeSenseRequest.VitcTime, "VITC", ct);
+                }
+
+                now = DateTimeOffset.UtcNow;
+                if (now >= ltcUserBitsDue)
+                {
+                    ltcUserBitsDue = now + userBitsInterval;
+                    await PollOptionalUserBitsAsync(TimeSenseRequest.LtcUserBits, "LTC user bits", ct);
+                }
+
+                now = DateTimeOffset.UtcNow;
+                if (now >= vitcUserBitsDue)
+                {
+                    vitcUserBitsDue = now + userBitsInterval;
+                    await PollOptionalUserBitsAsync(TimeSenseRequest.VitcUserBits, "VITC user bits", ct);
                 }
             }
             catch (OperationCanceledException)
@@ -370,11 +428,16 @@ public sealed class Sony9PinController : IVtrController
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Polling cycle failed; will retry");
+                UpdateLinkHealth(DateTimeOffset.UtcNow, ex.Message);
                 // Back off briefly so a dead link does not spin.
                 await Task.Delay(250, ct);
             }
 
-            var nextDue = new[] { statusDue, timeDue, userBitsDue }.Min();
+            UpdateLinkHealth(DateTimeOffset.UtcNow);
+            var nextDue = new[]
+            {
+                statusDue, timeDue, ltcDue, vitcDue, ltcUserBitsDue, vitcUserBitsDue,
+            }.Min();
             var delay = nextDue - DateTimeOffset.UtcNow;
             if (delay > TimeSpan.Zero)
             {
@@ -386,9 +449,16 @@ public sealed class Sony9PinController : IVtrController
     private async Task PollStatusAsync(CancellationToken ct)
     {
         var response = await _transceiver.ExchangeAsync(Sony9PinCommands.StatusSense(), ct);
+        var receivedAt = DateTimeOffset.UtcNow;
+        var receivedTimestamp100ns = CaptureMonotonicClock.GetTimestamp100ns();
+        RecordResponse(receivedAt);
         if (response is Sony9PinResponse.StatusData status)
         {
-            Publish(StatusBitsParser.Parse(status.Bytes) with { Timestamp = DateTimeOffset.UtcNow });
+            Publish(StatusBitsParser.Parse(status.Bytes) with
+            {
+                Timestamp = receivedAt,
+                Timestamp100ns = receivedTimestamp100ns,
+            });
         }
     }
 
@@ -397,51 +467,242 @@ public sealed class Sony9PinController : IVtrController
         // Best available timecode (deck picks LTC/VITC/corrected LTC).
         var tcResponse = await _transceiver.ExchangeAsync(
             Sony9PinCommands.CurrentTimeSense(TimeSenseRequest.BestTimecode), ct);
+        var tcReceipt = CaptureReceipt();
+        RecordResponse(tcReceipt.ReceivedAt);
+        if (tcResponse is Sony9PinResponse.TimeData tc)
+        {
+            Publish(ApplyTimeData(_time, tc, tcReceipt, makePrimary: true));
+        }
 
         // CTL (Timer-1).
         var ctlResponse = await _transceiver.ExchangeAsync(
             Sony9PinCommands.CurrentTimeSense(TimeSenseRequest.Timer1), ct);
-
-        var time = _time;
-
-        if (tcResponse is Sony9PinResponse.TimeData tc)
+        var ctlReceipt = CaptureReceipt();
+        RecordResponse(ctlReceipt.ReceivedAt);
+        if (ctlResponse is Sony9PinResponse.TimeData ctl)
         {
-            time = tc.Kind switch
-            {
-                TimeDataKind.LtcTime => time with { Ltc = tc.Timecode, PrimarySource = TimecodeSource.Ltc },
-                TimeDataKind.VitcTime or TimeDataKind.HoldVitcTime
-                    => time with { Vitc = tc.Timecode, PrimarySource = TimecodeSource.Vitc },
-                TimeDataKind.CorrectedLtcTime
-                    => time with { Ltc = tc.Timecode, PrimarySource = TimecodeSource.CorrectedLtc },
-                _ => time,
-            };
+            Publish(ApplyTimeData(_time, ctl, ctlReceipt, makePrimary: false));
         }
-
-        if (ctlResponse is Sony9PinResponse.TimeData { Kind: TimeDataKind.Timer1 } ctl)
-        {
-            time = time with { Ctl = ctl.Timecode };
-        }
-
-        Publish(time with { Timestamp = DateTimeOffset.UtcNow });
     }
 
-    private async Task PollUserBitsAsync(CancellationToken ct)
+    private async Task PollOptionalTimeAsync(
+        TimeSenseRequest request,
+        string label,
+        CancellationToken ct)
     {
-        if (!_profile.SupportsLtc) return;
-
-        var response = await _transceiver.ExchangeAsync(
-            Sony9PinCommands.CurrentTimeSense(TimeSenseRequest.LtcUserBits), ct);
-        if (response is Sony9PinResponse.UserBitsData ub)
+        try
         {
-            var time = ub.Kind switch
+            var response = await _transceiver.ExchangeAsync(
+                Sony9PinCommands.CurrentTimeSense(request), ct);
+            var receipt = CaptureReceipt();
+            RecordResponse(receipt.ReceivedAt);
+            if (response is Sony9PinResponse.TimeData time)
             {
-                TimeDataKind.LtcUserBits or TimeDataKind.HoldLtcUserBits
-                    => _time with { LtcUserBits = ub.UserBits },
-                TimeDataKind.VitcUserBits or TimeDataKind.HoldVitcUserBits
-                    => _time with { VitcUserBits = ub.UserBits },
-                _ => _time,
+                Publish(ApplyTimeData(_time, time, receipt, makePrimary: false));
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Optional registers are absent on some decks; they do not make the link unhealthy.
+            _logger.LogDebug(ex, "Optional {Label} poll failed", label);
+        }
+    }
+
+    private async Task PollOptionalUserBitsAsync(
+        TimeSenseRequest request,
+        string label,
+        CancellationToken ct)
+    {
+        try
+        {
+            var response = await _transceiver.ExchangeAsync(
+                Sony9PinCommands.CurrentTimeSense(request), ct);
+            var receipt = CaptureReceipt();
+            RecordResponse(receipt.ReceivedAt);
+            if (response is Sony9PinResponse.UserBitsData userBits)
+            {
+                Publish(ApplyUserBitsData(_time, userBits, receipt));
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Optional {Label} poll failed", label);
+        }
+    }
+
+    private static TimeInformation ApplyTimeData(
+        TimeInformation current,
+        Sony9PinResponse.TimeData response,
+        ObservationReceipt receipt,
+        bool makePrimary)
+        => response.Kind switch
+        {
+            TimeDataKind.Timer1 => current with
+            {
+                Ctl = response.Timecode,
+                CtlSource = TimecodeSource.Ctl,
+                CtlReceivedAt = receipt.ReceivedAt,
+                CtlReceivedTimestamp100ns = receipt.Timestamp100ns,
+                Timestamp = receipt.ReceivedAt,
+            },
+            TimeDataKind.Timer2 => current with
+            {
+                Ctl = response.Timecode,
+                CtlSource = TimecodeSource.Ctl2,
+                CtlReceivedAt = receipt.ReceivedAt,
+                CtlReceivedTimestamp100ns = receipt.Timestamp100ns,
+                Timestamp = receipt.ReceivedAt,
+            },
+            TimeDataKind.LtcTime => current with
+            {
+                Ltc = response.Timecode,
+                LtcSource = TimecodeSource.Ltc,
+                LtcReceivedAt = receipt.ReceivedAt,
+                LtcReceivedTimestamp100ns = receipt.Timestamp100ns,
+                PrimarySource = makePrimary ? TimecodeSource.Ltc : current.PrimarySource,
+                Timestamp = receipt.ReceivedAt,
+            },
+            TimeDataKind.CorrectedLtcTime => current with
+            {
+                Ltc = response.Timecode,
+                LtcSource = TimecodeSource.CorrectedLtc,
+                LtcReceivedAt = receipt.ReceivedAt,
+                LtcReceivedTimestamp100ns = receipt.Timestamp100ns,
+                PrimarySource = makePrimary ? TimecodeSource.CorrectedLtc : current.PrimarySource,
+                Timestamp = receipt.ReceivedAt,
+            },
+            TimeDataKind.VitcTime => current with
+            {
+                Vitc = response.Timecode,
+                VitcSource = TimecodeSource.Vitc,
+                VitcReceivedAt = receipt.ReceivedAt,
+                VitcReceivedTimestamp100ns = receipt.Timestamp100ns,
+                PrimarySource = makePrimary ? TimecodeSource.Vitc : current.PrimarySource,
+                Timestamp = receipt.ReceivedAt,
+            },
+            TimeDataKind.HoldVitcTime => current with
+            {
+                Vitc = response.Timecode,
+                VitcSource = TimecodeSource.HoldVitc,
+                VitcReceivedAt = receipt.ReceivedAt,
+                VitcReceivedTimestamp100ns = receipt.Timestamp100ns,
+                PrimarySource = makePrimary ? TimecodeSource.HoldVitc : current.PrimarySource,
+                Timestamp = receipt.ReceivedAt,
+            },
+            _ => current,
+        };
+
+    private static TimeInformation ApplyUserBitsData(
+        TimeInformation current,
+        Sony9PinResponse.UserBitsData response,
+        ObservationReceipt receipt)
+        => response.Kind switch
+        {
+            TimeDataKind.LtcUserBits => current with
+            {
+                LtcUserBits = response.UserBits,
+                LtcUserBitsSource = TimecodeSource.Ltc,
+                LtcUserBitsReceivedAt = receipt.ReceivedAt,
+                LtcUserBitsReceivedTimestamp100ns = receipt.Timestamp100ns,
+                Timestamp = receipt.ReceivedAt,
+            },
+            TimeDataKind.HoldLtcUserBits => current with
+            {
+                LtcUserBits = response.UserBits,
+                LtcUserBitsSource = TimecodeSource.HoldLtc,
+                LtcUserBitsReceivedAt = receipt.ReceivedAt,
+                LtcUserBitsReceivedTimestamp100ns = receipt.Timestamp100ns,
+                Timestamp = receipt.ReceivedAt,
+            },
+            TimeDataKind.VitcUserBits => current with
+            {
+                VitcUserBits = response.UserBits,
+                VitcUserBitsSource = TimecodeSource.Vitc,
+                VitcUserBitsReceivedAt = receipt.ReceivedAt,
+                VitcUserBitsReceivedTimestamp100ns = receipt.Timestamp100ns,
+                Timestamp = receipt.ReceivedAt,
+            },
+            TimeDataKind.HoldVitcUserBits => current with
+            {
+                VitcUserBits = response.UserBits,
+                VitcUserBitsSource = TimecodeSource.HoldVitc,
+                VitcUserBitsReceivedAt = receipt.ReceivedAt,
+                VitcUserBitsReceivedTimestamp100ns = receipt.Timestamp100ns,
+                Timestamp = receipt.ReceivedAt,
+            },
+            _ => current,
+        };
+
+    private static ObservationReceipt CaptureReceipt()
+        => new(DateTimeOffset.UtcNow, CaptureMonotonicClock.GetTimestamp100ns());
+
+    private readonly record struct ObservationReceipt(
+        DateTimeOffset ReceivedAt,
+        long Timestamp100ns);
+
+    private void RecordResponse(DateTimeOffset receivedAt)
+    {
+        _lastResponseAt = receivedAt;
+        if (_linkHealth.State == VtrLinkState.Online)
+        {
+            _linkHealth = _linkHealth with
+            {
+                LastResponseAt = receivedAt,
+                UpdatedAt = receivedAt,
+                Error = null,
             };
-            Publish(time with { Timestamp = DateTimeOffset.UtcNow });
+        }
+        else
+        {
+            Publish(new VtrLinkHealth
+            {
+                State = VtrLinkState.Online,
+                LastResponseAt = receivedAt,
+                UpdatedAt = receivedAt,
+            });
+        }
+    }
+
+    private void UpdateLinkHealth(DateTimeOffset now, string? error = null)
+    {
+        if (!IsConnected) return;
+
+        var reference = _lastResponseAt ?? _connectedAt;
+        var age = now - reference;
+        var state = age > LinkLostAfter
+            ? VtrLinkState.Lost
+            : age > LinkStaleAfter
+                ? VtrLinkState.Stale
+                : _lastResponseAt is null
+                    ? VtrLinkState.Connecting
+                    : VtrLinkState.Online;
+
+        if (state == _linkHealth.State && error == _linkHealth.Error) return;
+
+        Publish(new VtrLinkHealth
+        {
+            State = state,
+            LastResponseAt = _lastResponseAt,
+            UpdatedAt = now,
+            Error = state is VtrLinkState.Stale or VtrLinkState.Lost ? error : null,
+        });
+
+        if (state == VtrLinkState.Lost && _status.IsConnected)
+        {
+            Publish(_status with
+            {
+                IsConnected = false,
+                Timestamp = now,
+                Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+            });
         }
     }
 
@@ -455,6 +716,12 @@ public sealed class Sony9PinController : IVtrController
     {
         _time = time;
         TimeChanged?.Invoke(this, time);
+    }
+
+    private void Publish(VtrLinkHealth health)
+    {
+        _linkHealth = health;
+        LinkHealthChanged?.Invoke(this, health);
     }
 
     public async ValueTask DisposeAsync()

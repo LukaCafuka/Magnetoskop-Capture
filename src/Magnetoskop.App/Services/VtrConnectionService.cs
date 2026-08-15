@@ -68,6 +68,22 @@ public sealed class VtrConnectionService : IVtrController
             await _current.DisposeAsync();
         }
 
+        // Detaching suppresses the old controller's disconnect events. Clear the
+        // facade immediately so the UI never carries timecode into the new target.
+        var switchingAt = DateTimeOffset.UtcNow;
+        StatusChanged?.Invoke(this, new VtrStatus
+        {
+            IsConnected = false,
+            Timestamp = switchingAt,
+            Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+        });
+        TimeChanged?.Invoke(this, new TimeInformation { Timestamp = switchingAt });
+        LinkHealthChanged?.Invoke(this, new VtrLinkHealth
+        {
+            State = VtrLinkState.Connecting,
+            UpdatedAt = switchingAt,
+        });
+
         if (option.Id == VtrConnectionOption.SimulatorId)
         {
             _current = _services.GetRequiredService<SimulatedVtr>();
@@ -93,6 +109,7 @@ public sealed class VtrConnectionService : IVtrController
     {
         controller.StatusChanged += ForwardStatus;
         controller.TimeChanged += ForwardTime;
+        controller.LinkHealthChanged += ForwardLinkHealth;
         if (controller is Sony9PinController sony)
         {
             sony.Capabilities.CapabilityLearned += ForwardCapability;
@@ -103,6 +120,7 @@ public sealed class VtrConnectionService : IVtrController
     {
         controller.StatusChanged -= ForwardStatus;
         controller.TimeChanged -= ForwardTime;
+        controller.LinkHealthChanged -= ForwardLinkHealth;
         if (controller is Sony9PinController sony)
         {
             sony.Capabilities.CapabilityLearned -= ForwardCapability;
@@ -111,6 +129,8 @@ public sealed class VtrConnectionService : IVtrController
 
     private void ForwardStatus(object? sender, VtrStatus status) => StatusChanged?.Invoke(this, status);
     private void ForwardTime(object? sender, TimeInformation time) => TimeChanged?.Invoke(this, time);
+    private void ForwardLinkHealth(object? sender, VtrLinkHealth health)
+        => LinkHealthChanged?.Invoke(this, health);
     private void ForwardCapability(object? sender, TransportCommand command)
         => CapabilityLearned?.Invoke(this, command);
 
@@ -133,9 +153,11 @@ public sealed class VtrConnectionService : IVtrController
     public bool IsConnected => _current.IsConnected;
     public VtrStatus CurrentStatus => _current.CurrentStatus;
     public TimeInformation CurrentTime => _current.CurrentTime;
+    public VtrLinkHealth LinkHealth => _current.LinkHealth;
 
     public event EventHandler<VtrStatus>? StatusChanged;
     public event EventHandler<TimeInformation>? TimeChanged;
+    public event EventHandler<VtrLinkHealth>? LinkHealthChanged;
 
     public Task ConnectAsync(CancellationToken cancellationToken = default)
         => _current.ConnectAsync(cancellationToken);

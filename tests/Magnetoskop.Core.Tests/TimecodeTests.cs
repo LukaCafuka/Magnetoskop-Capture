@@ -5,6 +5,41 @@ namespace Magnetoskop.Core.Tests;
 public class TimecodeTests
 {
     [Fact]
+    public void DropFrame_AddFrame_SkipsMinuteFrameNumbers()
+    {
+        var value = new Timecode(0, 0, 59, 29, DropFrame: true);
+
+        var next = value.AddFrames(1, 30);
+
+        Assert.Equal(new Timecode(0, 1, 0, 2, DropFrame: true), next);
+    }
+
+    [Fact]
+    public void DropFrame_AddFrame_DoesNotSkipAtTenthMinute()
+    {
+        var value = new Timecode(0, 9, 59, 29, DropFrame: true);
+
+        var next = value.AddFrames(1, 30);
+
+        Assert.Equal(new Timecode(0, 10, 0, 0, DropFrame: true), next);
+    }
+
+    [Theory]
+    [InlineData(0, 0, 0, 0)]
+    [InlineData(0, 1, 0, 2)]
+    [InlineData(0, 10, 0, 0)]
+    [InlineData(23, 59, 59, 29)]
+    public void DropFrame_OrdinalRoundTrip(int hours, int minutes, int seconds, int frames)
+    {
+        var value = new Timecode(hours, minutes, seconds, frames, DropFrame: true);
+
+        var roundTrip = Timecode.FromSmpteFrameCount(
+            value.ToSmpteFrameCount(30), 30, dropFrame: true);
+
+        Assert.Equal(value, roundTrip);
+    }
+
+    [Fact]
     public void ToString_FormatsNonDropFrame()
     {
         var tc = new Timecode(1, 2, 3, 4);

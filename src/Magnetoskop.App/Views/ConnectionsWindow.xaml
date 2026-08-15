@@ -16,6 +16,7 @@
         <KeyBinding Key="Escape" Command="{Binding CloseConnectionsWindowCommand}"/>
     </Window.InputBindings>
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#DDDDDD"/>
         </Style>
@@ -78,7 +79,8 @@
             </Border>
 
             <!-- Capture devices -->
-            <Border Background="#262626" Padding="12" Margin="0,0,0,0" CornerRadius="4">
+            <Border Background="#262626" Padding="12" Margin="0,0,0,0" CornerRadius="4"
+                    IsEnabled="{Binding CanConfigureCapture}">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,10">
                         <Button DockPanel.Dock="Right" Content="Refresh" Margin="0"
@@ -91,12 +93,69 @@
                               SelectedItem="{Binding SelectedVideoDevice}"
                               DisplayMemberPath="Name"/>
 
+                    <TextBlock Text="Input standard" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox ItemsSource="{Binding VideoStandardOptions}"
+                              DisplayMemberPath="DisplayName"
+                              SelectedValuePath="Value"
+                              SelectedValue="{Binding SelectedVideoInputStandard}"/>
+
+                    <TextBlock Text="Scan mode / field order" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox ItemsSource="{Binding VideoScanModeOptions}"
+                              DisplayMemberPath="DisplayName"
+                              SelectedValuePath="Value"
+                              SelectedValue="{Binding SelectedVideoScanMode}"/>
+
+                    <Grid Margin="0,0,0,8"
+                          Visibility="{Binding IsCustomVideoInputStandard, Converter={StaticResource BoolToVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                            <TextBlock Text="Width" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Text="{Binding CustomVideoWidth, UpdateSourceTrigger=LostFocus}" Padding="4,2"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="4,0">
+                            <TextBlock Text="Height" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Text="{Binding CustomVideoHeight, UpdateSourceTrigger=LostFocus}" Padding="4,2"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="4,0,0,0">
+                            <TextBlock Text="Frame rate" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Text="{Binding CustomVideoFrameRate, UpdateSourceTrigger=LostFocus}" Padding="4,2"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="{Binding VideoInputConfigurationStatusText}"
+                               Foreground="#FFD166" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,3"/>
+                    <TextBlock Text="{Binding VideoInputFormatStatusText}"
+                               Foreground="#FFD166" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                    <CheckBox IsChecked="{Binding IsVideoFormatMismatchAcknowledged}"
+                              Visibility="{Binding IsVideoFormatAcknowledgmentRequired, Converter={StaticResource BoolToVis}}"
+                              Content="I verified this exact requested/driver format"
+                              Foreground="#DDDDDD" Margin="0,0,0,10"
+                              ToolTip="Stored only for this device and exact requested/actual format pair. A changed format requires a new acknowledgment."/>
+
                     <TextBlock Text="Audio device (auto-selected unless changed)"
                                Style="{StaticResource FieldLabel}"/>
                     <ComboBox ItemsSource="{Binding AudioDevices}"
                               SelectedItem="{Binding SelectedAudioDevice}"
                               DisplayMemberPath="Name"
                               SelectionChanged="AudioDevice_SelectionChanged"/>
+
+                    <TextBlock Text="Static A/V calibration — audio offset (ms)"
+                               Style="{StaticResource FieldLabel}"/>
+                    <DockPanel Margin="0,0,0,4">
+                        <CheckBox DockPanel.Dock="Right"
+                                  IsChecked="{Binding IsAvCalibrationCalibrated}"
+                                  Content="Measured"
+                                  Foreground="#DDDDDD" Margin="10,0,0,0"
+                                  VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding AudioCalibrationOffsetMilliseconds, UpdateSourceTrigger=LostFocus}"
+                                 Padding="4,2"
+                                 ToolTip="Positive values delay audio. Unmeasured values are stored but are not applied."/>
+                    </DockPanel>
+                    <TextBlock Text="{Binding AvCalibrationStatusText}"
+                               Foreground="#FFD166" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                     <CheckBox IsChecked="{Binding AudioMonitoringEnabled}"
                               Foreground="#DDDDDD" Margin="0,0,0,8"

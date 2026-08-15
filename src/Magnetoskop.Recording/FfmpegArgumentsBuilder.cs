@@ -19,6 +19,19 @@ public static class FfmpegArgumentsBuilder
         AudioFormat? audioFormat,
         string? audioPipePath,
         string outputPath)
+        => Build(profile, videoFormat, audioFormat, audioPipePath, TimeSpan.Zero, outputPath);
+
+    /// <summary>
+    /// Composes the full argument list with an optional measured delay for the audio input.
+    /// The offset is input-scoped and must therefore appear before the audio <c>-i</c>.
+    /// </summary>
+    public static IReadOnlyList<string> Build(
+        RecordingProfile profile,
+        VideoFormat videoFormat,
+        AudioFormat? audioFormat,
+        string? audioPipePath,
+        TimeSpan audioInputOffset,
+        string outputPath)
     {
         if (audioFormat is not null && string.IsNullOrEmpty(audioPipePath))
         {
@@ -34,9 +47,10 @@ public static class FfmpegArgumentsBuilder
         };
 
         // Audio before video when both are present: FFmpeg opens inputs in order.
-        // Opening the named pipe first lets the recorder WaitForConnection, drain
-        // capture backlog, and start A/V pumps together — without feeding stdin
-        // during probe (which would otherwise be required and desync the streams).
+        // Opening the named pipe first lets the recorder complete the FFmpeg handshake
+        // before it arms the strict capture subscriptions. The two capture paths can
+        // then start from one explicit recording boundary without feeding stdin during
+        // probe (which would otherwise be required and desync the streams).
         // probesize/analyzeduration must be tiny: defaults would buffer ~5 s of PCM
         // before opening the video input, stalling stdin writes.
         if (audioFormat is not null)
@@ -49,20 +63,30 @@ public static class FfmpegArgumentsBuilder
                 "-f", PcmInputFormat(audioFormat),
                 "-ar", audioFormat.SampleRate.ToString(),
                 "-ac", audioFormat.Channels.ToString(),
-                "-i", audioPipePath!,
+                "-thread_queue_size", "512",
+                "-blocksize", "4096",
             });
+            if (audioInputOffset > TimeSpan.Zero)
+            {
+                args.Add("-itsoffset");
+                args.Add(audioInputOffset.TotalSeconds.ToString(
+                    "0.#######", System.Globalization.CultureInfo.InvariantCulture));
+            }
+            args.Add("-i");
+            args.Add(audioPipePath!);
         }
 
         // ---- Video input: raw frames on stdin ----
         args.AddRange(new[]
         {
-            "-fflags", "nobuffer",
             "-probesize", "32",
             "-analyzeduration", "0",
             "-f", "rawvideo",
             "-pix_fmt", PixelFormatName(videoFormat.PixelFormat),
             "-video_size", $"{videoFormat.Width}x{videoFormat.Height}",
             "-framerate", FormatFrameRate(videoFormat.FrameRate),
+            "-thread_queue_size", "64",
+            "-blocksize", "65536",
             "-i", "pipe:0",
         });
 

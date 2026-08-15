@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Threading.Channels;
 using System.Windows;
@@ -18,6 +19,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Magnetoskop.App.ViewModels;
 
+public sealed record VideoStandardOption(VideoInputStandard Value, string DisplayName);
+public sealed record VideoScanModeOption(VideoScanMode Value, string DisplayName);
+
 /// <summary>
 /// Main window view model: transport control, timecode/status display,
 /// device selection, preview rendering, and recording control.
@@ -35,9 +39,11 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly DebugSessionFileLoggerProvider _debugLogger;
     private readonly ILogger<MainViewModel> _logger;
     private readonly DispatcherTimer _meterTimer;
+    private readonly DispatcherTimer _freshnessTimer;
 
     private CancellationTokenSource? _previewCts;
     private Task? _previewTask;
+    private CaptureSubscription<VideoFrame>? _previewSubscription;
     private WriteableBitmap? _previewBitmap;
     private readonly PreviewBobDeinterlacer _previewBob = new();
     private bool _suppressPreviewRestart;
@@ -57,6 +63,18 @@ public sealed partial class MainViewModel : ObservableObject
     private WatchWindow? _watchWindow;
     private ConnectionsWindow? _connectionsWindow;
     private TransportState _currentTransport = TransportState.Unknown;
+    private TimeInformation _latestTimeInformation = new();
+    private VtrLinkHealth _latestVtrLinkHealth = new();
+    private CaptureHealth _latestVideoHealth = new();
+    private long _previewStartedTimestamp100ns;
+    private long _lastPreviewFrameTimestamp100ns;
+    private bool _suppressVideoConfigurationPersistence;
+    private bool _suppressVideoFormatAcknowledgmentPersistence;
+    private bool _suppressCalibrationPersistence;
+    private bool _previewTransitionInProgress;
+    private Task _previewTransitionTask = Task.CompletedTask;
+    private bool _recordingStartInProgress;
+    private TaskCompletionSource<bool>? _recordingStartCompletion;
     /// <summary>JKL shuttle step: 0 stopped, +n forward, −n reverse.</summary>
     private int _jklStep;
     /// <summary>Linear peak hold (0…1) before dBFS mapping for the UI meters.</summary>
@@ -86,8 +104,10 @@ public sealed partial class MainViewModel : ObservableObject
 
         _vtr.StatusChanged += OnVtrStatusChanged;
         _vtr.TimeChanged += OnVtrTimeChanged;
+        _vtr.LinkHealthChanged += OnVtrLinkHealthChanged;
         _vtr.CapabilityLearned += OnCapabilityLearned;
         _recorder.StatusChanged += OnRecordingStatusChanged;
+        _videoCapture.HealthChanged += OnVideoCaptureHealthChanged;
 
         var saved = _settings.Load();
         if (!string.IsNullOrEmpty(saved.FfmpegPath))
@@ -133,6 +153,13 @@ public sealed partial class MainViewModel : ObservableObject
         _meterTimer.Tick += (_, _) => UpdateAudioMeters();
         _meterTimer.Start();
 
+        _freshnessTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(250),
+        };
+        _freshnessTimer.Tick += (_, _) => RefreshFreshnessIndicators();
+        _freshnessTimer.Start();
+
         // Property changers (e.g. AudioMonitoringEnabled) may SaveSettings; allow that only after load.
         _settingsReady = true;
         RefreshStatusBarCodec();
@@ -157,6 +184,9 @@ public sealed partial class MainViewModel : ObservableObject
     private string _ctlText = "--:--:--:--";
 
     [ObservableProperty]
+    private string _ctlFreshnessText = "N/A";
+
+    [ObservableProperty]
     private bool _isEditingCtl;
 
     [ObservableProperty]
@@ -164,6 +194,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private string _ltcText = "--:--:--:--";
+
+    [ObservableProperty]
+    private string _ltcFreshnessText = "N/A";
 
     [ObservableProperty]
     private bool _isEditingLtc;
@@ -175,7 +208,22 @@ public sealed partial class MainViewModel : ObservableObject
     private string _vitcText = "--:--:--:--";
 
     [ObservableProperty]
+    private string _vitcFreshnessText = "N/A";
+
+    [ObservableProperty]
     private string _userBitsText = "-- -- -- --";
+
+    [ObservableProperty]
+    private string _userBitsFreshnessText = "N/A";
+
+    [ObservableProperty]
+    private string _vtrLinkHealthText = "VTR disconnected";
+
+    [ObservableProperty]
+    private bool _isVtrLinkStaleOrLost;
+
+    [ObservableProperty]
+    private bool _isVtrLinkLost = true;
 
     [ObservableProperty]
     private string _statusFlagsText = "";
@@ -247,10 +295,52 @@ public sealed partial class MainViewModel : ObservableObject
     private bool _isPreviewRunning;
 
     [ObservableProperty]
+    private string _previewHealthText = "";
+
+    [ObservableProperty]
+    private bool _isPreviewHealthVisible;
+
+    [ObservableProperty]
+    private bool _isPreviewLost;
+
+    [ObservableProperty]
     private CaptureDeviceInfo? _selectedVideoDevice;
 
     [ObservableProperty]
     private CaptureDeviceInfo? _selectedAudioDevice;
+
+    [ObservableProperty]
+    private VideoInputStandard _selectedVideoInputStandard;
+
+    [ObservableProperty]
+    private VideoScanMode _selectedVideoScanMode;
+
+    [ObservableProperty]
+    private int _customVideoWidth = 720;
+
+    [ObservableProperty]
+    private int _customVideoHeight = 576;
+
+    [ObservableProperty]
+    private double _customVideoFrameRate = 25;
+
+    [ObservableProperty]
+    private bool _isVideoFormatMismatchAcknowledged;
+
+    [ObservableProperty]
+    private string _videoInputFormatStatusText = "Open the preview to verify the driver format.";
+
+    [ObservableProperty]
+    private double _audioCalibrationOffsetMilliseconds;
+
+    [ObservableProperty]
+    private bool _isAvCalibrationCalibrated;
+
+    [ObservableProperty]
+    private DateTimeOffset? _avCalibrationMeasuredAt;
+
+    [ObservableProperty]
+    private string _avCalibrationStatusText = "Uncalibrated — 0.000 ms default";
 
     /// <summary>When true the user picked an audio device manually; otherwise auto-select applies.</summary>
     [ObservableProperty]
@@ -297,6 +387,15 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _recordingStatusText = "Idle";
 
+    [ObservableProperty]
+    private string _recordingSyncStatusText = "";
+
+    [ObservableProperty]
+    private bool _isRecordingSyncStatusVisible;
+
+    [ObservableProperty]
+    private Brush _recordingSyncStatusBrush = Brushes.Gray;
+
     /// <summary>Bottom status bar: Idle / ● REC / Starting…</summary>
     [ObservableProperty]
     private string _statusBarRecordingText = "Idle";
@@ -334,6 +433,82 @@ public sealed partial class MainViewModel : ObservableObject
     public ObservableCollection<CaptureDeviceInfo> AudioDevices { get; } = new();
     public ObservableCollection<string> LogEntries { get; } = new();
 
+    public IReadOnlyList<VideoStandardOption> VideoStandardOptions { get; } = new[]
+    {
+        new VideoStandardOption(VideoInputStandard.Unspecified, "Select standard…"),
+        new VideoStandardOption(VideoInputStandard.Pal, "PAL — 720×576 @ 25"),
+        new VideoStandardOption(VideoInputStandard.Ntsc, "NTSC — 720×480 @ 29.97"),
+        new VideoStandardOption(VideoInputStandard.Custom, "Custom"),
+    };
+
+    public IReadOnlyList<VideoScanModeOption> VideoScanModeOptions { get; } = new[]
+    {
+        new VideoScanModeOption(VideoScanMode.Unspecified, "Select scan mode…"),
+        new VideoScanModeOption(VideoScanMode.Progressive, "Progressive"),
+        new VideoScanModeOption(VideoScanMode.Tff, "Interlaced — top field first (TFF)"),
+        new VideoScanModeOption(VideoScanMode.Bff, "Interlaced — bottom field first (BFF)"),
+    };
+
+    public VideoInputConfiguration CurrentVideoInputConfiguration => new()
+    {
+        Standard = SelectedVideoInputStandard,
+        ScanMode = SelectedVideoScanMode,
+        CustomWidth = CustomVideoWidth,
+        CustomHeight = CustomVideoHeight,
+        CustomFrameRate = CustomVideoFrameRate,
+    };
+
+    public bool IsCustomVideoInputStandard => SelectedVideoInputStandard == VideoInputStandard.Custom;
+
+    public bool HasExplicitVideoInputConfiguration
+        => SelectedVideoDevice?.Id.StartsWith("sim:", StringComparison.Ordinal) == true
+           || CurrentVideoInputConfiguration.IsExplicit;
+
+    public string VideoInputConfigurationStatusText
+        => HasExplicitVideoInputConfiguration
+            ? $"{SelectedVideoInputStandard} · {SelectedVideoScanMode}"
+            : "Required before recording: select the input standard and scan mode.";
+
+    public VideoInputFormatStatus? CurrentVideoInputFormatStatus
+        => (_videoCapture as IConfigurableVideoCaptureService)?.FormatStatus;
+
+    /// <summary>True only for a concrete driver readback that differs from the request.</summary>
+    public bool IsVideoFormatAcknowledgmentRequired
+        => CurrentVideoInputFormatStatus is { Actual: not null, AcknowledgmentRequired: true };
+
+    /// <summary>
+    /// Recording may proceed after a matching readback, or after the operator has
+    /// acknowledged this exact requested/actual pair. Pending readback remains blocked.
+    /// </summary>
+    public bool CanRecordWithVideoInputFormat
+    {
+        get
+        {
+            if (!HasExplicitVideoInputConfiguration) return false;
+            var status = CurrentVideoInputFormatStatus;
+            if (status is null) return true; // Capture services without the optional capability.
+            if (!status.AcknowledgmentRequired) return true;
+            return status.Actual is not null && IsVideoFormatMismatchAcknowledged;
+        }
+    }
+
+    public string? VideoFormatAcknowledgmentKey
+        => SelectedVideoDevice is { } device
+           && CurrentVideoInputFormatStatus is { Actual: not null } status
+            ? BuildVideoFormatAcknowledgmentKey(device.Id, status)
+            : null;
+
+    /// <summary>Only a measured/confirmed offset is applied; uncalibrated always means zero.</summary>
+    public long EffectiveAudioOffset100ns
+        => IsAvCalibrationCalibrated
+            ? checked((long)Math.Round(AudioCalibrationOffsetMilliseconds * TimeSpan.TicksPerMillisecond))
+            : 0;
+
+    public string? CurrentAvCalibrationKey
+        => SelectedVideoDevice is { } video && SelectedAudioDevice is { } audio
+            ? $"v1|video:{video.Id.Length}:{video.Id}|audio:{audio.Id.Length}:{audio.Id}"
+            : null;
+
     // ---- Lifecycle ---------------------------------------------------------
 
     [RelayCommand]
@@ -370,7 +545,7 @@ public sealed partial class MainViewModel : ObservableObject
             AppendLog($"Connected: {_vtr.DeviceDescription}");
             UpdateCompatibilityInfo();
 
-            await StartPreviewAsync();
+            await RunPreviewTransitionAsync(StartPreviewAsync);
         }
         catch (Exception ex)
         {
@@ -487,19 +662,45 @@ public sealed partial class MainViewModel : ObservableObject
     public async Task ShutdownAsync()
     {
         _meterTimer.Stop();
+        _freshnessTimer.Stop();
         SaveSettings();
+        var recordingStart = _recordingStartCompletion;
+        if (recordingStart is not null)
+        {
+            // A close can arrive while auto-play/preflight is awaiting. Let that
+            // start attempt settle before asking the coordinator to stop/finalize.
+            await recordingStart.Task;
+        }
         try
         {
+            // Also await an automatic incomplete/faulted session whose completion
+            // monitor may still be flushing its audit and atomic final summary.
+            await _session.StopForShutdownAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Recording artifacts could not be finalized during shutdown");
+        }
+
+        try
+        {
+            // Device/config changes restart preview asynchronously. Do not race a
+            // close-time capture stop against an in-flight reopen.
+            await _previewTransitionTask;
             await StopPreviewInternalAsync();
-            if (_recorder.Status.State == RecordingState.Recording)
-            {
-                await _session.StopRecordingAsync();
-            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Capture devices could not be stopped cleanly during shutdown");
+        }
+
+        try
+        {
             await _vtr.DisconnectAsync();
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during shutdown");
+            _logger.LogWarning(ex, "VTR could not be disconnected cleanly during shutdown");
         }
     }
 
@@ -564,7 +765,7 @@ public sealed partial class MainViewModel : ObservableObject
             : "Debug logging disabled");
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditRecordingSettings))]
     private void OpenVideoSettings()
     {
         var source = SelectedRecordingProfile ?? RecordingProfile.CreateDefault();
@@ -581,7 +782,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditRecordingSettings))]
     private void OpenAudioSettings()
     {
         var source = SelectedRecordingProfile ?? RecordingProfile.CreateDefault();
@@ -671,7 +872,10 @@ public sealed partial class MainViewModel : ObservableObject
     // ---- Device selection ----------------------------------------------------
 
     [RelayCommand]
-    private async Task RefreshDevicesAsync()
+    private Task RefreshDevicesAsync()
+        => RunPreviewTransitionAsync(RefreshDevicesAndPreviewAsync);
+
+    private async Task RefreshDevicesAndPreviewAsync()
     {
         await RefreshDevicesCoreAsync();
         if (!IsRecording)
@@ -696,6 +900,8 @@ public sealed partial class MainViewModel : ObservableObject
             var saved = _settings.Current;
             SelectedVideoDevice = ResolveVideoDevice(saved.VideoDeviceId, saved.VideoDeviceName);
             await RestoreAudioDeviceAsync(saved.AudioDeviceId);
+            LoadVideoInputConfiguration();
+            LoadAvCalibration();
         }
         catch (Exception ex)
         {
@@ -712,24 +918,39 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Prefer saved friendly name (stable), then id (DirectShow index), then default.</summary>
+    /// <summary>
+    /// Restore the stable DirectShow identity first. Friendly-name matching is retained
+    /// only for settings written by the older numeric/index-based implementation.
+    /// </summary>
     private CaptureDeviceInfo? ResolveVideoDevice(string? savedId, string? savedName)
+        => ResolveVideoDevice(VideoDevices, savedId, savedName);
+
+    internal static CaptureDeviceInfo? ResolveVideoDevice(
+        IReadOnlyList<CaptureDeviceInfo> devices,
+        string? savedId,
+        string? savedName)
     {
-        if (!string.IsNullOrWhiteSpace(savedName))
+        if (!string.IsNullOrWhiteSpace(savedId))
         {
-            var byName = VideoDevices.FirstOrDefault(d =>
+            var byId = devices.FirstOrDefault(d =>
+                string.Equals(d.Id, savedId, StringComparison.OrdinalIgnoreCase));
+            if (byId is not null) return byId;
+        }
+
+        if (IsLegacyVideoDeviceId(savedId) && !string.IsNullOrWhiteSpace(savedName))
+        {
+            var byName = devices.FirstOrDefault(d =>
                 string.Equals(d.Name, savedName, StringComparison.OrdinalIgnoreCase));
             if (byName is not null) return byName;
         }
 
-        if (!string.IsNullOrWhiteSpace(savedId))
-        {
-            var byId = VideoDevices.FirstOrDefault(d => d.Id == savedId);
-            if (byId is not null) return byId;
-        }
-
-        return VideoDevices.FirstOrDefault(d => d.IsDefault) ?? VideoDevices.FirstOrDefault();
+        return devices.FirstOrDefault(d => d.IsDefault) ?? devices.FirstOrDefault();
     }
+
+    private static bool IsLegacyVideoDeviceId(string? deviceId)
+        => string.IsNullOrWhiteSpace(deviceId)
+           || int.TryParse(deviceId, NumberStyles.None, CultureInfo.InvariantCulture, out _)
+           || deviceId.StartsWith("legacy-index:", StringComparison.OrdinalIgnoreCase);
 
     private async Task RestoreAudioDeviceAsync(string? savedId)
     {
@@ -760,6 +981,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     partial void OnSelectedVideoDeviceChanged(CaptureDeviceInfo? value)
     {
+        LoadVideoInputConfiguration();
+        LoadAvCalibration();
+
         if (_settingsReady && !_suppressPreviewRestart)
         {
             SaveSettings();
@@ -769,23 +993,292 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (value is not null && !AudioManuallySelected)
         {
-            _ = ApplyVideoDeviceChangeAsync();
+            _ = RunPreviewTransitionAsync(ApplyVideoDeviceChangeAsync);
         }
         else
         {
-            _ = RestartPreviewAsync();
+            _ = RunPreviewTransitionAsync(RestartPreviewAsync);
         }
     }
 
     partial void OnSelectedAudioDeviceChanged(CaptureDeviceInfo? value)
     {
+        LoadAvCalibration();
+
         if (_settingsReady && !_suppressPreviewRestart)
         {
             SaveSettings();
         }
 
         if (_suppressPreviewRestart || IsRecording) return;
-        _ = RestartPreviewAsync();
+        _ = RunPreviewTransitionAsync(RestartPreviewAsync);
+    }
+
+    partial void OnSelectedVideoInputStandardChanged(VideoInputStandard value)
+        => ApplyVideoInputConfigurationChange();
+
+    partial void OnSelectedVideoScanModeChanged(VideoScanMode value)
+        => ApplyVideoInputConfigurationChange();
+
+    partial void OnCustomVideoWidthChanged(int value)
+        => ApplyVideoInputConfigurationChange();
+
+    partial void OnCustomVideoHeightChanged(int value)
+        => ApplyVideoInputConfigurationChange();
+
+    partial void OnCustomVideoFrameRateChanged(double value)
+        => ApplyVideoInputConfigurationChange();
+
+    partial void OnIsVideoFormatMismatchAcknowledgedChanged(bool value)
+    {
+        if (_suppressVideoFormatAcknowledgmentPersistence) return;
+
+        var deviceId = SelectedVideoDevice?.Id;
+        var fingerprint = VideoFormatAcknowledgmentKey;
+        if (string.IsNullOrWhiteSpace(deviceId) || string.IsNullOrWhiteSpace(fingerprint))
+        {
+            if (value)
+            {
+                _suppressVideoFormatAcknowledgmentPersistence = true;
+                IsVideoFormatMismatchAcknowledged = false;
+                _suppressVideoFormatAcknowledgmentPersistence = false;
+            }
+            NotifyVideoInputFormatStatusChanged();
+            return;
+        }
+
+        if (value)
+        {
+            _settings.Current.VideoFormatAcknowledgments[deviceId] =
+                new VideoFormatAcknowledgmentSettings
+                {
+                    Fingerprint = fingerprint,
+                    AcknowledgedAt = DateTimeOffset.UtcNow,
+                };
+        }
+        else
+        {
+            _settings.Current.VideoFormatAcknowledgments.Remove(deviceId);
+        }
+
+        NotifyVideoInputFormatStatusChanged();
+        SaveSettings();
+    }
+
+    partial void OnAudioCalibrationOffsetMillisecondsChanged(double value)
+    {
+        if (_suppressCalibrationPersistence) return;
+
+        if (!double.IsFinite(value) || value is < -10_000 or > 10_000)
+        {
+            _suppressCalibrationPersistence = true;
+            AudioCalibrationOffsetMilliseconds = Math.Clamp(
+                double.IsFinite(value) ? value : 0,
+                -10_000,
+                10_000);
+            _suppressCalibrationPersistence = false;
+        }
+
+        if (IsAvCalibrationCalibrated)
+        {
+            IsAvCalibrationCalibrated = false;
+        }
+        PersistAvCalibration();
+    }
+
+    partial void OnIsAvCalibrationCalibratedChanged(bool value)
+    {
+        if (_suppressCalibrationPersistence) return;
+        AvCalibrationMeasuredAt = value ? DateTimeOffset.UtcNow : null;
+        PersistAvCalibration();
+    }
+
+    private void LoadVideoInputConfiguration()
+    {
+        var configuration = SelectedVideoDevice?.Id.StartsWith("sim:", StringComparison.Ordinal) == true
+            ? VideoInputConfiguration.SimulatedPalTff
+            : SelectedVideoDevice is { } device
+              && _settings.Current.VideoInputConfigurations.TryGetValue(device.Id, out var saved)
+                ? saved
+                : new VideoInputConfiguration();
+
+        _suppressVideoConfigurationPersistence = true;
+        SelectedVideoInputStandard = configuration.Standard;
+        SelectedVideoScanMode = configuration.ScanMode;
+        CustomVideoWidth = configuration.CustomWidth;
+        CustomVideoHeight = configuration.CustomHeight;
+        CustomVideoFrameRate = configuration.CustomFrameRate;
+        _suppressVideoConfigurationPersistence = false;
+        // OpenCV cannot safely renegotiate an active device. RestartPreviewAsync
+        // stops it first and StartPreviewAsync applies the new request before open.
+        if (!_videoCapture.IsCapturing)
+        {
+            ApplyConfigurationToCaptureService(configuration);
+        }
+        NotifyVideoInputConfigurationChanged();
+    }
+
+    private void ApplyVideoInputConfigurationChange()
+    {
+        OnPropertyChanged(nameof(IsCustomVideoInputStandard));
+        if (_suppressVideoConfigurationPersistence) return;
+
+        var configuration = CurrentVideoInputConfiguration;
+        if (SelectedVideoDevice is { } device
+            && !device.Id.StartsWith("sim:", StringComparison.Ordinal))
+        {
+            _settings.Current.VideoInputConfigurations[device.Id] = configuration;
+        }
+
+        if (!_videoCapture.IsCapturing)
+        {
+            ApplyConfigurationToCaptureService(configuration);
+        }
+        NotifyVideoInputConfigurationChanged();
+        SaveSettings();
+
+        if (!IsRecording && !_suppressPreviewRestart && SelectedVideoDevice is not null)
+        {
+            _ = RunPreviewTransitionAsync(RestartPreviewAsync);
+        }
+    }
+
+    private void ApplyConfigurationToCaptureService(VideoInputConfiguration configuration)
+    {
+        if (_videoCapture is IConfigurableVideoCaptureService configurable)
+        {
+            configurable.InputConfiguration = configuration;
+        }
+    }
+
+    private void NotifyVideoInputConfigurationChanged()
+    {
+        OnPropertyChanged(nameof(CurrentVideoInputConfiguration));
+        OnPropertyChanged(nameof(HasExplicitVideoInputConfiguration));
+        OnPropertyChanged(nameof(VideoInputConfigurationStatusText));
+        RefreshVideoInputFormatStatus();
+    }
+
+    private void RefreshVideoInputFormatStatus()
+    {
+        var status = CurrentVideoInputFormatStatus;
+        var fingerprint = VideoFormatAcknowledgmentKey;
+        var acknowledged = SelectedVideoDevice is { } device
+                           && fingerprint is not null
+                           && _settings.Current.VideoFormatAcknowledgments.TryGetValue(device.Id, out var saved)
+                           && string.Equals(saved.Fingerprint, fingerprint, StringComparison.Ordinal);
+
+        _suppressVideoFormatAcknowledgmentPersistence = true;
+        IsVideoFormatMismatchAcknowledged = acknowledged;
+        _suppressVideoFormatAcknowledgmentPersistence = false;
+
+        VideoInputFormatStatusText = DescribeVideoInputFormatStatus(status, acknowledged);
+        NotifyVideoInputFormatStatusChanged();
+    }
+
+    private void NotifyVideoInputFormatStatusChanged()
+    {
+        OnPropertyChanged(nameof(CurrentVideoInputFormatStatus));
+        OnPropertyChanged(nameof(IsVideoFormatAcknowledgmentRequired));
+        OnPropertyChanged(nameof(CanRecordWithVideoInputFormat));
+        OnPropertyChanged(nameof(VideoFormatAcknowledgmentKey));
+        StartRecordingCommand.NotifyCanExecuteChanged();
+    }
+
+    private static string DescribeVideoInputFormatStatus(
+        VideoInputFormatStatus? status,
+        bool acknowledged)
+    {
+        if (status is null)
+        {
+            return "This capture source does not expose driver-format readback.";
+        }
+        if (status.Actual is null)
+        {
+            return status.Message ?? "Open the preview to verify the driver format.";
+        }
+
+        var actual = status.Actual;
+        var dimensions = FormattableString.Invariant(
+            $"Driver: {actual.Width}×{actual.Height} @ {actual.FrameRate:0.###}");
+        var scan = actual.Interlaced
+            ? actual.TopFieldFirst ? "TFF" : "BFF"
+            : "progressive";
+        var readback = status.ScanReadbackAvailable
+            ? $"{dimensions}, {scan}."
+            : $"{dimensions}; scan order not reported.";
+        if (!status.AcknowledgmentRequired)
+        {
+            return $"Verified — {readback}";
+        }
+        var reason = status.ScanReadbackAvailable
+            ? "The driver readback differs from the request."
+            : "The driver does not report scan order; verify it from the source/device settings.";
+        return acknowledged
+            ? $"Format limitation acknowledged for this exact readback — {readback}"
+            : $"{reason} {readback} Acknowledge before recording.";
+    }
+
+    internal static string BuildVideoFormatAcknowledgmentKey(
+        string deviceId,
+        VideoInputFormatStatus status)
+        => status.BuildAcknowledgmentKey(deviceId);
+
+    private void LoadAvCalibration()
+    {
+        var saved = SelectedVideoDevice is { } video && SelectedAudioDevice is { } audio
+            ? _settings.Current.AvCalibrations.FirstOrDefault(item =>
+                string.Equals(item.VideoDeviceId, video.Id, StringComparison.Ordinal)
+                && string.Equals(item.AudioDeviceId, audio.Id, StringComparison.Ordinal))
+            : null;
+
+        _suppressCalibrationPersistence = true;
+        AudioCalibrationOffsetMilliseconds = saved?.AudioOffset100ns / (double)TimeSpan.TicksPerMillisecond ?? 0;
+        IsAvCalibrationCalibrated = saved?.IsCalibrated == true;
+        AvCalibrationMeasuredAt = saved?.MeasuredAt;
+        _suppressCalibrationPersistence = false;
+        RefreshAvCalibrationStatus();
+    }
+
+    private void PersistAvCalibration()
+    {
+        if (_suppressCalibrationPersistence
+            || SelectedVideoDevice is not { } video
+            || SelectedAudioDevice is not { } audio)
+        {
+            RefreshAvCalibrationStatus();
+            return;
+        }
+
+        var items = _settings.Current.AvCalibrations;
+        var existing = items.FirstOrDefault(item =>
+            string.Equals(item.VideoDeviceId, video.Id, StringComparison.Ordinal)
+            && string.Equals(item.AudioDeviceId, audio.Id, StringComparison.Ordinal));
+        if (existing is null)
+        {
+            existing = new AvCalibrationSettings
+            {
+                VideoDeviceId = video.Id,
+                AudioDeviceId = audio.Id,
+            };
+            items.Add(existing);
+        }
+
+        existing.AudioOffset100ns = checked((long)Math.Round(
+            AudioCalibrationOffsetMilliseconds * TimeSpan.TicksPerMillisecond));
+        existing.IsCalibrated = IsAvCalibrationCalibrated;
+        existing.MeasuredAt = AvCalibrationMeasuredAt;
+        RefreshAvCalibrationStatus();
+        OnPropertyChanged(nameof(EffectiveAudioOffset100ns));
+        SaveSettings();
+    }
+
+    private void RefreshAvCalibrationStatus()
+    {
+        AvCalibrationStatusText = IsAvCalibrationCalibrated
+            ? $"Calibrated: {AudioCalibrationOffsetMilliseconds:+0.000;-0.000;0.000} ms" +
+              (AvCalibrationMeasuredAt is { } at ? $" · {at.LocalDateTime:g}" : "")
+            : $"Uncalibrated — {AudioCalibrationOffsetMilliseconds:+0.000;-0.000;0.000} ms stored, 0.000 ms applied";
     }
 
     private async Task ApplyVideoDeviceChangeAsync()
@@ -830,6 +1323,38 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ---- Preview ------------------------------------------------------------
 
+    private Task RunPreviewTransitionAsync(Func<Task> operation)
+    {
+        if (_previewTransitionInProgress)
+        {
+            return _previewTransitionTask;
+        }
+
+        _previewTransitionInProgress = true;
+        OnPropertyChanged(nameof(CanConfigureCapture));
+        StartRecordingCommand.NotifyCanExecuteChanged();
+        _previewTransitionTask = CompletePreviewTransitionAsync(operation);
+        return _previewTransitionTask;
+    }
+
+    private async Task CompletePreviewTransitionAsync(Func<Task> operation)
+    {
+        try
+        {
+            await operation();
+        }
+        catch (Exception ex)
+        {
+            ReportError("Failed to update preview", ex);
+        }
+        finally
+        {
+            _previewTransitionInProgress = false;
+            OnPropertyChanged(nameof(CanConfigureCapture));
+            StartRecordingCommand.NotifyCanExecuteChanged();
+        }
+    }
+
     private async Task RestartPreviewAsync()
     {
         if (IsRecording || SelectedVideoDevice is null) return;
@@ -843,21 +1368,49 @@ public sealed partial class MainViewModel : ObservableObject
 
         try
         {
+            _previewStartedTimestamp100ns = CaptureMonotonicClock.GetTimestamp100ns();
+            Interlocked.Exchange(ref _lastPreviewFrameTimestamp100ns, 0);
+            // A terminal health snapshot belongs to the capture session that
+            // published it. Reset it before opening so an old zero-timestamp or
+            // faulted snapshot cannot mark a successfully reopened preview lost.
+            _latestVideoHealth = new CaptureHealth
+            {
+                State = CaptureHealthState.Starting,
+                Timestamp100ns = _previewStartedTimestamp100ns,
+            };
+            ApplyConfigurationToCaptureService(CurrentVideoInputConfiguration);
             await _videoCapture.StartAsync(SelectedVideoDevice);
+            RefreshVideoInputFormatStatus();
             if (SelectedAudioDevice is not null)
             {
                 await _audioCapture.StartAsync(SelectedAudioDevice);
             }
 
             _previewCts = new CancellationTokenSource();
-            var reader = _videoCapture.Subscribe(capacity: 2);
-            _previewTask = Task.Run(() => PreviewLoopAsync(reader, _previewCts.Token), CancellationToken.None);
+            _previewSubscription = _videoCapture.Subscribe(CaptureSubscriptionOptions.Preview(capacity: 2));
+            _previewTask = Task.Run(
+                () => PreviewLoopAsync(_previewSubscription, _previewCts.Token),
+                CancellationToken.None);
             IsPreviewRunning = true;
+            RefreshPreviewFreshness();
             AppendLog($"Preview started ({SelectedVideoDevice.Name})");
             await _audioMonitor.SyncAsync(AudioMonitoringEnabled);
         }
         catch (Exception ex)
         {
+            // Starting video, audio, the preview subscription and monitoring is a
+            // single logical operation. Roll back a partially opened device set so
+            // the next retry does not inherit a hidden capture pump.
+            try
+            {
+                await StopPreviewInternalAsync();
+            }
+            catch (Exception cleanupException)
+            {
+                _logger.LogWarning(
+                    cleanupException,
+                    "Preview startup rollback could not stop every capture component");
+            }
             ReportError("Failed to start preview", ex);
         }
     }
@@ -877,10 +1430,18 @@ public sealed partial class MainViewModel : ObservableObject
         _previewCts?.Dispose();
         _previewCts = null;
         _previewTask = null;
+        if (_previewSubscription is not null)
+        {
+            await _previewSubscription.DisposeAsync();
+            _previewSubscription = null;
+        }
 
         if (_videoCapture.IsCapturing) await _videoCapture.StopAsync();
         if (_audioCapture.IsCapturing) await _audioCapture.StopAsync();
         IsPreviewRunning = false;
+        PreviewHealthText = "";
+        IsPreviewHealthVisible = false;
+        IsPreviewLost = false;
     }
 
     partial void OnAudioMonitoringEnabledChanged(bool value)
@@ -905,39 +1466,55 @@ public sealed partial class MainViewModel : ObservableObject
 
     private async Task PreviewLoopAsync(ChannelReader<VideoFrame> reader, CancellationToken ct)
     {
-        await foreach (var frame in reader.ReadAllAsync(ct))
+        try
         {
-            var dispatcher = Application.Current?.Dispatcher;
-            if (dispatcher is null) return;
-
-            if (PreviewYadif2xEnabled
-                && _previewBob.TryDeinterlace(frame.Data, frame.Format, out var first, out var second))
+            await foreach (var frame in reader.ReadAllAsync(ct))
             {
-                var w = frame.Format.Width;
-                var h = frame.Format.Height;
-                // Pace the two bob frames so each is painted: writing both in one
-                // dispatcher callback only leaves the second field on screen (~25p).
-                var fieldPeriod = FieldPeriod(frame.Format.FrameRate);
+                Interlocked.Exchange(ref _lastPreviewFrameTimestamp100ns, frame.Timestamp100ns);
+                var dispatcher = Application.Current?.Dispatcher;
+                if (dispatcher is null) return;
 
-                await dispatcher.InvokeAsync(
-                    () => RenderPixels(w, h, first), DispatcherPriority.Render);
-                try
+                if (PreviewYadif2xEnabled
+                    && _previewBob.TryDeinterlace(frame.Data, frame.Format, out var first, out var second))
                 {
-                    await Task.Delay(fieldPeriod, ct);
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
+                    var w = frame.Format.Width;
+                    var h = frame.Format.Height;
+                    // Pace the two bob frames so each is painted: writing both in one
+                    // dispatcher callback only leaves the second field on screen (~25p).
+                    var fieldPeriod = FieldPeriod(frame.Format.FrameRate);
 
-                await dispatcher.InvokeAsync(
-                    () => RenderPixels(w, h, second), DispatcherPriority.Render);
+                    await dispatcher.InvokeAsync(
+                        () => RenderPixels(w, h, first), DispatcherPriority.Render);
+                    try
+                    {
+                        await Task.Delay(fieldPeriod, ct);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+
+                    await dispatcher.InvokeAsync(
+                        () => RenderPixels(w, h, second), DispatcherPriority.Render);
+                }
+                else
+                {
+                    await dispatcher.InvokeAsync(
+                        () => RenderFrame(frame), DispatcherPriority.Render);
+                }
             }
-            else
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            RunOnUi(() =>
             {
-                await dispatcher.InvokeAsync(
-                    () => RenderFrame(frame), DispatcherPriority.Render);
-            }
+                PreviewHealthText = $"Preview failed: {ex.Message}";
+                IsPreviewHealthVisible = true;
+                IsPreviewLost = true;
+            });
         }
     }
 
@@ -1396,22 +1973,85 @@ public sealed partial class MainViewModel : ObservableObject
     // ---- Recording ------------------------------------------------------------
 
     private bool CanStartRecording()
-        => !IsRecording && SelectedRecordingProfile is not null && HasOutputDirectory;
+        => !IsRecording
+           && !_previewTransitionInProgress
+           && !_recordingStartInProgress
+           && SelectedRecordingProfile is not null
+           && HasOutputDirectory
+           && CanRecordWithVideoInputFormat;
 
     [RelayCommand(CanExecute = nameof(CanStartRecording))]
     private async Task StartRecordingAsync()
     {
-        if (IsRecording || SelectedRecordingProfile is null) return;
+        if (IsRecording
+            || _previewTransitionInProgress
+            || _recordingStartInProgress
+            || SelectedRecordingProfile is null)
+        {
+            return;
+        }
+
+        var completion = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        _recordingStartCompletion = completion;
+        _recordingStartInProgress = true;
+        OnPropertyChanged(nameof(CanConfigureCapture));
+        StartRecordingCommand.NotifyCanExecuteChanged();
+        BrowseOutputDirectoryCommand.NotifyCanExecuteChanged();
+        OpenVideoSettingsCommand.NotifyCanExecuteChanged();
+        OpenAudioSettingsCommand.NotifyCanExecuteChanged();
+        try
+        {
+            await StartRecordingCoreAsync();
+        }
+        finally
+        {
+            _recordingStartInProgress = false;
+            if (ReferenceEquals(_recordingStartCompletion, completion))
+            {
+                _recordingStartCompletion = null;
+            }
+            completion.TrySetResult(true);
+            OnPropertyChanged(nameof(CanConfigureCapture));
+            StartRecordingCommand.NotifyCanExecuteChanged();
+            BrowseOutputDirectoryCommand.NotifyCanExecuteChanged();
+            OpenVideoSettingsCommand.NotifyCanExecuteChanged();
+            OpenAudioSettingsCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    private async Task StartRecordingCoreAsync()
+    {
+        // Freeze the profile across preview/preflight/autoplay awaits. Observable
+        // selection properties can change between continuations even though the
+        // command gate checked them before entering this method.
+        var profile = SelectedRecordingProfile;
+        if (profile is null) return;
+
         if (!HasOutputDirectory)
         {
             ReportError("Choose a save location via File → Choose save location… before recording.", null);
             return;
         }
+        if (!HasExplicitVideoInputConfiguration)
+        {
+            ReportError(
+                "Select the video input standard and scan mode in Connections before recording.",
+                null);
+            return;
+        }
 
         if (!IsPreviewRunning)
         {
-            await StartPreviewAsync();
+            await RunPreviewTransitionAsync(StartPreviewAsync);
             if (!IsPreviewRunning) return; // preview failed; error already reported
+        }
+
+        RefreshVideoInputFormatStatus();
+        if (!CanRecordWithVideoInputFormat)
+        {
+            ReportError(VideoInputFormatStatusText, null);
+            return;
         }
 
         // Preflight: surface workflow warnings (missing ffmpeg, tape out, not playing, ...)
@@ -1442,7 +2082,23 @@ public sealed partial class MainViewModel : ObservableObject
             }
 
             var outputPath = await _session.StartRecordingAsync(
-                OutputDirectory, SelectedRecordingProfile, SelectedVideoDevice?.Name);
+                OutputDirectory,
+                profile,
+                SelectedVideoDevice?.Name,
+                new CaptureSessionStartOptions
+                {
+                    VideoDeviceStableId = SelectedVideoDevice?.Id,
+                    AudioDeviceStableId = SelectedAudioDevice?.Id,
+                    Recording = new RecordingStartOptions
+                    {
+                        AudioOffset100ns = EffectiveAudioOffset100ns,
+                        IsCalibrated = IsAvCalibrationCalibrated,
+                        CalibrationKey = CurrentAvCalibrationKey,
+                        CalibratedAt = AvCalibrationMeasuredAt,
+                    },
+                    VideoFormatMismatchAcknowledged = IsVideoFormatMismatchAcknowledged,
+                    VideoFormatAcknowledgmentKey = VideoFormatAcknowledgmentKey,
+                });
             IsRecording = true;
             AppendLog($"Recording started: {outputPath}");
         }
@@ -1503,7 +2159,12 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    private bool CanBrowseOutputDirectory() => !IsRecording;
+    private bool CanBrowseOutputDirectory() => !IsRecording && !_recordingStartInProgress;
+
+    private bool CanEditRecordingSettings() => !IsRecording && !_recordingStartInProgress;
+
+    public bool CanConfigureCapture
+        => !IsRecording && !_previewTransitionInProgress && !_recordingStartInProgress;
 
     partial void OnOutputDirectoryChanged(string value)
     {
@@ -1523,7 +2184,10 @@ public sealed partial class MainViewModel : ObservableObject
     {
         StartRecordingCommand.NotifyCanExecuteChanged();
         BrowseOutputDirectoryCommand.NotifyCanExecuteChanged();
+        OpenVideoSettingsCommand.NotifyCanExecuteChanged();
+        OpenAudioSettingsCommand.NotifyCanExecuteChanged();
         NotifyTransportCanExecuteChanged();
+        OnPropertyChanged(nameof(CanConfigureCapture));
     }
 
     partial void OnDisableTransportDuringRecordingChanged(bool value)
@@ -1591,34 +2255,230 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void OnVtrTimeChanged(object? sender, TimeInformation time)
     {
+        _latestTimeInformation = time;
+        RunOnUi(() => RefreshTimeInformation(DateTimeOffset.UtcNow));
+    }
+
+    private void OnVtrLinkHealthChanged(object? sender, VtrLinkHealth health)
+    {
+        _latestVtrLinkHealth = health;
         RunOnUi(() =>
         {
-            CtlText = Timecode.FormatCtlDisplay(time.Ctl, Ctl24HourWrap);
-            LtcText = time.Ltc?.ToString() ?? "--:--:--:--";
-            VitcText = time.Vitc?.ToString() ?? "--:--:--:--";
-            UserBitsText = time.LtcUserBits?.ToString()
-                ?? time.VitcUserBits?.ToString()
-                ?? "-- -- -- --";
+            if (health.State is VtrLinkState.Lost or VtrLinkState.Disconnected)
+            {
+                IsVtrConnected = false;
+            }
+            else if (health.State == VtrLinkState.Online)
+            {
+                // Link recovery may be observed on a time poll before the next
+                // status-sense response; restore connectivity immediately.
+                IsVtrConnected = _vtr.IsConnected;
+            }
+            RefreshTimeInformation(DateTimeOffset.UtcNow);
         });
+    }
+
+    private void OnVideoCaptureHealthChanged(object? sender, CaptureHealthEventArgs args)
+    {
+        _latestVideoHealth = args.Health;
+        RunOnUi(RefreshPreviewFreshness);
+    }
+
+    private void RefreshFreshnessIndicators()
+    {
+        RefreshTimeInformation(DateTimeOffset.UtcNow);
+        RefreshPreviewFreshness();
+        RefreshVideoInputFormatStatus();
+    }
+
+    private void RefreshTimeInformation(DateTimeOffset now)
+    {
+        var time = _latestTimeInformation;
+        var nowTimestamp100ns = CaptureMonotonicClock.GetTimestamp100ns();
+        var ctl = time.CtlObservation;
+        var ltc = time.LtcObservation;
+        var vitc = time.VitcObservation;
+        var linkUnavailable = _latestVtrLinkHealth.State is VtrLinkState.Disconnected or VtrLinkState.Lost;
+
+        var ctlFreshness = linkUnavailable
+            ? ObservationFreshness.Lost
+            : ctl?.FreshnessAt(nowTimestamp100ns, now) ?? ObservationFreshness.Unavailable;
+        var ltcFreshness = linkUnavailable
+            ? ObservationFreshness.Lost
+            : ltc?.FreshnessAt(nowTimestamp100ns, now) ?? ObservationFreshness.Unavailable;
+        var vitcFreshness = linkUnavailable
+            ? ObservationFreshness.Lost
+            : vitc?.FreshnessAt(nowTimestamp100ns, now) ?? ObservationFreshness.Unavailable;
+
+        CtlText = ctl is { } ctlValue && ctlFreshness != ObservationFreshness.Lost
+            ? Timecode.FormatCtlDisplay(ctlValue.Value, Ctl24HourWrap)
+            : "--:--:--:--";
+        LtcText = ltc is { } ltcValue && ltcFreshness != ObservationFreshness.Lost
+            ? ltcValue.Value.ToString()
+            : "--:--:--:--";
+        VitcText = vitc is { } vitcValue && vitcFreshness != ObservationFreshness.Lost
+            ? vitcValue.Value.ToString()
+            : "--:--:--:--";
+
+        CtlFreshnessText = DescribeFreshness(ctl, ctlFreshness, now, nowTimestamp100ns);
+        LtcFreshnessText = DescribeFreshness(ltc, ltcFreshness, now, nowTimestamp100ns);
+        VitcFreshnessText = DescribeFreshness(vitc, vitcFreshness, now, nowTimestamp100ns);
+
+        var userBits = SelectBestUserBits(time, now, nowTimestamp100ns);
+        var userBitsFreshness = linkUnavailable
+            ? ObservationFreshness.Lost
+            : userBits?.FreshnessAt(nowTimestamp100ns, now) ?? ObservationFreshness.Unavailable;
+        UserBitsText = userBits is { } bits && userBitsFreshness != ObservationFreshness.Lost
+            ? bits.Value.ToString()
+            : "-- -- -- --";
+        UserBitsFreshnessText = DescribeFreshness(
+            userBits, userBitsFreshness, now, nowTimestamp100ns);
+
+        var primary = time.GetPrimaryObservation(now, nowTimestamp100ns);
+        var linkState = _latestVtrLinkHealth.State;
+        (VtrLinkHealthText, IsVtrLinkStaleOrLost, IsVtrLinkLost) = linkState switch
+        {
+            VtrLinkState.Lost => ("VTR CONNECTION LOST — retrying", true, true),
+            VtrLinkState.Stale => ("VTR RESPONSE STALE", true, false),
+            VtrLinkState.Connecting => ("Waiting for VTR response…", true, false),
+            VtrLinkState.Disconnected => ("VTR disconnected", true, true),
+            _ when primary is null => ("Timecode unavailable or stale", true, false),
+            _ => ("Time data current", false, false),
+        };
+    }
+
+    private static TimeObservation<UserBits>? SelectBestUserBits(
+        TimeInformation time,
+        DateTimeOffset now,
+        long nowTimestamp100ns)
+    {
+        var observations = new[] { time.LtcUserBitsObservation, time.VitcUserBitsObservation }
+            .Where(item => item is not null)
+            .Select(item => item!.Value)
+            .OrderBy(item => FreshnessRank(item.FreshnessAt(nowTimestamp100ns, now)))
+            .ThenByDescending(item => item.ReceivedAt)
+            .ToArray();
+        return observations.Length == 0 ? null : observations[0];
+    }
+
+    private static int FreshnessRank(ObservationFreshness freshness) => freshness switch
+    {
+        ObservationFreshness.Fresh => 0,
+        ObservationFreshness.Stale => 1,
+        ObservationFreshness.Lost => 2,
+        _ => 3,
+    };
+
+    private static string DescribeFreshness<T>(
+        TimeObservation<T>? observation,
+        ObservationFreshness freshness,
+        DateTimeOffset now,
+        long nowTimestamp100ns)
+    {
+        if (observation is null) return "N/A";
+
+        var source = observation.Value.Source switch
+        {
+            TimecodeSource.CorrectedLtc => "CORR",
+            TimecodeSource.HoldVitc or TimecodeSource.HoldLtc => "HOLD",
+            _ => "",
+        };
+        var age = observation.Value.AgeAt(nowTimestamp100ns, now);
+        var state = freshness switch
+        {
+            ObservationFreshness.Fresh => "",
+            ObservationFreshness.Stale => $"STALE {Math.Max(0, age.TotalSeconds):F1}s",
+            ObservationFreshness.Lost => "LOST",
+            _ => "N/A",
+        };
+        return string.Join(" · ", new[] { source, state }.Where(value => value.Length > 0));
+    }
+
+    private void RefreshPreviewFreshness()
+    {
+        if (!IsPreviewRunning)
+        {
+            PreviewHealthText = "";
+            IsPreviewHealthVisible = false;
+            IsPreviewLost = false;
+            return;
+        }
+
+        var health = _latestVideoHealth;
+        var healthIsCurrentSession = health.Timestamp100ns <= 0
+                                     || health.Timestamp100ns >= _previewStartedTimestamp100ns;
+        if (healthIsCurrentSession && health.State == CaptureHealthState.Faulted)
+        {
+            PreviewHealthText = string.IsNullOrWhiteSpace(health.Error)
+                ? "VIDEO SIGNAL LOST"
+                : $"VIDEO SIGNAL LOST — {health.Error}";
+            IsPreviewHealthVisible = true;
+            IsPreviewLost = true;
+            return;
+        }
+
+        var now100ns = CaptureMonotonicClock.GetTimestamp100ns();
+        // Health notifications are edge-triggered, while the preview loop records
+        // every consumed frame. Always use the newest of those two monotonic points
+        // so a previous recovery notification cannot later make a live preview stale.
+        var lastFrame100ns = Math.Max(
+            health.LastDeliveryTimestamp100ns ?? 0,
+            Interlocked.Read(ref _lastPreviewFrameTimestamp100ns));
+        // Never carry the previous capture session's delivery timestamp into a
+        // newly opened preview. Before its first frame, age from this session's start.
+        var reference100ns = Math.Max(_previewStartedTimestamp100ns, lastFrame100ns);
+        var age = TimeSpan.FromTicks(Math.Max(0, now100ns - reference100ns));
+        var freshness = MonotonicFreshness.Classify(
+            reference100ns,
+            now100ns,
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromSeconds(2));
+
+        if (freshness == ObservationFreshness.Lost)
+        {
+            PreviewHealthText = $"VIDEO SIGNAL LOST — last frame {age.TotalSeconds:F1}s ago";
+            IsPreviewHealthVisible = true;
+            IsPreviewLost = true;
+        }
+        else if (freshness == ObservationFreshness.Stale
+                 || healthIsCurrentSession && health.State == CaptureHealthState.Degraded)
+        {
+            PreviewHealthText = $"Preview stale — last frame {age.TotalSeconds:F1}s ago";
+            IsPreviewHealthVisible = true;
+            IsPreviewLost = false;
+        }
+        else
+        {
+            PreviewHealthText = "";
+            IsPreviewHealthVisible = false;
+            IsPreviewLost = false;
+        }
     }
 
     private void OnRecordingStatusChanged(object? sender, RecordingStatus status)
     {
         RunOnUi(() =>
         {
-            RecordingStatusText = status.State switch
-            {
-                RecordingState.Recording =>
-                    $"Recording {status.Elapsed:hh\\:mm\\:ss} ({status.VideoFramesWritten} frames)",
-                RecordingState.Faulted => $"Error: {status.Error}",
-                _ => status.State.ToString(),
-            };
-            IsRecording = status.State is RecordingState.Recording or RecordingState.Starting;
+            RecordingStatusText = FormatRecordingStatus(status);
+            RecordingSyncStatusText = FormatRecordingSyncStatus(status);
+            IsRecordingSyncStatusVisible = RecordingSyncStatusText.Length > 0;
+            RecordingSyncStatusBrush = status.State == RecordingState.Faulted
+                ? Brushes.IndianRed
+                : status.SyncWarning
+                  || !status.SyncTelemetryComplete
+                  || status.State == RecordingState.Incomplete
+                    ? Brushes.Gold
+                    : Brushes.LightGray;
+            IsRecording = status.State is RecordingState.Recording
+                or RecordingState.Starting
+                or RecordingState.Stopping;
             StatusBarRecordingText = status.State switch
             {
                 RecordingState.Recording => "● REC",
                 RecordingState.Starting => "Starting…",
                 RecordingState.Stopping => "Stopping…",
+                RecordingState.Incomplete => $"Incomplete: {status.StopReason}",
+                RecordingState.Cancelled => "Cancelled",
                 RecordingState.Faulted => "Faulted",
                 _ => "Idle",
             };
@@ -1630,6 +2490,40 @@ public sealed partial class MainViewModel : ObservableObject
                 ReportError(status.Error, null);
             }
         });
+    }
+
+    internal static string FormatRecordingStatus(RecordingStatus status)
+    {
+        var detail = string.IsNullOrWhiteSpace(status.Error) ? "" : $" — {status.Error}";
+        return status.State switch
+        {
+            RecordingState.Recording =>
+                $"Recording {status.Elapsed:hh\\:mm\\:ss} ({status.VideoFramesWritten} frames)",
+            RecordingState.Incomplete => $"Incomplete: {status.StopReason}{detail}",
+            RecordingState.Cancelled => $"Cancelled: {status.StopReason}{detail}",
+            RecordingState.Faulted => $"Error: {status.StopReason}{detail}",
+            _ => status.State.ToString(),
+        };
+    }
+
+    internal static string FormatRecordingSyncStatus(RecordingStatus status)
+    {
+        if (status.State == RecordingState.Idle && status.StopReason == RecordingStopReason.None)
+        {
+            return "";
+        }
+
+        var residual = status.CurrentAvOffset is { } offset
+            ? FormattableString.Invariant($"residual {offset.TotalMilliseconds:+0.0;-0.0;0.0} ms")
+            : "residual measuring";
+        var telemetry = status.SyncTelemetryComplete
+            ? residual
+            : "timestamp telemetry incomplete";
+        var prefix = status.SyncWarning || !status.SyncTelemetryComplete
+            ? "A/V SYNC WARNING"
+            : "A/V sync";
+        FormattableString text = $"{prefix} — {telemetry} · drift {status.EstimatedDriftPpm:+0.0;-0.0;0.0} ppm · correction {status.AppliedCorrectionPpm:+0.0;-0.0;0.0} ppm (required {status.RequiredCorrectionPpm:+0.0;-0.0;0.0})";
+        return FormattableString.Invariant(text);
     }
 
     private void RefreshStatusBarCodec()

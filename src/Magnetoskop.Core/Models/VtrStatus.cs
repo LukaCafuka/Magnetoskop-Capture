@@ -54,6 +54,25 @@ public enum VariableSpeedMode
     Shuttle,
 }
 
+/// <summary>Responsiveness of the recorder link while the serial port remains open.</summary>
+public enum VtrLinkState
+{
+    Disconnected,
+    Connecting,
+    Online,
+    Stale,
+    Lost,
+}
+
+/// <summary>Host-side health of recorder polling.</summary>
+public sealed record VtrLinkHealth
+{
+    public VtrLinkState State { get; init; } = VtrLinkState.Disconnected;
+    public DateTimeOffset? LastResponseAt { get; init; }
+    public DateTimeOffset UpdatedAt { get; init; } = DateTimeOffset.UtcNow;
+    public string? Error { get; init; }
+}
+
 /// <summary>A snapshot of the recorder status.</summary>
 public sealed record VtrStatus
 {
@@ -76,5 +95,7 @@ public sealed record VtrStatus
     public bool ServoAlarm { get; init; }
     /// <summary>Tape direction: true = reverse.</summary>
     public bool TapeReverse { get; init; }
+    /// <summary>Process-wide monotonic receipt time in normalized 100 ns units.</summary>
+    public long Timestamp100ns { get; init; }
     public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
 }

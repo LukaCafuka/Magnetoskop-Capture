@@ -258,6 +258,37 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
+                    <Border Background="#B0000000"
+                            Padding="16,10"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            CornerRadius="4"
+                            Visibility="{Binding IsPreviewHealthVisible, Converter={StaticResource BoolToVis}}">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="#D6A82A"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPreviewLost}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#E05252"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="{Binding PreviewHealthText}"
+                                   FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#FFD166"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPreviewLost}" Value="True">
+                                            <Setter Property="Foreground" Value="#FF7777"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
                 </Grid>
             </Border>
 
@@ -381,7 +412,25 @@
                 <!-- Time information -->
                 <Border Background="#262626" Padding="10" Margin="0,0,0,10" CornerRadius="4">
                     <StackPanel>
-                        <TextBlock Text="TIME INFORMATION" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <DockPanel Margin="0,0,0,8">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding VtrLinkHealthText}"
+                                       FontSize="11" Margin="8,0,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#66FF99"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsVtrLinkStaleOrLost}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFD166"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsVtrLinkLost}" Value="True">
+                                                <Setter Property="Foreground" Value="#FF7777"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="TIME INFORMATION" FontWeight="Bold"/>
+                        </DockPanel>
                         <UniformGrid Columns="2">
                             <StackPanel Margin="0,0,10,8">
                                 <DockPanel Margin="0,0,0,0">
@@ -392,8 +441,11 @@
                                             VerticalAlignment="Center"
                                             Command="{Binding ResetCtlCommand}"
                                             ToolTip="Reset CTL counter to 00:00:00:00 (Timer-1 Reset). Does not move the tape."/>
-                                    <TextBlock Style="{StaticResource TimecodeLabel}" Text="CTL"
-                                               VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Style="{StaticResource TimecodeLabel}" Text="CTL"/>
+                                        <TextBlock Text="{Binding CtlFreshnessText}" Foreground="#FFD166"
+                                                   FontSize="10" Margin="6,0,0,2"/>
+                                    </StackPanel>
                                 </DockPanel>
                                 <Grid>
                                     <TextBlock Text="{Binding CtlText}"
@@ -433,7 +485,11 @@
                                 </Grid>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,8">
-                                <TextBlock Style="{StaticResource TimecodeLabel}" Text="LTC"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource TimecodeLabel}" Text="LTC"/>
+                                    <TextBlock Text="{Binding LtcFreshnessText}" Foreground="#FFD166"
+                                               FontSize="10" Margin="6,0,0,2"/>
+                                </StackPanel>
                                 <Grid>
                                     <TextBlock Text="{Binding LtcText}"
                                                Cursor="Hand"
@@ -472,11 +528,19 @@
                                 </Grid>
                             </StackPanel>
                             <StackPanel Margin="0,0,10,0">
-                                <TextBlock Style="{StaticResource TimecodeLabel}" Text="VITC"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource TimecodeLabel}" Text="VITC"/>
+                                    <TextBlock Text="{Binding VitcFreshnessText}" Foreground="#FFD166"
+                                               FontSize="10" Margin="6,0,0,2"/>
+                                </StackPanel>
                                 <TextBlock Style="{StaticResource TimecodeText}" Text="{Binding VitcText}"/>
                             </StackPanel>
                             <StackPanel>
-                                <TextBlock Style="{StaticResource TimecodeLabel}" Text="USER BITS"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource TimecodeLabel}" Text="USER BITS"/>
+                                    <TextBlock Text="{Binding UserBitsFreshnessText}" Foreground="#FFD166"
+                                               FontSize="10" Margin="6,0,0,2"/>
+                                </StackPanel>
                                 <TextBlock Style="{StaticResource TimecodeText}" FontSize="20"
                                            Text="{Binding UserBitsText}"/>
                             </StackPanel>
@@ -566,6 +630,10 @@
                             <Button Content="■ Stop capture" Command="{Binding StopRecordingCommand}"/>
                         </StackPanel>
                         <TextBlock Text="{Binding RecordingStatusText}"/>
+                        <TextBlock Text="{Binding RecordingSyncStatusText}"
+                                   Visibility="{Binding IsRecordingSyncStatusVisible, Converter={StaticResource BoolToVis}}"
+                                   Foreground="{Binding RecordingSyncStatusBrush}"
+                                   FontSize="11" TextWrapping="Wrap" Margin="0,3,0,0"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

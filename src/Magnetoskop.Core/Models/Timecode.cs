@@ -46,6 +46,82 @@ public readonly record struct Timecode(
     }
 
     /// <summary>
+    /// Converts SMPTE timecode to a continuous frame ordinal. Unlike
+    /// <see cref="ToFrameCount"/>, this accounts for the skipped frame numbers in
+    /// 29.97/59.94 drop-frame timecode.
+    /// </summary>
+    public long ToSmpteFrameCount(int nominalFramesPerSecond)
+    {
+        if (!DropFrame || nominalFramesPerSecond is not (30 or 60))
+            return ToFrameCount(nominalFramesPerSecond);
+
+        var dropFrames = nominalFramesPerSecond / 15; // 2 @ 30, 4 @ 60
+        var totalMinutes = Hours * 60L + Minutes;
+        var numberedFrames =
+            ((Hours * 60L + Minutes) * 60L + Seconds) * nominalFramesPerSecond + Frames;
+        var skippedNumbers = dropFrames * (totalMinutes - totalMinutes / 10);
+        var result = numberedFrames - skippedNumbers;
+        return IsNegative ? -result : result;
+    }
+
+    /// <summary>
+    /// Creates SMPTE drop-frame timecode from a continuous frame ordinal. The
+    /// returned value wraps at 24 hours, matching VTR timecode displays.
+    /// </summary>
+    public static Timecode FromSmpteFrameCount(
+        long totalFrames,
+        int nominalFramesPerSecond,
+        bool dropFrame,
+        bool colorFrame = false)
+    {
+        if (!dropFrame || nominalFramesPerSecond is not (30 or 60))
+        {
+            return FromFrameCount(totalFrames, nominalFramesPerSecond) with
+            {
+                DropFrame = dropFrame,
+                ColorFrame = colorFrame,
+            };
+        }
+
+        var negative = totalFrames < 0;
+        if (negative) totalFrames = -totalFrames;
+
+        var dropFrames = nominalFramesPerSecond / 15;
+        var framesPerMinute = nominalFramesPerSecond * 60 - dropFrames;
+        var framesPerTenMinutes = nominalFramesPerSecond * 600 - dropFrames * 9;
+        var framesPerDay = framesPerTenMinutes * 6L * 24L;
+        totalFrames %= framesPerDay;
+
+        var tenMinuteBlocks = totalFrames / framesPerTenMinutes;
+        var remainder = totalFrames % framesPerTenMinutes;
+        var numberedFrames = totalFrames + dropFrames * 9L * tenMinuteBlocks;
+        if (remainder >= dropFrames)
+        {
+            numberedFrames += dropFrames * ((remainder - dropFrames) / framesPerMinute);
+        }
+
+        var frames = (int)(numberedFrames % nominalFramesPerSecond);
+        var totalSeconds = numberedFrames / nominalFramesPerSecond;
+        var seconds = (int)(totalSeconds % 60);
+        var totalMinutes = totalSeconds / 60;
+        var minutes = (int)(totalMinutes % 60);
+        var hours = (int)(totalMinutes / 60 % 24);
+        return new Timecode(
+            hours, minutes, seconds, frames,
+            DropFrame: true,
+            ColorFrame: colorFrame,
+            IsNegative: negative);
+    }
+
+    /// <summary>Advances this value by a number of actual video frames.</summary>
+    public Timecode AddFrames(long frames, int nominalFramesPerSecond)
+        => FromSmpteFrameCount(
+            ToSmpteFrameCount(nominalFramesPerSecond) + frames,
+            nominalFramesPerSecond,
+            DropFrame,
+            ColorFrame);
+
+    /// <summary>
     /// Parses tape timecode for Cue Up.
     /// Accepts <c>HH:MM:SS:FF</c> / <c>HH:MM:SS;FF</c>, or short <c>MM:SS:FF</c> as <c>00:MM:SS:FF</c>.
     /// Leading zeros optional. When <paramref name="allowNegative"/> is true, a leading '-' sets

@@ -1,4 +1,3 @@
-using System.Threading.Channels;
 using Magnetoskop.Core.Abstractions;
 using Magnetoskop.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -16,12 +15,18 @@ public sealed class SimulatedAudioCaptureService : IAudioCaptureService
     };
 
     private readonly ILogger<SimulatedAudioCaptureService> _logger;
-    private readonly List<Channel<AudioBuffer>> _subscribers = new();
+    private readonly List<CaptureSubscription<AudioBuffer>> _subscribers = new();
     private readonly object _gate = new();
+    private readonly object _healthGate = new();
     private readonly float[] _peaks = new float[2];
 
     private CancellationTokenSource? _cts;
     private Task? _loop;
+    private CaptureHealth _health = new()
+    {
+        State = CaptureHealthState.Stopped,
+        Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+    };
 
     public SimulatedAudioCaptureService(ILogger<SimulatedAudioCaptureService> logger)
     {
@@ -31,6 +36,16 @@ public sealed class SimulatedAudioCaptureService : IAudioCaptureService
     public bool IsCapturing { get; private set; }
 
     public AudioFormat? CurrentFormat => IsCapturing ? Format : null;
+
+    public CaptureHealth Health
+    {
+        get
+        {
+            lock (_healthGate) return _health;
+        }
+    }
+
+    public event EventHandler<CaptureHealthEventArgs>? HealthChanged;
 
     public IReadOnlyList<float> PeakLevels
     {
@@ -66,14 +81,23 @@ public sealed class SimulatedAudioCaptureService : IAudioCaptureService
 
         IsCapturing = true;
         _cts = new CancellationTokenSource();
-        _loop = Task.Run(() => GenerateAsync(_cts.Token), CancellationToken.None);
+        SetHealth(new CaptureHealth
+        {
+            State = CaptureHealthState.Running,
+            Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+        });
+        _loop = Task.Run(() => RunGenerationAsync(_cts.Token), CancellationToken.None);
         _logger.LogInformation("Simulated audio capture started ({Device})", device.Name);
         return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsCapturing) return;
+        if (!IsCapturing && _cts is null && _loop is null)
+        {
+            CompleteSubscriptions();
+            return;
+        }
 
         IsCapturing = false;
         if (_cts is not null) await _cts.CancelAsync();
@@ -88,21 +112,57 @@ public sealed class SimulatedAudioCaptureService : IAudioCaptureService
         {
             Array.Clear(_peaks);
         }
+        CompleteSubscriptions();
+        SetHealth(Health with
+        {
+            State = CaptureHealthState.Stopped,
+            Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+        });
         _logger.LogInformation("Simulated audio capture stopped");
     }
 
-    public ChannelReader<AudioBuffer> Subscribe(int capacity = 16)
+    public CaptureSubscription<AudioBuffer> Subscribe(int capacity = 16)
+        => Subscribe(CaptureSubscriptionOptions.Monitor(capacity));
+
+    public CaptureSubscription<AudioBuffer> Subscribe(CaptureSubscriptionOptions options)
     {
-        var channel = Channel.CreateBounded<AudioBuffer>(new BoundedChannelOptions(capacity)
-        {
-            FullMode = BoundedChannelFullMode.DropOldest,
-            SingleWriter = true,
-        });
+        var subscription = new CaptureSubscription<AudioBuffer>(
+            options,
+            singleWriter: true,
+            onDisposed: RemoveSubscription,
+            onOverflow: OnSubscriptionOverflow);
         lock (_gate)
         {
-            _subscribers.Add(channel);
+            _subscribers.Add(subscription);
         }
-        return channel.Reader;
+        return subscription;
+    }
+
+    private async Task RunGenerationAsync(CancellationToken ct)
+    {
+        try
+        {
+            await GenerateAsync(ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // normal stop
+        }
+        catch (Exception ex)
+        {
+            IsCapturing = false;
+            var health = Health;
+            SetHealth(health with
+            {
+                State = CaptureHealthState.Faulted,
+                Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+                TotalCaptureFailures = health.TotalCaptureFailures + 1,
+                ConsecutiveCaptureFailures = 1,
+                Error = ex.Message,
+            });
+            CompleteSubscriptions(ex);
+            _logger.LogError(ex, "Simulated audio capture failed");
+        }
     }
 
     private async Task GenerateAsync(CancellationToken ct)
@@ -114,8 +174,6 @@ public sealed class SimulatedAudioCaptureService : IAudioCaptureService
         var bytesPerBlock = samplesPerBlock * Format.Channels * (Format.BitsPerSample / 8);
 
         long sampleIndex = 0;
-        var start = TimeSpan.FromMilliseconds(Environment.TickCount64);
-
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(blockMs));
         while (await timer.WaitForNextTickAsync(ct))
         {
@@ -148,31 +206,84 @@ public sealed class SimulatedAudioCaptureService : IAudioCaptureService
                 Data = data,
                 Length = data.Length,
                 Format = Format,
-                Timestamp = TimeSpan.FromSeconds((double)sampleIndex / Format.SampleRate) ,
+                Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns()
+                    - (long)samplesPerBlock * TimeSpan.TicksPerSecond / Format.SampleRate,
+                FirstSampleIndex = sampleIndex,
+                SampleCount = samplesPerBlock,
+                QpcPosition100ns = 0,
+                DevicePosition = sampleIndex,
+                Discontinuity = false,
+                TimestampEstimated = true,
+                Silent = false,
             };
             sampleIndex += samplesPerBlock;
-            _ = start; // start reserved for wallclock alignment in later phases
 
+            CaptureSubscription<AudioBuffer>[] subscribers;
             lock (_gate)
             {
-                foreach (var sub in _subscribers)
-                {
-                    sub.Writer.TryWrite(buffer);
-                }
+                subscribers = _subscribers
+                    .OrderBy(subscription => subscription.Options.OverflowPolicy
+                        == CaptureOverflowPolicy.RejectNew ? 0 : 1)
+                    .ToArray();
             }
+            foreach (var sub in subscribers)
+            {
+                sub.TryPublish(buffer);
+            }
+            NoteDelivery(buffer.Timestamp100ns);
         }
+    }
+
+    private void RemoveSubscription(CaptureSubscription<AudioBuffer> subscription)
+    {
+        lock (_gate) _subscribers.Remove(subscription);
+    }
+
+    private void OnSubscriptionOverflow(CaptureOverflow _)
+    {
+        var health = Health;
+        SetHealth(health with
+        {
+            Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+            SubscriberOverflows = health.SubscriberOverflows + 1,
+        });
+    }
+
+    private void CompleteSubscriptions(Exception? error = null)
+    {
+        CaptureSubscription<AudioBuffer>[] subscriptions;
+        lock (_gate)
+        {
+            subscriptions = _subscribers.ToArray();
+            _subscribers.Clear();
+        }
+        foreach (var subscription in subscriptions) subscription.Complete(error);
+    }
+
+    private void NoteDelivery(long timestamp100ns)
+    {
+        lock (_healthGate)
+        {
+            _health = _health with
+            {
+                State = CaptureHealthState.Running,
+                Timestamp100ns = timestamp100ns,
+                LastDeliveryTimestamp100ns = timestamp100ns,
+                ItemsDelivered = _health.ItemsDelivered + 1,
+            };
+        }
+    }
+
+    private void SetHealth(CaptureHealth health)
+    {
+        lock (_healthGate) _health = health;
+        try { HealthChanged?.Invoke(this, new CaptureHealthEventArgs(health)); }
+        catch (Exception ex) { _logger.LogWarning(ex, "Simulated audio health observer failed"); }
     }
 
     public async ValueTask DisposeAsync()
     {
         await StopAsync();
-        lock (_gate)
-        {
-            foreach (var sub in _subscribers)
-            {
-                sub.Writer.TryComplete();
-            }
-            _subscribers.Clear();
-        }
+        CompleteSubscriptions();
     }
 }

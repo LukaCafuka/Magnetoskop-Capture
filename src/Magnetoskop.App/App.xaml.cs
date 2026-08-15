@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 using Magnetoskop.App.Services;
 using Magnetoskop.App.ViewModels;
 using Magnetoskop.App.Views;
@@ -17,6 +18,8 @@ namespace Magnetoskop.App;
 public partial class App : Application
 {
     private IHost? _host;
+    private int _shutdownStarted;
+    private bool _shutdownCompleted;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -85,7 +88,69 @@ public partial class App : Application
 
         var window = _host.Services.GetRequiredService<MainWindow>();
         MainWindow = window;
+        window.Closing += OnMainWindowClosing;
         window.Show();
+    }
+
+    /// <summary>
+    /// WPF's OnExit callback is synchronous from the application's perspective;
+    /// making that override async-void can let the process disappear while FFmpeg
+    /// or a sidecar is still finalizing. Cancel the first close, await the complete
+    /// shutdown pipeline, then allow a second close to finish normally.
+    /// </summary>
+    private async void OnMainWindowClosing(object? sender, CancelEventArgs e)
+    {
+        if (_shutdownCompleted) return;
+
+        e.Cancel = true;
+        if (Interlocked.Exchange(ref _shutdownStarted, 1) != 0) return;
+
+        try
+        {
+            await ShutdownHostAsync();
+        }
+        catch (Exception ex)
+        {
+            ReportUnhandled("Application shutdown failed", ex);
+        }
+        finally
+        {
+            _shutdownCompleted = true;
+            if (sender is MainWindow window)
+            {
+                window.Closing -= OnMainWindowClosing;
+                window.Close();
+            }
+        }
+    }
+
+    private async Task ShutdownHostAsync()
+    {
+        var host = _host;
+        if (host is null) return;
+
+        // Finalize recording/audit/summary before capture devices and DI-owned
+        // services are torn down.
+        var vm = host.Services.GetRequiredService<MainViewModel>();
+        try
+        {
+            await vm.ShutdownAsync();
+            await host.StopAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            _host = null;
+            if (host is IAsyncDisposable asyncHost)
+            {
+                // Capture/recording services own asynchronous pumps and device handles.
+                // Disposing the DI container synchronously can reject async-only services.
+                await asyncHost.DisposeAsync();
+            }
+            else
+            {
+                host.Dispose();
+            }
+        }
     }
 
     private void ReportUnhandled(string context, Exception exception)
@@ -104,17 +169,13 @@ public partial class App : Application
         }
     }
 
-    protected override async void OnExit(ExitEventArgs e)
+    protected override void OnExit(ExitEventArgs e)
     {
-        if (_host is not null)
-        {
-            // Dispose view model resources (stops capture, disconnects VTR) before host teardown.
-            var vm = _host.Services.GetRequiredService<MainViewModel>();
-            await vm.ShutdownAsync();
-
-            await _host.StopAsync(TimeSpan.FromSeconds(5));
-            _host.Dispose();
-        }
+        // Normal main-window shutdown has already awaited ShutdownHostAsync in the
+        // cancellable Closing phase. Dispose only as a last-resort startup-failure
+        // cleanup; never start asynchronous media teardown from OnExit.
+        _host?.Dispose();
+        _host = null;
         base.OnExit(e);
     }
 }

@@ -114,8 +114,16 @@ public sealed class AppSettings
     public string? OutputDirectory { get; set; }
     public VideoEncodeSettings? Video { get; set; }
     public string? VideoDeviceId { get; set; }
-    /// <summary>Friendly name used to restore the video device when DirectShow indices shift.</summary>
+    /// <summary>Friendly-name fallback for settings written before stable DirectShow identities.</summary>
     public string? VideoDeviceName { get; set; }
+    /// <summary>Operator-declared input standard and scan order, keyed by stable video-device id.</summary>
+    public Dictionary<string, VideoInputConfiguration> VideoInputConfigurations { get; set; } = new();
+    /// <summary>
+    /// Operator acknowledgments for a driver format mismatch, keyed by stable video-device id.
+    /// The fingerprint includes both the requested and actual formats, so a changed readback
+    /// cannot silently reuse an older acknowledgment.
+    /// </summary>
+    public Dictionary<string, VideoFormatAcknowledgmentSettings> VideoFormatAcknowledgments { get; set; } = new();
     public string? AudioDeviceId { get; set; }
     public bool AudioManuallySelected { get; set; }
     /// <summary>When true, play the live capture input through the default output device.</summary>
@@ -154,6 +162,27 @@ public sealed class AppSettings
 
     /// <summary>Obsolete preset id from earlier builds; ignored on load.</summary>
     public string? RecordingProfileId { get; set; }
+
+    /// <summary>Static A/V calibration measurements keyed by stable video/audio device pair.</summary>
+    public List<AvCalibrationSettings> AvCalibrations { get; set; } = new();
+}
+
+/// <summary>Persisted static audio offset for one stable video/audio device pair.</summary>
+public sealed class AvCalibrationSettings
+{
+    public string VideoDeviceId { get; set; } = "";
+    public string AudioDeviceId { get; set; } = "";
+    /// <summary>Signed offset in 100 ns units. Positive means delay audio.</summary>
+    public long AudioOffset100ns { get; set; }
+    public bool IsCalibrated { get; set; }
+    public DateTimeOffset? MeasuredAt { get; set; }
+}
+
+/// <summary>An explicit operator acknowledgment of one exact requested/actual format pair.</summary>
+public sealed class VideoFormatAcknowledgmentSettings
+{
+    public string Fingerprint { get; set; } = "";
+    public DateTimeOffset AcknowledgedAt { get; set; }
 }
 
 /// <summary>Loads and saves <see cref="AppSettings"/> as JSON under %AppData%.</summary>
@@ -201,6 +230,9 @@ public sealed class SettingsService
         }
 
         Current.Video ??= VideoEncodeSettings.FromProfile(RecordingProfile.CreateDefault());
+        Current.VideoInputConfigurations ??= new Dictionary<string, VideoInputConfiguration>();
+        Current.VideoFormatAcknowledgments ??= new Dictionary<string, VideoFormatAcknowledgmentSettings>();
+        Current.AvCalibrations ??= new List<AvCalibrationSettings>();
         return Current;
     }
 

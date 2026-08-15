@@ -12,9 +12,20 @@ public sealed class FakeSerialTransport : ISerialTransport
 {
     private readonly Channel<byte> _incoming = Channel.CreateUnbounded<byte>();
     private readonly List<byte> _written = new();
+    private readonly List<CommandBlock> _receivedCommands = new();
+    private readonly object _receivedGate = new();
 
     /// <summary>Every complete command block the master has written.</summary>
-    public List<CommandBlock> ReceivedCommands { get; } = new();
+    public IReadOnlyList<CommandBlock> ReceivedCommands
+    {
+        get
+        {
+            lock (_receivedGate)
+            {
+                return _receivedCommands.ToArray();
+            }
+        }
+    }
 
     /// <summary>Scripted response logic. Return null to simulate no response (timeout).</summary>
     public Func<CommandBlock, byte[]?>? Responder { get; set; }
@@ -61,7 +72,10 @@ public sealed class FakeSerialTransport : ISerialTransport
 
             if (block is null) break;
             _written.RemoveRange(0, consumed);
-            ReceivedCommands.Add(block);
+            lock (_receivedGate)
+            {
+                _receivedCommands.Add(block);
+            }
 
             var response = Responder?.Invoke(block);
             if (response is not null)

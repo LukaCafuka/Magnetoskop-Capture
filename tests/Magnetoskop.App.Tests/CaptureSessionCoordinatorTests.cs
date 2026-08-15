@@ -207,7 +207,14 @@ public class CaptureSessionCoordinatorTests
         {
             var coordinator = CreateCoordinator();
             var outputPath = await coordinator.StartRecordingAsync(
-                dir, Ffv1Profile, "Test Capture Device");
+                dir,
+                Ffv1Profile,
+                "Test Capture Device",
+                new CaptureSessionStartOptions
+                {
+                    VideoDeviceStableId = "video-stable-id",
+                    AudioDeviceStableId = "audio-stable-id",
+                });
             await coordinator.StopRecordingAsync();
 
             var sidecarPath = Path.ChangeExtension(outputPath, ".json");
@@ -217,6 +224,8 @@ public class CaptureSessionCoordinatorTests
                 await File.ReadAllTextAsync(sidecarPath));
             Assert.NotNull(metadata);
             Assert.Equal("Test Capture Device", metadata!.SourceDevice);
+            Assert.Equal("video-stable-id", metadata.VideoDeviceStableId);
+            Assert.Equal("audio-stable-id", metadata.AudioDeviceStableId);
             Assert.Equal("Test Deck", metadata.VtrDevice);
             Assert.Equal(Ffv1Profile.DisplayName, metadata.RecordingProfile);
             Assert.Equal("01:02:03:04", metadata.StartTimecode);

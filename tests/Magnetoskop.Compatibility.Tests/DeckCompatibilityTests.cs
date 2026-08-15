@@ -276,7 +276,7 @@ public class DeckCompatibilityTests
         await controller.ConnectAsync();
 
         await WaitUntilAsync(() => controller.CurrentTime.Vitc is not null);
-        Assert.Equal(TimecodeSource.Vitc, controller.CurrentTime.PrimarySource);
+        Assert.Equal(TimecodeSource.HoldVitc, controller.CurrentTime.PrimarySource);
     }
 
     [Fact]

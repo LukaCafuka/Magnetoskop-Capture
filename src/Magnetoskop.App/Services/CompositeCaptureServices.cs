@@ -11,7 +11,7 @@ namespace Magnetoskop.App.Services;
 /// Exposes both real (OpenCV) and simulated video devices in one service.
 /// The device Id prefix "sim:" routes to the simulator.
 /// </summary>
-public sealed class CompositeVideoCaptureService : IVideoCaptureService
+public sealed class CompositeVideoCaptureService : IVideoCaptureService, IConfigurableVideoCaptureService
 {
     private readonly OpenCvVideoCaptureService _real;
     private readonly SimulatedVideoCaptureService _simulated;
@@ -21,11 +21,34 @@ public sealed class CompositeVideoCaptureService : IVideoCaptureService
     {
         _real = real;
         _simulated = simulated;
+        _real.HealthChanged += ForwardHealth;
+        _simulated.HealthChanged += ForwardHealth;
     }
 
     public bool IsCapturing => _active?.IsCapturing ?? false;
 
     public VideoFormat? CurrentFormat => _active?.CurrentFormat;
+
+    public CaptureHealth Health => _active?.Health ?? new CaptureHealth
+    {
+        State = CaptureHealthState.Stopped,
+        Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+    };
+
+    public event EventHandler<CaptureHealthEventArgs>? HealthChanged;
+
+    public VideoInputConfiguration InputConfiguration
+    {
+        get => _active is IConfigurableVideoCaptureService active
+            ? active.InputConfiguration
+            : _real.InputConfiguration;
+        set => _real.InputConfiguration = value;
+    }
+
+    public VideoInputFormatStatus FormatStatus
+        => _active is IConfigurableVideoCaptureService active
+            ? active.FormatStatus
+            : _real.FormatStatus;
 
     public async Task<IReadOnlyList<CaptureDeviceInfo>> EnumerateDevicesAsync(CancellationToken cancellationToken = default)
     {
@@ -47,11 +70,24 @@ public sealed class CompositeVideoCaptureService : IVideoCaptureService
     public Task StopAsync(CancellationToken cancellationToken = default)
         => _active?.StopAsync(cancellationToken) ?? Task.CompletedTask;
 
-    public ChannelReader<VideoFrame> Subscribe(int capacity = 4)
+    public CaptureSubscription<VideoFrame> Subscribe(int capacity = 4)
         => (_active ?? _simulated).Subscribe(capacity);
+
+    public CaptureSubscription<VideoFrame> Subscribe(CaptureSubscriptionOptions options)
+        => (_active ?? _simulated).Subscribe(options);
+
+    private void ForwardHealth(object? sender, CaptureHealthEventArgs e)
+    {
+        if (ReferenceEquals(sender, _active))
+        {
+            HealthChanged?.Invoke(this, e);
+        }
+    }
 
     public async ValueTask DisposeAsync()
     {
+        _real.HealthChanged -= ForwardHealth;
+        _simulated.HealthChanged -= ForwardHealth;
         await _real.DisposeAsync();
         await _simulated.DisposeAsync();
     }
@@ -68,11 +104,21 @@ public sealed class CompositeAudioCaptureService : IAudioCaptureService
     {
         _real = real;
         _simulated = simulated;
+        _real.HealthChanged += ForwardHealth;
+        _simulated.HealthChanged += ForwardHealth;
     }
 
     public bool IsCapturing => _active?.IsCapturing ?? false;
 
     public AudioFormat? CurrentFormat => _active?.CurrentFormat;
+
+    public CaptureHealth Health => _active?.Health ?? new CaptureHealth
+    {
+        State = CaptureHealthState.Stopped,
+        Timestamp100ns = CaptureMonotonicClock.GetTimestamp100ns(),
+    };
+
+    public event EventHandler<CaptureHealthEventArgs>? HealthChanged;
 
     public IReadOnlyList<float> PeakLevels => (_active ?? _real).PeakLevels;
 
@@ -106,11 +152,24 @@ public sealed class CompositeAudioCaptureService : IAudioCaptureService
     public Task StopAsync(CancellationToken cancellationToken = default)
         => _active?.StopAsync(cancellationToken) ?? Task.CompletedTask;
 
-    public ChannelReader<AudioBuffer> Subscribe(int capacity = 16)
+    public CaptureSubscription<AudioBuffer> Subscribe(int capacity = 16)
         => (_active ?? _simulated).Subscribe(capacity);
+
+    public CaptureSubscription<AudioBuffer> Subscribe(CaptureSubscriptionOptions options)
+        => (_active ?? _simulated).Subscribe(options);
+
+    private void ForwardHealth(object? sender, CaptureHealthEventArgs e)
+    {
+        if (ReferenceEquals(sender, _active))
+        {
+            HealthChanged?.Invoke(this, e);
+        }
+    }
 
     public async ValueTask DisposeAsync()
     {
+        _real.HealthChanged -= ForwardHealth;
+        _simulated.HealthChanged -= ForwardHealth;
         await _real.DisposeAsync();
         await _simulated.DisposeAsync();
     }

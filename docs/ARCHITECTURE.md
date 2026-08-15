@@ -1,243 +1,347 @@
-# Architecture and Feasibility
+# Architecture and Reliability Model
 
 **Project:** Development of Software for Videotape Recorder Control and Audiovisual Signal Digitization
-**Target framework:** .NET 8 (WPF, Windows only)
-**Status:** Phase 0 deliverable
+
+**Target:** .NET 8, WPF, Windows 10/11 x64
+
+**Implementation status:** software reliability and A/V-correlation path implemented; physical deck and four-hour capture validation pending
 
 ---
 
-## 1. Goals
+## 1. Goals and claim boundary
 
-A Windows desktop application that:
+Magnetoskop Capture combines two tasks:
 
-1. Controls a videotape recorder (VTR) over RS-422 using the Sony 9-pin protocol.
-2. Captures the analog-to-digital converted video and audio signal from capture devices.
-3. Shows a live preview and time information (CTL, LTC, VITC, user bits).
-4. Records synchronized video + audio to archival and access formats (H.264, FFV1+PCM/MKV, ProRes).
+1. control a videotape recorder (VTR) over RS-422 using the Sony 9-pin protocol;
+2. capture video and audio from Windows devices, preview them, and record them through FFmpeg;
+3. expose CTL, LTC, VITC, user bits, signal health, and recording-integrity evidence;
+4. preserve archival interlacing and field order when the selected profile does not process the picture.
 
-Target VTRs (via generic implementation + optional device profiles):
-Sony PVW-2600P, DVW-M2000P, BVU-950P, UVW-1800P, JVC BR-S622E.
+The synchronization design supports a claim of **software-correlated A/V timing**. Video
+is the master output timeline; WASAPI audio device positions are correlated to the host's
+monotonic QPC domain and audio is adaptively resampled. A static measured offset can be
+stored for each video/audio device pair.
+
+This is not a shared hardware clock. In particular, an OpenCV video timestamp represents
+delivery to the application, not the instant at which the capture device sampled the
+field. The application therefore cannot prove that a driver did not lose a frame before
+OpenCV delivered it. Those limits must remain explicit in the thesis and in any practical
+fitness claim.
 
 ## 2. Solution structure
 
-```
-MagnetoskopCapture.sln
+```text
+MagnetoskopCapture.slnx
 ├── src/
-│   ├── Magnetoskop.Core/                  # Contracts and domain models (no external deps)
-│   ├── Magnetoskop.Serial/                # ISerialTransport + System.IO.Ports implementation
-│   ├── Magnetoskop.Protocol.Sony9Pin/     # Sony 9-pin protocol (framing, checksum, parsing, controller)
-│   ├── Magnetoskop.Capture.Video/         # OpenCvSharp device enumeration + capture loop
-│   ├── Magnetoskop.Capture.Audio/         # NAudio device enumeration + capture
-│   ├── Magnetoskop.Recording/             # FFmpeg process-based recorder + recording profiles
-│   ├── Magnetoskop.Simulation/            # Simulated VTR and simulated capture sources
-│   └── Magnetoskop.App/                   # WPF UI, MVVM view models, DI composition root
+│   ├── Magnetoskop.Core/                  contracts, domain and timing models
+│   ├── Magnetoskop.Serial/                System.IO.Ports transport
+│   ├── Magnetoskop.Protocol.Sony9Pin/     framing, commands, parsing and controller
+│   ├── Magnetoskop.Capture.Video/         DirectShow enumeration + OpenCV capture
+│   ├── Magnetoskop.Capture.Audio/         low-level WASAPI packet capture via NAudio
+│   ├── Magnetoskop.Recording/             FFmpeg recorder, drift estimator, resampler
+│   ├── Magnetoskop.Simulation/            simulated VTR and timed A/V sources
+│   └── Magnetoskop.App/                   WPF/MVVM, workflow and evidence sidecars
 └── tests/
     ├── Magnetoskop.Core.Tests/
     ├── Magnetoskop.Protocol.Sony9Pin.Tests/
-    └── Magnetoskop.Recording.Tests/
+    ├── Magnetoskop.Recording.Tests/
+    ├── Magnetoskop.App.Tests/
+    └── Magnetoskop.Compatibility.Tests/
 ```
 
 ### Dependency rules
 
-- `Magnetoskop.Core` has **no** dependencies on other project layers or hardware libraries.
-- All other `src` projects depend only on `Core` (and their own third-party library).
-- `Magnetoskop.App` is the only project referencing everything; it wires services via
-  `Microsoft.Extensions.Hosting` dependency injection.
-- Hardware access is always behind an interface defined in `Core`
-  (`IVtrController`, `IVideoCaptureService`, `IAudioCaptureService`, `ISerialTransport`,
-  `IRecordingService`), so `Magnetoskop.Simulation` can substitute every device.
+- `Magnetoskop.Core` has no hardware-library or project-layer dependency.
+- Hardware access is behind Core contracts: `IVtrController`, `ISerialTransport`,
+  `IVideoCaptureService`, `IAudioCaptureService`, and `IRecordingService`.
+- Capture, protocol, serial, recording, and simulation depend on Core plus their own
+  library. `Magnetoskop.App` is the composition root.
+- Simulation and test fakes can replace all hardware without changing the workflow or UI.
 
-## 3. Module responsibilities
+## 3. Shared monotonic time and packet provenance
 
-### 3.1 Magnetoskop.Core
+`CaptureMonotonicClock` converts the process-wide high-resolution performance counter
+(`Stopwatch`, backed by QPC on Windows) to signed 100-nanosecond units. These values are
+monotonic process positions, not UTC wall-clock timestamps.
 
-- Domain models: `Timecode` (BCD-safe HH:MM:SS:FF value type), `TimecodeSource`
-  (CTL/LTC/VITC/…), `UserBits`, `TransportState`, `VtrStatus`, `RecordingProfile`,
-  `VtrDeviceProfile`, `CaptureDeviceInfo`, video/audio format descriptors.
-- Service abstractions listed above.
-- No I/O.
+The following observations use that domain:
 
-### 3.2 Magnetoskop.Serial
-
-- `ISerialTransport`: async open/close, `WriteAsync(ReadOnlyMemory<byte>, CancellationToken)`,
-  `ReadAsync(Memory<byte>, CancellationToken)`, port enumeration.
-- `SerialPortTransport` implementation over `System.IO.Ports.SerialPort`.
-- Configuration is supplied by the protocol layer / device profile; the transport itself does
-  not know anything about the Sony 9-pin protocol.
-
-### 3.3 Magnetoskop.Protocol.Sony9Pin
-
-Layered inside the project:
-
-1. **Framing** – `CommandBlock` (CMD-1 nibble + data count, CMD-2, data, checksum),
-   serializer/deserializer, checksum calculation.
-2. **Command catalog** – strongly-typed factory methods for the supported commands.
-3. **Response parsing** – ACK, NAK (+ error bitmask), Device Type, Status Data,
-   time data (LTC/VITC/CTL timers, user bits, corrected/hold variants).
-4. **Controller** – `Sony9PinController : IVtrController`:
-   - single-flight command queue (protocol forbids overlapping commands),
-   - per-command timeout, cancellation, and configurable retry policy,
-   - background status/timecode polling with priority given to user commands,
-   - communication logging (hex dumps at `Trace`/`Debug` level via `ILogger`),
-   - `UnsupportedCommandException` mapping for NAK "Undefined Command" and for commands
-     excluded by the active device profile.
-
-### 3.4 Magnetoskop.Capture.Video
-
-- Device enumeration (DirectShow names where obtainable, index-based fallback).
-- `OpenCvVideoCaptureService`: background capture thread reading `Mat` frames, publishing
-  `VideoFrame` (pixel data + timestamp) into bounded `Channel<T>` consumers:
-  - preview consumer (drop-oldest policy; UI never blocks capture),
-  - recording consumer (blocking with bounded capacity so encode back-pressure is visible).
-
-### 3.5 Magnetoskop.Capture.Audio
-
-- NAudio (WASAPI capture; WaveInEvent fallback) device enumeration and capture.
-- Auto-selection: when the user has not chosen an audio device explicitly, pick the audio
-  endpoint whose name best matches the selected video capture device, else system default.
-- Publishes PCM buffers with timestamps; exposes peak levels for UI meters.
-
-### 3.6 Magnetoskop.Recording
-
-- **Decision: FFmpeg as an external process**, fed via stdin/named pipes with raw video
-  (`rawvideo`, known pixel format/size/rate) and raw PCM audio. OpenCvSharp `VideoWriter`
-  is *not* used for recording: it cannot produce FFV1+PCM in Matroska or ProRes reliably,
-  and gives no control over interlaced flags or audio muxing.
-- `FfmpegRecordingService`: builds the argument list from a `RecordingProfile`, manages the
-  process lifetime, monitors stderr for progress/errors, supports cancellation and clean
-  finalization (close pipes, wait for trailer write).
-- Profiles (initial set):
-  - **FFV1 (archival):** `-c:v ffv1 -level 3 -g 1 -slicecrc 1`, PCM s16/s24 audio, MKV.
-    Interlacing preserved: no filters by default; field order flagged via
-    `-top`/`setfield` metadata according to source configuration.
-  - **H.264 (access):** `libx264`, configurable CRF/preset, AAC or PCM audio, MP4/MKV.
-    Optional deinterlace only when the user explicitly enables processing.
-  - **ProRes:** `prores_ks` with selectable profile (Proxy…HQ), PCM audio, MOV.
-- A/V sync: both elementary streams carry wallclock-based timestamps from the capture
-  services; the recorder computes the initial offset and instructs FFmpeg accordingly
-  (`-itsoffset` / audio resample fill). Details validated in Phase 6.
-
-### 3.7 Magnetoskop.Simulation
-
-- `SimulatedVtr : IVtrController`: full transport state machine (Stop/Play/FF/Rew/Eject +
-  future Pause/Record/Jog/Shuttle), synthesized CTL/LTC/VITC counters, artificial latency.
-- `SimulatedVideoSource` / `SimulatedAudioSource`: SMPTE-bar-like frames with burned-in
-  counter and a sine tone, so the whole pipeline runs without hardware.
-
-### 3.8 Magnetoskop.App (WPF, MVVM)
-
-- CommunityToolkit.Mvvm for observable view models and relay commands.
-- Generic Host (`Microsoft.Extensions.Hosting`) composition root; `ILogger` +
-  file/debug sinks; user settings persisted to JSON in `%APPDATA%`.
-- Views: main window with preview surface (`WriteableBitmap`), transport control bar,
-  timecode/status panel, device & profile selection, recording controls, log/error panel.
-- All device work happens off the UI thread; view models marshal updates via dispatcher.
-
-## 4. Sony 9-pin protocol summary (from context_source/sony_9pin)
-
-Facts taken from the archived protocol reference (Rick Davies summary of the Sony
-DVR-2000/2100 document) and the Drastic VVCR 422 page:
-
-| Item | Value |
+| Observation | Timing/provenance retained |
 |---|---|
-| Physical layer | EIA RS-422-A |
-| Baud rate | 38,400 bit/s |
-| Byte format | 1 start + 8 data + **odd parity** + 1 stop |
-| Block format | CMD-1/count, CMD-2, DATA-1..N (N ≤ 15), CHECKSUM |
-| Checksum | Lower 8 bits of the sum of all preceding block bytes |
-| Response deadline | Slave responds within 9 ms |
-| Inter-byte gap | ≤ 10 ms within a block |
-| Flow rule | Master sends one command at a time; waits for response |
-| ACK | `10 01` |
-| NAK | `11 12` + error byte (bit0 undefined cmd, bit2 checksum, bit4 parity, bit5 overrun, bit6 framing, bit7 timeout) |
-| NAK handling | Stop transmitting immediately; "undefined command" may be followed immediately, other errors require ≥ 10 ms wait |
+| Video frame | OpenCV delivery timestamp, delivery sequence, source frame number |
+| Audio packet | first device sample index, sample-frame count, WASAPI device position, QPC position, discontinuity/silence/timestamp-error flags |
+| VTR data | independent receipt time and QPC timestamp for CTL, LTC, VITC, LTC user bits, and VITC user bits |
+| Capture health | last successful delivery and health-change QPC timestamps |
 
-Commands used initially:
+The low-level audio reader calls `IAudioCaptureClient::GetBuffer` through NAudio so the
+device position and QPC position for the packet's first audio frame are not discarded.
+WASAPI supplies the QPC position already expressed in 100-nanosecond units. If the
+driver marks it invalid, the service estimates a first-sample time from host receipt and
+packet duration and marks `TimestampEstimated=true`. Such a session is finalized as
+`Incomplete`, even if no media queue overflowed, because its timing evidence is weaker.
+See [IAudioCaptureClient::GetBuffer](https://learn.microsoft.com/windows/win32/api/audioclient/nf-audioclient-iaudiocaptureclient-getbuffer).
 
-| Command | Code | Response |
+## 4. Capture fan-out and overload policy
+
+Capture consumers use removable `CaptureSubscription<T>` instances with a role and a
+bounded capacity. Each subscription exposes exact counters for publish attempts,
+enqueued/dequeued items, current depth, high-water mark, oldest-item drops, and rejected
+new items.
+
+| Role | Full-queue policy | Intended use |
 |---|---|---|
-| Device Type Request | `00 11` | `12 11` + 2 data bytes |
-| Stop | `20 00` | ACK |
-| Play | `20 01` | ACK |
-| Fast Forward | `20 10` | ACK |
-| Rewind | `20 20` | ACK |
-| Eject | `20 0F` | ACK |
-| Status Sense | `61 20` + start/count byte | `7X 20` status data (10 bytes documented) |
-| Current Time Sense | `61 0C` + source bitmask | `74 0X` time / user-bit data |
+| `Preview`, `Monitor` | `DropOldest` | keep the most recent live state; an exact eviction counter is incremented |
+| `Recording`, `FrameAudit` | `RejectNew` | preserve every accepted item; reject rather than silently replace data |
 
-Time data format (all time responses): DATA-1..4 = frames, seconds, minutes, hours in BCD
-(tens digit in the high nibble). For LTC preset/response, bit 7 of DATA-1 = color frame,
-bit 6 = drop frame. User bits: 8 binary groups, 2 per data byte.
-CTL is exposed as Timer-1/Timer-2 data (`74 00` / `74 01`), selected via the Current Time
-Sense mask (Timer-1 = `04`). "Best available timecode" mask `03` returns LTC, VITC, or
-corrected LTC (`74 14`) depending on tape speed and signal validity.
+Strict subscribers are published before best-effort subscribers. Publication never
+blocks the OpenCV capture thread or the WASAPI packet callback. The recording service
+uses approximately two seconds of strict video and audio capacity. Its first observed
+rejection requests an integrity stop; admission is removed, accepted data is drained,
+and FFmpeg is asked to write a trailer. The terminal outcome is `Incomplete` when that
+trailer is successfully written, not a false success.
 
-Commands planned for later phases (already in the catalog, gated by device profile):
-Record `20 02`, Standby On/Off `20 05`/`20 04`, Jog/Var/Shuttle Fwd `2X 11/12/13`,
-Jog/Var/Shuttle Rev `2X 21/22/23`, Cue Up With Data `24 31`, Preroll `20 30`,
-Edit On/Off `20 65`/`20 64`, Local Enable/Disable `00 1D`/`00 0C`.
+Subscriptions remove themselves on disposal and are completed when capture stops or
+faults. Capture cleanup is idempotent, including the path where the OpenCV read loop
+fails before normal shutdown. Repeated preview/record cycles therefore do not retain
+abandoned queues.
 
-### 4.1 Must be verified on documentation or real hardware
+The capture services also report source health. The recording path treats all of the
+following as integrity failures: video delivery-sequence gaps, audio device-position
+gaps, WASAPI discontinuities, non-monotonic timestamps, format changes, media stalls,
+strict queue rejection, frame-audit rejection, low disk space, and unexpected encoder
+termination.
 
-These are **not** assumed correct until tested against the actual decks:
+## 5. Video capture, stable identity and declared signal format
 
-1. **Per-model command support.** The reference documents the DVR-2000/2100 command set.
-   PVW/UVW/BVU decks implement subsets; the JVC BR-S622E implements a Sony-compatible
-   subset whose exact coverage must be probed (NAK "undefined command" responses will be
-   used to detect and record unsupported commands per profile).
-2. **Status byte count per model.** 10 bytes documented for DVR-2000; smaller decks may
-   return fewer. Status Sense will request a conservative count and adapt.
-3. **Status bit timing.** The reference explicitly warns that Play/Record status bit
-   timing "varies almost from machine to machine". Poll-rate and debounce values in the
-   device profiles must be tuned on hardware.
-4. **VITC availability** at low tape speeds and per deck (BVU-950P VITC option status).
-5. **Device Type codes** for DVW-M2000P, UVW-1800P, BVU-950P, JVC BR-S622E — not present
-   in the reference table; will be captured from hardware and stored in profiles.
-6. **USB–RS422 adapter behavior** with odd parity at 38.4 kBaud and its added latency
-   relative to the 9 ms response window (the PC master is tolerant here, but timing of
-   our inter-byte gaps must be checked with a scope/analyzer if problems appear).
-7. **Cable pinout.** The reference notes pinouts "vary a lot"; the standard Sony
-   controller pinout (1 GND, 2 RxA-, 3 TxB+, 7 TxA-... as listed) must be verified per
-   adapter/deck combination.
+`DirectShowDeviceEnumerator` reads each friendly name and, where available, the
+DirectShow `DevicePath` or display moniker. The stable string is persisted; whenever the
+device is opened, it is resolved to the current numeric OpenCV DirectShow index. Numeric
+IDs remain supported for migrated settings and for the limited fallback probe.
 
-## 5. Concurrency and reliability model
+This improves persistence across USB reorderings, but does not make OpenCV moniker-bound:
+DirectShow enumeration order and OpenCV's numeric index order are not guaranteed to be
+identical. The mapping remains best-effort, and the operator must verify the picture.
 
-- **UI thread:** rendering + view models only.
-- **Protocol:** one dedicated command loop (`Channel<PendingCommand>`); polling requests
-  are enqueued at low priority, user commands at high priority; every command carries a
-  `CancellationToken` and timeout.
-- **Video capture:** one thread per device; frames flow through bounded channels.
-- **Audio capture:** NAudio callback threads; buffers forwarded to bounded channels.
-- **Recording:** FFmpeg stdin writers on dedicated tasks; back-pressure is surfaced as a
-  "frames dropped / queue full" health metric instead of blocking capture.
-- Everything disposable implements `IAsyncDisposable`; the host coordinates ordered
-  shutdown (stop recording → stop capture → stop polling → close port).
-- Structured logging via `Microsoft.Extensions.Logging` throughout; protocol layer logs
-  raw frames in hex at Trace level for offline analysis.
+The application does not infer progressive/interlaced structure or field order from
+image height. Before recording, the operator must select:
 
-## 6. Feasibility notes
+- PAL, NTSC, or Custom (width, height and frame rate); and
+- Progressive, TFF, or BFF.
 
-| Concern | Assessment |
+Requested width, height and frame rate are applied as OpenCV properties and read back.
+The production OpenCV backend cannot read back scan structure or field order, so even a
+matching size/rate requires explicit confirmation of the exact requested/actual pair.
+The confirmation is fingerprinted by stable device ID and both formats; a changed
+device or format requires a new acknowledgement. Requested and actual values, the
+acknowledgement key, and the scan-readback limitation are recorded in the sidecar.
+
+## 6. Audio capture
+
+`NAudioCaptureService` enumerates WASAPI endpoints and captures shared-mode PCM through
+the low-level packet reader described in section 3. It publishes complete interleaved
+sample frames and exposes peak levels for the UI. A name-overlap heuristic can choose an
+audio endpoint for the selected video device; the operator may override it.
+
+Shared-mode Windows audio processing can still resample before the application. An
+exclusive/bit-exact capture mode is not implemented.
+
+## 7. Recording and active A/V correction
+
+OpenCvSharp `VideoWriter` is not used. `FfmpegRecordingService` sends raw BGR video to
+FFmpeg stdin and PCM audio to a Windows named pipe. FFmpeg provides the FFV1, H.264,
+ProRes/DNxHR, PCM/AAC and container support and writes field-order metadata from the
+operator-declared input configuration.
+
+### 7.1 Arming and initial alignment
+
+Recording startup is ordered as follows:
+
+1. create/start FFmpeg and connect its audio pipe;
+2. record the arm wall-clock/QPC time and install strict media subscriptions;
+3. read the first live video and audio observations;
+4. add the persisted device-pair calibration offset to the audio timestamp;
+5. retain the first video frame not earlier than the calibrated first audio sample;
+6. trim earlier video and the corresponding PCM prefix as intentional startup trims.
+
+The recorder does not synthesize startup silence and does not use FFmpeg `-itsoffset`.
+The click/request time is retained separately from the authoritative arm time.
+
+### 7.2 Video-master timeline and drift controller
+
+Committed video frames define the final media duration. FFmpeg's two blocking raw-pipe
+inputs must nevertheless be probed and interleaved concurrently: gating audio only on a
+completed video-pipe write can deadlock both pumps. While the video pump is active, the
+recorder may therefore submit audio against the strict video subscription's accepted,
+contiguous prefix. The amount by which that prefix can lead committed video is bounded by
+the approximately two-second strict queue; it is mux lookahead, not synthetic audio or
+an unreported recording-path loss. The live raw-video input deliberately has no
+`-fflags nobuffer`, and the live encode has no `-shortest` duration limiter; both variants
+can deadlock admission between the blocking inputs.
+
+After both inputs reach EOF, the exact budget is
+`floor(committed video frames × sample rate / frame rate)` sample frames. If the first
+FFmpeg process exits successfully and lookahead exists, the recorder starts a second,
+finite-file FFmpeg pass using `-t <committed-video-duration> -map 0 -c copy`. It writes to
+a same-directory temporary path with the same extension, so no media is re-encoded and
+the original is replaced atomically only when the trim exits with code zero and produces
+a nonempty file. A trim failure leaves the playable first-pass file in place and changes
+the result to `Incomplete/FinalizationTrimFailed`.
+
+This pass writes a second copy on the same volume. For a long recording, the temporary
+file can require additional space of the same order as the first-pass media—potentially
+close to its size—and copying it can add appreciable time after capture has stopped. A
+free-space guard runs before the pass. Insufficient space is treated as a trim failure:
+the first-pass file is preserved, an otherwise successful result becomes
+`Incomplete/FinalizationTrimFailed`, and an earlier causal stop reason remains primary
+with the trim diagnostic appended to `Error`.
+
+Telemetry reports `AudioSamplesSubmittedToEncoder`, the application-side final budget
+`AudioSamplesWritten`, `AudioSamplesInterleaveLookaheadSubmitted`, and
+`AudioSamplesInterleaveLookaheadTrimmed` separately. A submitted lookahead is counted as
+trimmed, and contributes to the intentional end-trim total, only after replacement
+succeeds. `AudioSamplesWritten` is not a decoded-container sample count: the finite
+stream-copy boundary has packet granularity, so the resulting streams and durations must
+still be checked with `ffprobe` and a full decode.
+
+After a 10-second warm-up, rolling 30-second least-squares fits compare video sequence
+progress and audio device-sample progress against the shared QPC domain. The estimate is
+updated at most once per second. A phase term combines filtered residual skew with the
+measured clock-rate difference. PCM passes through NAudio's WDL sinc resampler.
+
+Default controller bounds are:
+
+| Parameter | Value |
+|---|---:|
+| Correction clamp | +/-1000 ppm |
+| Correction slew | at most 50 ppm/s |
+| Residual-skew warning | over 10 ms |
+| Residual integrity stop | over one field for 5 continuous seconds |
+| Capture/write stall | 15 seconds |
+| Low-disk stop | below 500 MiB free |
+
+Drift beyond the correctable bound, a timestamp regression, or the sustained residual
+condition stops the session as `Incomplete`. Current and peak estimated drift, required
+and applied correction, initial/current offset, warning state, sample counts, intentional
+trims, missing samples, discontinuities, and queue metrics are frozen in
+`RecordingResult` and the final JSON.
+
+### 7.3 Stop and outcome semantics
+
+The first stop reason establishes one monotonic QPC cutoff. Strict subscriptions are
+then removed and their accepted queues are drained: a video frame crossing the cutoff is
+counted as an intentional end trim, and an audio buffer may be retained only through the
+sample immediately before that cutoff. The WDL resampler is flushed without inserting
+silence. Video remains the duration authority and the resulting PCM tail is capped to
+its final sample budget. The pipes are closed to send EOF; FFmpeg is given 15 seconds to
+exit and write its container trailer before a kill fallback.
+
+| Outcome | Meaning |
 |---|---|
-| .NET 8 + WPF | Installed runtime confirmed (8.0.x present). |
-| OpenCvSharp capture of USB capture sticks/cards | Standard DirectShow/MSMF path; device *names* require a DirectShow enumeration helper (OpenCV exposes only indices). |
-| NAudio WASAPI capture | Mature; supports device notifications and level metering. |
-| FFmpeg availability | Shipped alongside the app (`ffmpeg.exe` in a `tools/` folder or on PATH); recorder validates presence and encoder support (`ffmpeg -encoders`) at startup. |
-| RS-422 from PC | Requires USB→RS422 adapter (e.g., FTDI-based) presenting a COM port; `System.IO.Ports` with odd parity is supported. |
-| Interlaced archival capture | Depends on the capture device delivering fields untouched; FFV1 path applies no filtering by default. |
+| `Completed` | normal user stop or orderly application shutdown, complete timing telemetry, FFmpeg trailer written |
+| `Incomplete` | a detectable continuity/timing/audit/disk/capture failure occurred, but FFmpeg still finalized the playable partial media |
+| `Faulted` | startup/internal/encoder failure or inability to finalize the media reliably |
+| `Cancelled` | start/operation cancellation |
 
-## 7. Development phases
+`MediaFinalized` is the independent evidence that FFmpeg exited normally after EOF. A
+file's mere existence is never treated as proof of integrity.
 
-| Phase | Content | Exit criterion |
-|---|---|---|
-| 0 | This document | Reviewed and approved |
-| 1 | Solution skeleton, simulated VTR + simulated capture, WPF shell, DI, logging, tests build | `dotnet build` + `dotnet test` green; app runs against simulation |
-| 2 | Full Sony 9-pin protocol + unit tests | Protocol test suite green against fake transport |
-| 3 | Real RS-422 communication | Deck responds to transport commands; status/timecode polled |
-| 4 | Video device selection + live preview | Live preview at native rate without UI stalls |
-| 5 | Audio capture + monitoring | Device selection, auto-select, level meters |
-| 6 | FFV1+PCM MKV recording PoC | File plays in VLC/ffprobe verifies streams & sync |
-| 7 | H.264 + ProRes profiles | All three profiles produce valid files |
-| 8 | Workflow integration | Control deck + capture + record concurrently, errors surfaced |
-| 9 | Deck compatibility | Profiles validated on all five machines |
-| 10 | Reliability, docs, packaging | Release build, user guide |
+## 8. Time information, preview freshness and frame audit
+
+The Sony controller keeps the existing fast status, best-timecode and CTL polls. It also
+polls explicit LTC and VITC at a slower staggered cadence and their user bits at a still
+slower cadence. An unsupported optional LTC/VITC/user-bit request is logged at debug
+level and does not mark the whole link unhealthy.
+
+CTL, LTC, VITC and each user-bit source retain independent receipt times. A poll of one
+register cannot make another old value appear fresh. The default classification is:
+
+- fresh through 1 second;
+- stale after 1 second and through 3 seconds;
+- lost after 3 seconds.
+
+The UI labels stale values with age in amber, retains `CORR` and `HOLD` provenance, and
+clears lost values. A stale VTR link is amber; a lost/disconnected link is red. Preview
+uses separate QPC thresholds: an overlay appears after 500 ms without a frame and turns
+to a red signal-loss warning after 2 seconds. A newly delivered frame clears the warning.
+
+For every frame successfully committed to FFmpeg stdin, the application queues one
+`.frames.jsonl` record containing recording ordinal, source frame number, capture QPC,
+capture offset, nearest preceding VTR observation, its source/age/freshness, servo and
+transport state, and an optional interpolated timecode. Interpolation is allowed only
+from fresh raw LTC/VITC while transport is forward `Playing`, servo lock is true and its
+status observation is fresh. Corrected/held values and uncertain transport states are
+recorded as observations, not extrapolated facts.
+
+The audit writer is bounded and non-blocking so it cannot stall FFmpeg. It flushes at
+least once per second. A rejected audit record or writer failure makes the recording
+incomplete.
+
+## 9. Sidecars and crash evidence
+
+Each media file has:
+
+- `capture_....frames.jsonl`: one association per committed application frame;
+- `capture_....json.partial`: initial and in-progress summary evidence;
+- `capture_....json`: atomically replaced final summary after orderly termination.
+
+The initial partial JSON is written before recorder startup. Final JSON includes session
+and device identifiers, requested/actual video format, format acknowledgement,
+calibration provenance, one freshness-checked start/end VTR snapshot, first/last
+committed-frame associations, terminal outcome/reason, FFmpeg finalization state, all
+queue and synchronization metrics, exact detectable losses, and the integrity scope.
+JSON replacement uses a same-directory temporary file. The partial summary is removed
+only after final JSON succeeds; a hard process crash may therefore leave it as evidence
+of an unfinalized session.
+
+The scope statement is deliberately limited to application capture subscriptions through
+the finalized media file. Upstream OpenCV/DirectShow continuity remains unknown.
+
+## 10. Sony 9-pin protocol architecture
+
+The protocol project retains four layers:
+
+1. block framing/checksum (`CommandBlock`);
+2. strongly typed command catalog and BCD/time-data parsing;
+3. a single-flight transceiver with timeout/retry/NAK rules;
+4. `Sony9PinController`, which polls status/time information and exposes capability
+   learning behind `IVtrController`.
+
+Wire settings are EIA RS-422-A, 38,400 bit/s, 8 data bits, odd parity and one stop bit.
+The master sends one command at a time. Device-specific command subsets, response timing,
+status sizes, VITC options and USB-adapter behavior remain hardware-validation items; see
+`docs/HARDWARE_TESTING.md`.
+
+## 11. Concurrency and shutdown
+
+| Component | Execution model |
+|---|---|
+| WPF | rendering and bindings on the UI thread |
+| Sony protocol | asynchronous single-flight exchange and background polling |
+| Video | dedicated OpenCV capture thread; non-blocking subscriber publication |
+| Audio | WASAPI packet thread; non-blocking subscriber publication |
+| Recording | independent video/audio pumps, process monitor, watchdog and finalizer |
+| Frame audit | independent single-reader JSONL writer |
+
+Orderly host shutdown asks the session coordinator to stop/finalize the active recording
+before preview/capture and device connections are disposed. Cleanup operations are
+idempotent.
+
+## 12. Evidence and remaining validation
+
+Automated tests cover timing math, exact queue overflow counts, subscription disposal,
+fresh/stale/lost transitions, format/readback acknowledgement, timecode association,
+sidecar terminal paths, protocol behavior, simulations, and FFmpeg integration where
+the executable is available. These tests establish deterministic software behavior;
+they are not a substitute for a capture-device/deck soak.
+
+The current implementation still requires the documented hardware campaign:
+
+- all target VTR profiles and cable/adapter assumptions;
+- reordered/duplicate/removed DirectShow devices on the target workstation;
+- PAL/NTSC/custom plus Progressive/TFF/BFF verification;
+- four-hour flash/tone marker capture on the available combined A/V device;
+- induced encoder overload and inspection of the resulting incomplete but finalized file.
+
+Until those results are recorded, the thesis must say **implemented and
+software-tested; physical long-duration validation pending**, not that long-term
+synchronization or driver-level continuity has been proved.

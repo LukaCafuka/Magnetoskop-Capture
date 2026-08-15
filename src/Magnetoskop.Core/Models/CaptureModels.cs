@@ -43,8 +43,12 @@ public sealed record VideoFrame
 {
     public required byte[] Data { get; init; }
     public required VideoFormat Format { get; init; }
-    /// <summary>Monotonic capture timestamp.</summary>
-    public required TimeSpan Timestamp { get; init; }
+    /// <summary>Process-wide monotonic capture/delivery time in normalized 100 ns units.</summary>
+    public required long Timestamp100ns { get; init; }
+    /// <summary>Compatibility view of <see cref="Timestamp100ns"/>.</summary>
+    public TimeSpan Timestamp => TimeSpan.FromTicks(Timestamp100ns);
+    /// <summary>Sequence assigned to every frame delivered by this capture session.</summary>
+    public required long DeliverySequence { get; init; }
     public long FrameNumber { get; init; }
 }
 
@@ -62,6 +66,22 @@ public sealed record AudioBuffer
     public required byte[] Data { get; init; }
     public required int Length { get; init; }
     public required AudioFormat Format { get; init; }
-    /// <summary>Monotonic capture timestamp of the first sample.</summary>
-    public required TimeSpan Timestamp { get; init; }
+    /// <summary>Process-wide monotonic time of the first sample, normalized to 100 ns.</summary>
+    public required long Timestamp100ns { get; init; }
+    /// <summary>Compatibility view of <see cref="Timestamp100ns"/>.</summary>
+    public TimeSpan Timestamp => TimeSpan.FromTicks(Timestamp100ns);
+    /// <summary>Device or delivered-stream position of the first interleaved sample frame.</summary>
+    public required long FirstSampleIndex { get; init; }
+    /// <summary>Number of interleaved sample frames in this buffer (not channels × frames).</summary>
+    public required int SampleCount { get; init; }
+    /// <summary>WASAPI QPC position converted by the API to 100 ns units; zero when unavailable.</summary>
+    public long QpcPosition100ns { get; init; }
+    /// <summary>WASAPI device position when available; otherwise equals <see cref="FirstSampleIndex"/>.</summary>
+    public long DevicePosition { get; init; }
+    /// <summary>True when the capture API reported a discontinuity before this packet.</summary>
+    public bool Discontinuity { get; init; }
+    /// <summary>True when host callback timing was used because a device QPC timestamp was unavailable.</summary>
+    public bool TimestampEstimated { get; init; }
+    /// <summary>True when the capture API marked this packet as silence.</summary>
+    public bool Silent { get; init; }
 }

@@ -26,11 +26,17 @@ public interface IVtrController : IAsyncDisposable
 
     bool IsConnected { get; }
 
+    /// <summary>Whether polling is currently receiving responses from the recorder.</summary>
+    VtrLinkHealth LinkHealth { get; }
+
     /// <summary>Raised whenever a fresh status snapshot is available (from polling).</summary>
     event EventHandler<VtrStatus>? StatusChanged;
 
     /// <summary>Raised whenever fresh time information is available (from polling).</summary>
     event EventHandler<TimeInformation>? TimeChanged;
+
+    /// <summary>Raised when the host-observed recorder link changes state.</summary>
+    event EventHandler<VtrLinkHealth>? LinkHealthChanged;
 
     /// <summary>Opens the connection and starts status/timecode polling.</summary>
     Task ConnectAsync(CancellationToken cancellationToken = default);

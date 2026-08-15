@@ -38,9 +38,12 @@ public class ControllerTests
             // Current time sense
             (0x60, 0x0C) when cmd.Data.Count > 0 => cmd.Data[0] switch
             {
+                0x01 => new CommandBlock(0x74, 0x04, 0x10, 0x30, 0x20, 0x01).ToBytes(), // LTC
+                0x02 => new CommandBlock(0x74, 0x06, 0x11, 0x30, 0x20, 0x01).ToBytes(), // VITC
                 0x03 => new CommandBlock(0x74, 0x04, 0x10, 0x30, 0x20, 0x01).ToBytes(), // LTC 01:20:30:10
                 0x04 => new CommandBlock(0x74, 0x00, 0x05, 0x00, 0x00, 0x00).ToBytes(), // CTL 00:00:00:05
                 0x10 => new CommandBlock(0x74, 0x05, 0xAA, 0xBB, 0xCC, 0xDD).ToBytes(), // LTC UB
+                0x20 => new CommandBlock(0x74, 0x07, 0x11, 0x22, 0x33, 0x44).ToBytes(), // VITC UB
                 _ => null,
             },
             _ => null,
@@ -413,6 +416,108 @@ public class ControllerTests
 
         var time = await AwaitWithTimeout(ubTcs.Task, timeoutMs: 3000);
         Assert.Equal(new UserBits(0xAA, 0xBB, 0xCC, 0xDD), time.LtcUserBits);
+    }
+
+    [Fact]
+    public async Task Polling_PublishesIndependentLtcVitcAndUserBitObservations()
+    {
+        var transport = new FakeSerialTransport { Responder = DefaultResponder };
+        await using var controller = CreateController(transport);
+
+        var observations = new TaskCompletionSource<TimeInformation>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        controller.TimeChanged += (_, time) =>
+        {
+            if (time.LtcObservation is not null
+                && time.VitcObservation is not null
+                && time.LtcUserBitsObservation is not null
+                && time.VitcUserBitsObservation is not null)
+            {
+                observations.TrySetResult(time);
+            }
+        };
+
+        await controller.ConnectAsync();
+        var time = await AwaitWithTimeout(observations.Task, timeoutMs: 3000);
+
+        Assert.Equal(TimecodeSource.Ltc, time.LtcObservation!.Value.Source);
+        Assert.Equal(TimecodeSource.Vitc, time.VitcObservation!.Value.Source);
+        Assert.Equal(new UserBits(0xAA, 0xBB, 0xCC, 0xDD), time.LtcUserBits);
+        Assert.Equal(new UserBits(0x11, 0x22, 0x33, 0x44), time.VitcUserBits);
+        Assert.NotEqual(time.LtcReceivedAt, time.VitcReceivedAt);
+    }
+
+    [Fact]
+    public async Task Polling_PreservesHeldVitcAsPrimarySource()
+    {
+        var transport = new FakeSerialTransport
+        {
+            Responder = command => command is { Cmd1: 0x61, Cmd2: 0x0C }
+                                    && command.Data.Count > 0
+                                    && command.Data[0] == (byte)TimeSenseRequest.BestTimecode
+                ? new CommandBlock(0x74, 0x16, 0x12, 0x30, 0x20, 0x01).ToBytes()
+                : DefaultResponder(command),
+        };
+        await using var controller = CreateController(transport);
+
+        var held = new TaskCompletionSource<TimeInformation>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        controller.TimeChanged += (_, time) =>
+        {
+            if (time.PrimarySource == TimecodeSource.HoldVitc)
+            {
+                held.TrySetResult(time);
+            }
+        };
+
+        await controller.ConnectAsync();
+        var time = await AwaitWithTimeout(held.Task);
+
+        Assert.Equal(TimecodeSource.HoldVitc, time.VitcSource);
+        Assert.Equal(new Timecode(1, 20, 30, 12), time.Vitc);
+    }
+
+    [Fact]
+    public async Task Polling_ReportsLostLinkAndRecoversWithoutClosingPort()
+    {
+        var failSense = false;
+        var transport = new FakeSerialTransport
+        {
+            Responder = command => failSense && (command.Cmd1 & 0xF0) == 0x60
+                ? null
+                : DefaultResponder(command),
+        };
+        await using var controller = CreateController(transport);
+        controller.LinkStaleAfter = TimeSpan.FromMilliseconds(40);
+        controller.LinkLostAfter = TimeSpan.FromMilliseconds(100);
+
+        var lost = new TaskCompletionSource<VtrLinkHealth>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var recovered = new TaskCompletionSource<VtrLinkHealth>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var sawLost = false;
+        controller.LinkHealthChanged += (_, health) =>
+        {
+            if (health.State == VtrLinkState.Lost)
+            {
+                sawLost = true;
+                lost.TrySetResult(health);
+            }
+            else if (sawLost && health.State == VtrLinkState.Online)
+            {
+                recovered.TrySetResult(health);
+            }
+        };
+
+        await controller.ConnectAsync();
+        await WaitForCtlAsync(controller, expectedFrames: 5);
+        failSense = true;
+
+        await AwaitWithTimeout(lost.Task, timeoutMs: 3000);
+        Assert.True(controller.IsConnected); // port remains open so polling can recover
+        Assert.False(controller.CurrentStatus.IsConnected);
+
+        failSense = false;
+        await AwaitWithTimeout(recovered.Task, timeoutMs: 3000);
+        Assert.Equal(VtrLinkState.Online, controller.LinkHealth.State);
     }
 
     [Fact]

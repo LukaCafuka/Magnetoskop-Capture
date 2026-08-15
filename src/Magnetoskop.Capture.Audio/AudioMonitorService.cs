@@ -19,6 +19,7 @@ public sealed class AudioMonitorService : IAsyncDisposable
 
     private CancellationTokenSource? _cts;
     private Task? _pumpTask;
+    private CaptureSubscription<AudioBuffer>? _subscription;
     private WasapiOut? _output;
     private BufferedWaveProvider? _buffer;
     private VolumeSampleProvider? _volumeProvider;
@@ -138,8 +139,8 @@ public sealed class AudioMonitorService : IAsyncDisposable
             output.Play();
 
             var cts = new CancellationTokenSource();
-            var reader = _audio.Subscribe(capacity: 4);
-            var pump = Task.Run(() => PumpAsync(reader, buffer, cts.Token), CancellationToken.None);
+            var subscription = _audio.Subscribe(CaptureSubscriptionOptions.Monitor(capacity: 4));
+            var pump = Task.Run(() => PumpAsync(subscription, buffer, cts.Token), CancellationToken.None);
 
             lock (_gate)
             {
@@ -148,6 +149,7 @@ public sealed class AudioMonitorService : IAsyncDisposable
                 _output = output;
                 _cts = cts;
                 _pumpTask = pump;
+                _subscription = subscription;
                 _runningFormat = format;
             }
 
@@ -202,15 +204,18 @@ public sealed class AudioMonitorService : IAsyncDisposable
     {
         CancellationTokenSource? cts;
         Task? pump;
+        CaptureSubscription<AudioBuffer>? subscription;
         WasapiOut? output;
 
         lock (_gate)
         {
             cts = _cts;
             pump = _pumpTask;
+            subscription = _subscription;
             output = _output;
             _cts = null;
             _pumpTask = null;
+            _subscription = null;
             _output = null;
             _buffer = null;
             _volumeProvider = null;
@@ -227,6 +232,8 @@ public sealed class AudioMonitorService : IAsyncDisposable
             }
         }
         catch (Exception) { /* ignore */ }
+
+        try { subscription?.Dispose(); } catch (Exception) { /* ignore */ }
 
         try
         {
