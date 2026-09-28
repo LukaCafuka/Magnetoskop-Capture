@@ -61,7 +61,7 @@ public interface IVtrController : IAsyncDisposable
 
     /// <summary>
     /// Cues the deck via Sony 9-pin Cue Up With Data (<c>24 31</c>) after selecting
-    /// the timer mode (<c>41 36</c>): TIME CODE for LTC, TIMER-1 for CTL.
+    /// the timer mode (<c>41 36</c>): TIME CODE for LTC/VITC, TIMER-1 for CTL.
     /// </summary>
     Task CueUpAsync(
         Timecode timecode,

@@ -125,7 +125,7 @@ and status-panel result:
 | Frame step forward/reverse | one-frame movement or documented fallback | |
 | Standby on/off | status follows deck, if supported | |
 | Jog/Shuttle | sign and speed are correct, if supported | |
-| Cue LTC/CTL | reaches requested location within deck tolerance | |
+| Cue LTC/VITC/CTL | reaches requested location within deck tolerance | |
 
 Operate the front panel as well as the application and confirm the UI follows. Record
 the returned Status Sense byte count and any transition flicker/debounce requirement.

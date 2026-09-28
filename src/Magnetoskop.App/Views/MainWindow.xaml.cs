@@ -52,6 +52,7 @@ public partial class MainWindow : Window
 
     private bool _ltcCommitting;
     private bool _ctlCommitting;
+    private bool _vitcCommitting;
 
     private void LtcDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -91,6 +92,46 @@ public partial class MainWindow : Window
     {
         if (_ltcCommitting || !_viewModel.IsEditingLtc) return;
         _viewModel.CancelEditLtcCommand.Execute(null);
+    }
+
+    private void VitcDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_viewModel.BeginEditVitcCommand.CanExecute(null)) return;
+        _viewModel.BeginEditVitcCommand.Execute(null);
+        Dispatcher.BeginInvoke(() =>
+        {
+            VitcEditBox.Focus();
+            VitcEditBox.SelectAll();
+        }, System.Windows.Threading.DispatcherPriority.Input);
+        e.Handled = true;
+    }
+
+    private async void VitcEditBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            _vitcCommitting = true;
+            try
+            {
+                await _viewModel.CommitGoToVitcCommand.ExecuteAsync(null);
+            }
+            finally
+            {
+                _vitcCommitting = false;
+            }
+        }
+        else if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+            _viewModel.CancelEditVitcCommand.Execute(null);
+        }
+    }
+
+    private void VitcEditBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (_vitcCommitting || !_viewModel.IsEditingVitc) return;
+        _viewModel.CancelEditVitcCommand.Execute(null);
     }
 
     private void CtlDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

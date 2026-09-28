@@ -211,6 +211,12 @@ public sealed partial class MainViewModel : ObservableObject
     private string _vitcFreshnessText = "N/A";
 
     [ObservableProperty]
+    private bool _isEditingVitc;
+
+    [ObservableProperty]
+    private string _vitcEditText = "00:00:00:00";
+
+    [ObservableProperty]
     private string _userBitsText = "-- -- -- --";
 
     [ObservableProperty]
@@ -1600,7 +1606,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void BeginEditLtc()
     {
-        if (!CanUseTransport() || IsEditingLtc || IsEditingCtl) return;
+        if (!CanUseTransport() || IsEditingLtc || IsEditingCtl || IsEditingVitc) return;
         LtcEditText = LtcText.StartsWith("--", StringComparison.Ordinal) || LtcText.StartsWith('-')
             ? "00:00:00:00"
             : LtcText;
@@ -1646,9 +1652,58 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void BeginEditVitc()
+    {
+        if (!CanUseTransport() || IsEditingVitc || IsEditingLtc || IsEditingCtl) return;
+        VitcEditText = VitcText.StartsWith("--", StringComparison.Ordinal) || VitcText.StartsWith('-')
+            ? "00:00:00:00"
+            : VitcText;
+        IsEditingVitc = true;
+    }
+
+    [RelayCommand]
+    private void CancelEditVitc()
+    {
+        IsEditingVitc = false;
+    }
+
+    [RelayCommand]
+    private async Task CommitGoToVitcAsync()
+    {
+        if (!CanUseTransport()) return;
+
+        if (!Timecode.TryParse(VitcEditText, out var timecode))
+        {
+            ReportError(
+                "Invalid timecode. Use HH:MM:SS:FF (e.g. 00:01:00:00 for 1 minute), or MM:SS:FF.",
+                null);
+            return;
+        }
+
+        VitcEditText = timecode.ToString();
+
+        try
+        {
+            // Sony Cue Up addresses the shared TIME CODE domain. A VITC reading is
+            // therefore cued with the same timer mode as an LTC reading.
+            await _vtr.CueUpAsync(timecode, CueUpTimerMode.TimeCode);
+            AppendLog($"Transport: Cue Up {timecode} (VITC / TIME CODE mode)");
+            IsEditingVitc = false;
+        }
+        catch (UnsupportedCommandException ex)
+        {
+            ReportError("Cue Up not supported by this device", ex);
+        }
+        catch (Exception ex)
+        {
+            ReportError($"VITC Cue Up to {timecode} failed", ex);
+        }
+    }
+
+    [RelayCommand]
     private void BeginEditCtl()
     {
-        if (!CanUseTransport() || IsEditingCtl || IsEditingLtc) return;
+        if (!CanUseTransport() || IsEditingCtl || IsEditingLtc || IsEditingVitc) return;
         CtlEditText = CtlText.StartsWith("--", StringComparison.Ordinal)
             ? "00:00:00:00"
             : CtlText;

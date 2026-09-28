@@ -58,7 +58,7 @@ public static class Sony9PinCommands
     public static CommandBlock TimerModeSelect(Core.Models.CueUpTimerMode mode)
         => new(0x41, 0x36, (byte)mode);
 
-    /// <summary>41 36 with TIME CODE (LTC go-to).</summary>
+    /// <summary>41 36 with TIME CODE (LTC/VITC go-to).</summary>
     public static CommandBlock TimerModeSelectTimeCode()
         => TimerModeSelect(Core.Models.CueUpTimerMode.TimeCode);
 

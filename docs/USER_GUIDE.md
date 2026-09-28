@@ -56,8 +56,8 @@ What you should see:
   current transport mode display as `--:--:--:--`. CTL below zero shows with a
   leading minus by default (e.g. `-00:00:00:01`); enable **CTL 24-hour wrap** in
   **File → Settings…** to show the deck-style wrap (`23:59:59:24`) instead.
-- Click **LTC** to edit a target timecode, then press **Enter** to cue the deck
-  there (Sony Cue Up With Data, forced to TIME CODE / LTC mode). Use
+- Click **LTC** or **VITC** to edit a target timecode, then press **Enter** to cue the deck
+  there (Sony Cue Up With Data, forced to the shared TIME CODE mode). Use
   `HH:MM:SS:FF` (e.g. `00:01:00:00` for one minute) or short `MM:SS:FF`.
   **Esc** or clicking away cancels. Note: `1:00:00:00` is **one hour**, not one minute.
 - Click **CTL** the same way to cue on TIMER-1 / CTL (Timer Mode Select `01`).

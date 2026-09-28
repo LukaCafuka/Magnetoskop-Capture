@@ -533,7 +533,42 @@
                                     <TextBlock Text="{Binding VitcFreshnessText}" Foreground="#FFD166"
                                                FontSize="10" Margin="6,0,0,2"/>
                                 </StackPanel>
-                                <TextBlock Style="{StaticResource TimecodeText}" Text="{Binding VitcText}"/>
+                                <Grid>
+                                    <TextBlock Text="{Binding VitcText}"
+                                               Cursor="Hand"
+                                               ToolTip="Click to go to VITC. Enter HH:MM:SS:FF (00:01:00:00 = 1 min) or MM:SS:FF. Esc cancels."
+                                               MouseLeftButtonDown="VitcDisplay_MouseLeftButtonDown">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource TimecodeText}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEditingVitc}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBox x:Name="VitcEditBox"
+                                             Text="{Binding VitcEditText, UpdateSourceTrigger=PropertyChanged}"
+                                             FontFamily="Consolas" FontSize="26"
+                                             Foreground="#66FF99" Background="#1A1A1A"
+                                             BorderBrush="#66FF99" CaretBrush="#66FF99"
+                                             Padding="2,0"
+                                             KeyDown="VitcEditBox_KeyDown"
+                                             LostKeyboardFocus="VitcEditBox_LostKeyboardFocus">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEditingVitc}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+                                </Grid>
                             </StackPanel>
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
