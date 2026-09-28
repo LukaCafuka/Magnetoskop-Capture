@@ -20,27 +20,13 @@
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#DDDDDD"/>
         </Style>
-        <Style TargetType="Button">
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Padding" Value="12,6"/>
             <Setter Property="Margin" Value="4,0,0,0"/>
             <Setter Property="MinWidth" Value="70"/>
         </Style>
-        <Style TargetType="ComboBox">
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Margin" Value="0,0,0,8"/>
-            <Setter Property="Foreground" Value="#1A1A1A"/>
-            <Style.Resources>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Foreground" Value="#1A1A1A"/>
-                </Style>
-            </Style.Resources>
-        </Style>
-        <Style TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="#1A1A1A"/>
-            <Style.Resources>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Foreground" Value="#1A1A1A"/>
-                </Style>
-            </Style.Resources>
         </Style>
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#999999"/>

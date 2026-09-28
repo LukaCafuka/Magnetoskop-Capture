@@ -23,7 +23,7 @@
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#DDDDDD"/>
         </Style>
-        <Style TargetType="Button">
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Padding" Value="12,6"/>
             <Setter Property="Margin" Value="4,0"/>
             <Setter Property="MinWidth" Value="70"/>
@@ -117,31 +117,20 @@
             <Setter Property="Foreground" Value="#DDDDDD"/>
             <Setter Property="Background" Value="#2A2A2A"/>
             <Setter Property="Padding" Value="8,4"/>
-        </Style>
-        <!-- ComboBoxes use a light system background; override the window TextBlock
-             foreground so selected/dropdown text stays readable (black on white). -->
-        <Style TargetType="ComboBox">
-            <Setter Property="Foreground" Value="#1A1A1A"/>
             <Style.Resources>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Foreground" Value="#1A1A1A"/>
-                </Style>
+                <SolidColorBrush x:Key="{x:Static SystemColors.MenuBrushKey}" Color="#2A2A2A"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.MenuTextBrushKey}" Color="#DDDDDD"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#195F8F"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFFFFF"/>
             </Style.Resources>
         </Style>
-        <Style TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="#1A1A1A"/>
-            <Style.Resources>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Foreground" Value="#1A1A1A"/>
-                </Style>
-            </Style.Resources>
-        </Style>
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"/>
         <Style TargetType="ToggleButton">
             <Setter Property="Foreground" Value="#1A1A1A"/>
             <Setter Property="Padding" Value="8,2"/>
             <Setter Property="MinWidth" Value="56"/>
         </Style>
-        <Style TargetType="Slider">
+        <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
             <Setter Property="Foreground" Value="#66FF99"/>
         </Style>
     </Window.Resources>
@@ -205,21 +194,21 @@
             <Separator/>
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Elapsed  " Foreground="#888888"/>
+                    <TextBlock Text="Elapsed  " Foreground="#A0A0A0"/>
                     <TextBlock Text="{Binding StatusBarElapsedText}" FontFamily="Consolas" MinWidth="64"/>
                 </StackPanel>
             </StatusBarItem>
             <Separator/>
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Codec  " Foreground="#888888"/>
+                    <TextBlock Text="Codec  " Foreground="#A0A0A0"/>
                     <TextBlock Text="{Binding StatusBarCodecText}" TextTrimming="CharacterEllipsis" MaxWidth="360"/>
                 </StackPanel>
             </StatusBarItem>
             <Separator/>
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="VTR  " Foreground="#888888"/>
+                    <TextBlock Text="VTR  " Foreground="#A0A0A0"/>
                     <TextBlock Text="{Binding StatusBarTransportText}" FontWeight="SemiBold" Foreground="#FFCC66"/>
                 </StackPanel>
             </StatusBarItem>
@@ -246,7 +235,7 @@
                     <Image Source="{Binding PreviewSource}" Stretch="Uniform"/>
                     <TextBlock Text="No preview"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                               Foreground="#555555" FontSize="20">
+                               Foreground="#8A8A8A" FontSize="20">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -660,7 +649,7 @@
                             <TextBlock Text="Auto-play deck on record" Foreground="#DDDDDD"/>
                         </CheckBox>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                            <Button Content="● Capture" Foreground="Red" FontWeight="Bold"
+                            <Button Content="● Capture" Foreground="#FF7777" FontWeight="Bold"
                                     Command="{Binding StartRecordingCommand}"/>
                             <Button Content="■ Stop capture" Command="{Binding StopRecordingCommand}"/>
                         </StackPanel>

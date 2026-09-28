@@ -18,18 +18,18 @@
                 <ColumnDefinition Width="6*"/>
                 <ColumnDefinition Width="6*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="-60" FontSize="9" Foreground="#888888"
+            <TextBlock Grid.Column="0" Text="-60" FontSize="9" Foreground="#A0A0A0"
                        VerticalAlignment="Center" HorizontalAlignment="Left"/>
-            <TextBlock Grid.Column="1" Text="-40" FontSize="9" Foreground="#888888"
+            <TextBlock Grid.Column="1" Text="-40" FontSize="9" Foreground="#A0A0A0"
                        VerticalAlignment="Center" HorizontalAlignment="Left"/>
-            <TextBlock Grid.Column="2" Text="-20" FontSize="9" Foreground="#888888"
+            <TextBlock Grid.Column="2" Text="-20" FontSize="9" Foreground="#A0A0A0"
                        VerticalAlignment="Center" HorizontalAlignment="Left"/>
-            <TextBlock Grid.Column="3" Text="-12" FontSize="9" Foreground="#888888"
+            <TextBlock Grid.Column="3" Text="-12" FontSize="9" Foreground="#A0A0A0"
                        VerticalAlignment="Center" HorizontalAlignment="Left"/>
             <Grid Grid.Column="4">
-                <TextBlock Text="-6" FontSize="9" Foreground="#888888"
+                <TextBlock Text="-6" FontSize="9" Foreground="#A0A0A0"
                            VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                <TextBlock Text="0" FontSize="9" Foreground="#888888"
+                <TextBlock Text="0" FontSize="9" Foreground="#A0A0A0"
                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
         </Grid>
